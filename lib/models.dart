@@ -5,6 +5,10 @@ library;
 String dayKey(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+/// [n] naptári nappal később (negatívval korábban), délben.
+/// Nem 24 órákat ad hozzá, így az óraátállítás napján sem csúszik el.
+DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n, 12);
+
 String newId() => DateTime.now().microsecondsSinceEpoch.toString();
 
 /// Közös program barátokkal.
@@ -67,11 +71,11 @@ class Habit {
   /// naptól számol, így a sorozat nem nullázódik le reggel.
   int streak([DateTime? now]) {
     var day = now ?? DateTime.now();
-    if (!isDoneOn(day)) day = day.subtract(const Duration(days: 1));
+    if (!isDoneOn(day)) day = addDays(day, -1);
     var count = 0;
     while (isDoneOn(day)) {
       count++;
-      day = day.subtract(const Duration(days: 1));
+      day = addDays(day, -1);
     }
     return count;
   }

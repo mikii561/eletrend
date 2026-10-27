@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -20,7 +21,7 @@ class HabitsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final today = DateTime.now();
-    final days = List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
+    final days = List.generate(7, (i) => addDays(today, i - 6));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Szokások')),

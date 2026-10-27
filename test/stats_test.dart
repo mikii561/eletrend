@@ -71,6 +71,21 @@ void main() {
     expect(reloaded.entryFor(day)!.question, questionFor(day));
   });
 
+  test('sorozat az óraátállítás napján sem számol duplán', () async {
+    final store = await emptyStore();
+    // 2026.10.25-én ért véget a nyári időszámítás; késő este ellenőrzünk.
+    for (var d = 20; d <= 26; d++) {
+      store.saveEntry(entry(DateTime(2026, 10, d, 12), 3));
+    }
+    store.addHabit('Séta');
+    for (var d = 20; d <= 26; d++) {
+      store.habits.first.doneDays.add(dayKey(DateTime(2026, 10, d)));
+    }
+    final lateEvening = DateTime(2026, 10, 26, 23, 30);
+    expect(MoodStats(store).journalStreak(lateEvening), 7);
+    expect(store.habits.first.streak(lateEvening), 7);
+  });
+
   test('havi átlag és napló-sorozat', () async {
     final store = await emptyStore();
     final now = DateTime(2026, 10, 27);

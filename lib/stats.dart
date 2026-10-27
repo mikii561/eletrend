@@ -5,10 +5,13 @@ import 'store.dart';
 
 /// Egy felfedezett összefüggés a statisztika képernyőn.
 class Insight {
-  const Insight(this.emoji, this.text);
+  const Insight(this.emoji, this.text, [this.strength = 0]);
 
   final String emoji;
   final String text;
+
+  /// Mennyire erős az összefüggés (pontkülönbség); ez alapján rendezünk.
+  final double strength;
 }
 
 class TagStat {
@@ -31,6 +34,8 @@ class MoodStats {
   /// Ekkora (pontban mért) különbség alatt nem szólunk.
   static const minDiff = 0.3;
 
+  static const maxInsights = 5;
+
   Iterable<JournalEntry> entriesBetween(DateTime from, DateTime to) =>
       store.journal.where((j) => !j.date.isBefore(from) && j.date.isBefore(to));
 
@@ -52,11 +57,11 @@ class MoodStats {
   /// Hány egymást követő napon írtál naplót (ma még nem kötelező).
   int journalStreak([DateTime? now]) {
     var day = now ?? DateTime.now();
-    if (store.entryFor(day) == null) day = day.subtract(const Duration(days: 1));
+    if (store.entryFor(day) == null) day = addDays(day, -1);
     var count = 0;
     while (store.entryFor(day) != null) {
       count++;
-      day = day.subtract(const Duration(days: 1));
+      day = addDays(day, -1);
     }
     return count;
   }
@@ -64,7 +69,7 @@ class MoodStats {
   /// Az elmúlt [days] nap bejegyzései napi bontásban (null, ha nem írtál).
   List<JournalEntry?> lastDays(int days, [DateTime? now]) {
     final today = now ?? DateTime.now();
-    return [for (var i = days - 1; i >= 0; i--) store.entryFor(today.subtract(Duration(days: i)))];
+    return [for (var i = days - 1; i >= 0; i--) store.entryFor(addDays(today, -i))];
   }
 
   List<Insight> insights() {
@@ -79,8 +84,8 @@ class MoodStats {
       final diff = average(done)! - average(notDone)!;
       if (diff.abs() < minDiff) continue;
       result.add(diff > 0
-          ? Insight('✨', 'Azokon a napokon, amikor teljesítetted ezt: „${h.name}”, átlagosan ${_fmt(diff)} ponttal jobb volt a hangulatod.')
-          : Insight('🤔', 'Azokon a napokon, amikor teljesítetted ezt: „${h.name}”, átlagosan ${_fmt(-diff)} ponttal rosszabb volt a hangulatod.'));
+          ? Insight('✨', 'Azokon a napokon, amikor teljesítetted ezt: „${h.name}”, átlagosan ${_fmt(diff)} ponttal jobb volt a hangulatod.', diff)
+          : Insight('🤔', 'Azokon a napokon, amikor teljesítetted ezt: „${h.name}”, átlagosan ${_fmt(-diff)} ponttal rosszabb volt a hangulatod.', -diff));
     }
 
     // Programok: milyen a hangulat azokon a napokon, amikor volt program?
@@ -90,7 +95,7 @@ class MoodStats {
     if (withEvent.length >= minSamples && withoutEvent.length >= minSamples) {
       final diff = average(withEvent)! - average(withoutEvent)!;
       if (diff >= minDiff) {
-        result.add(Insight('🎉', 'Amikor programod van a barátaiddal, átlagosan ${_fmt(diff)} ponttal jobb a hangulatod.'));
+        result.add(Insight('🎉', 'Amikor programod van a barátaiddal, átlagosan ${_fmt(diff)} ponttal jobb a hangulatod.', diff));
       }
     }
 
@@ -105,6 +110,7 @@ class MoodStats {
         diff > 0
             ? 'Amikor „${t.tag}” vagy, átlagosan ${_fmt(diff)} ponttal jobb a napod.'
             : 'Amikor „${t.tag}” vagy, átlagosan ${_fmt(-diff)} ponttal rosszabb a napod. Érdemes figyelni rá.',
+        diff.abs(),
       ));
     }
 
@@ -118,10 +124,12 @@ class MoodStats {
       usable.sort((a, b) => average(b.value)!.compareTo(average(a.value)!));
       final best = usable.first;
       final name = DateFormat.EEEE('hu').format(_dateForWeekday(best.key));
-      result.add(Insight('📅', 'A hét legjobb napja nálad: $name (átlag ${_fmt(average(best.value)!)}).'));
+      result.add(Insight('📅', 'A hét legjobb napja nálad: $name (átlag ${_fmt(average(best.value)!)}).', 0.6));
     }
 
-    return result;
+    // A legerősebb összefüggések elöl, legfeljebb [maxInsights] darab.
+    result.sort((a, b) => b.strength.compareTo(a.strength));
+    return result.take(maxInsights).toList();
   }
 
   /// Címkénként: hányszor használtad és milyen volt átlagosan a hangulat. Gyakoriság szerint.

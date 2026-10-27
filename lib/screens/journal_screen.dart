@@ -199,7 +199,7 @@ class _MoodWeek extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final days = List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
+    final days = List.generate(7, (i) => addDays(today, i - 6));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(gradient: AppColors.headerGradient, borderRadius: BorderRadius.circular(24)),
