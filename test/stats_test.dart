@@ -1,4 +1,5 @@
 import 'package:eletrend/models.dart';
+import 'package:eletrend/questions.dart';
 import 'package:eletrend/stats.dart';
 import 'package:eletrend/store.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,6 +37,20 @@ void main() {
     store.addHabit('Olvasás');
     store.saveEntry(entry(DateTime(2026, 10, 1), 4));
     expect(MoodStats(store).insights(), isEmpty);
+  });
+
+  test('napi kérdés: naponta állandó, a válasz megmarad mentés után', () async {
+    final day = DateTime(2026, 10, 27);
+    expect(questionFor(day), questionFor(DateTime(2026, 10, 27, 23)));
+    expect(nextQuestion(questionFor(day)), isNot(questionFor(day)));
+
+    final store = await emptyStore();
+    store.saveEntry(entry(day, 4)
+      ..question = questionFor(day)
+      ..answer = 'A kávé');
+    final reloaded = await AppStore.load();
+    expect(reloaded.entryFor(day)!.answer, 'A kávé');
+    expect(reloaded.entryFor(day)!.question, questionFor(day));
   });
 
   test('havi átlag és napló-sorozat', () async {

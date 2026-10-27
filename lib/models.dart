@@ -94,6 +94,8 @@ class JournalEntry {
     required this.mood,
     this.gratitude = '',
     this.note = '',
+    this.question = '',
+    this.answer = '',
   });
 
   final String id;
@@ -104,12 +106,18 @@ class JournalEntry {
   String gratitude;
   String note;
 
+  /// A napi kérdés és a rá adott válasz (üres, ha nem válaszolt).
+  String question;
+  String answer;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'date': date.toIso8601String(),
         'mood': mood,
         'gratitude': gratitude,
         'note': note,
+        'question': question,
+        'answer': answer,
       };
 
   factory JournalEntry.fromJson(Map<String, dynamic> j) => JournalEntry(
@@ -118,6 +126,8 @@ class JournalEntry {
         mood: j['mood'] as int,
         gratitude: j['gratitude'] as String? ?? '',
         note: j['note'] as String? ?? '',
+        question: j['question'] as String? ?? '',
+        answer: j['answer'] as String? ?? '',
       );
 }
 

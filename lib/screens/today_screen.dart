@@ -25,13 +25,7 @@ class TodayScreen extends StatelessWidget {
     final store = StoreScope.of(context);
     final now = DateTime.now();
     final existing = store.entryFor(now);
-    store.saveEntry(JournalEntry(
-      id: existing?.id ?? newId(),
-      date: now,
-      mood: mood,
-      gratitude: existing?.gratitude ?? '',
-      note: existing?.note ?? '',
-    ));
+    store.saveEntry((existing ?? JournalEntry(id: newId(), date: now, mood: mood))..mood = mood);
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models.dart';
+import '../questions.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -95,6 +96,11 @@ class _EntryCard extends StatelessWidget {
                         const SizedBox(height: 8),
                         Text('🙏 ${j.gratitude}', style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
+                      if (j.answer.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(j.question, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13)),
+                        Text(j.answer),
+                      ],
                       if (j.note.isNotEmpty) ...[
                         const SizedBox(height: 4),
                         Text(j.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted)),
@@ -182,15 +188,20 @@ class _JournalEditorState extends State<JournalEditor> {
   late int _mood = widget.existing?.mood ?? 3;
   late final _gratitude = TextEditingController(text: widget.existing?.gratitude);
   late final _note = TextEditingController(text: widget.existing?.note);
+  late String _question =
+      widget.existing?.question.isNotEmpty == true ? widget.existing!.question : questionFor(widget.date);
+  late final _answer = TextEditingController(text: widget.existing?.answer);
 
   void _save() {
-    StoreScope.of(context).saveEntry(JournalEntry(
-      id: widget.existing?.id ?? newId(),
-      date: widget.date,
-      mood: _mood,
-      gratitude: _gratitude.text.trim(),
-      note: _note.text.trim(),
-    ));
+    final answer = _answer.text.trim();
+    StoreScope.of(context).saveEntry(
+      (widget.existing ?? JournalEntry(id: newId(), date: widget.date, mood: _mood))
+        ..mood = _mood
+        ..gratitude = _gratitude.text.trim()
+        ..note = _note.text.trim()
+        ..question = answer.isEmpty ? '' : _question
+        ..answer = answer,
+    );
     Navigator.pop(context);
   }
 
@@ -198,6 +209,7 @@ class _JournalEditorState extends State<JournalEditor> {
   void dispose() {
     _gratitude.dispose();
     _note.dispose();
+    _answer.dispose();
     super.dispose();
   }
 
@@ -255,6 +267,50 @@ class _JournalEditorState extends State<JournalEditor> {
             textCapitalization: TextCapitalization.sentences,
             decoration: const InputDecoration(hintText: 'pl. egy jó beszélgetés, a napsütés…'),
             maxLines: 2,
+          ),
+          const SectionTitle('A nap kérdése ❓'),
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 4, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Text(
+                            _question,
+                            key: ValueKey(_question),
+                            style: theme.textTheme.titleMedium?.copyWith(color: AppColors.primary),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Másik kérdés',
+                        icon: const Icon(Icons.shuffle, color: AppColors.textMuted),
+                        onPressed: () => setState(() => _question = nextQuestion(_question)),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: TextField(
+                      controller: _answer,
+                      textCapitalization: TextCapitalization.sentences,
+                      decoration: const InputDecoration(
+                        hintText: 'Válaszod (nem kötelező)',
+                        fillColor: AppColors.background,
+                      ),
+                      maxLines: 3,
+                      minLines: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SectionTitle('Jegyzet a napodról'),
           TextField(
