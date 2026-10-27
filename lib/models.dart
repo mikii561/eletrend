@@ -96,6 +96,7 @@ class JournalEntry {
     this.note = '',
     this.question = '',
     this.answer = '',
+    this.photoPath,
   });
 
   final String id;
@@ -110,6 +111,9 @@ class JournalEntry {
   String question;
   String answer;
 
+  /// A nap fotója a telefon tárhelyén (null, ha nincs).
+  String? photoPath;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'date': date.toIso8601String(),
@@ -118,6 +122,7 @@ class JournalEntry {
         'note': note,
         'question': question,
         'answer': answer,
+        'photoPath': photoPath,
       };
 
   factory JournalEntry.fromJson(Map<String, dynamic> j) => JournalEntry(
@@ -128,6 +133,7 @@ class JournalEntry {
         note: j['note'] as String? ?? '',
         question: j['question'] as String? ?? '',
         answer: j['answer'] as String? ?? '',
+        photoPath: j['photoPath'] as String?,
       );
 }
 

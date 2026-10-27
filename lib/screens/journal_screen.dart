@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../models.dart';
+import '../photos.dart';
 import '../questions.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -109,6 +113,21 @@ class _EntryCard extends StatelessWidget {
                   ),
                 ),
               ),
+              if (j.photoPath != null && Photos.supported)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 12, 12, 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.file(
+                      File(j.photoPath!),
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      cacheWidth: 216,
+                      errorBuilder: (_, _, _) => const SizedBox(width: 72),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -191,22 +210,66 @@ class _JournalEditorState extends State<JournalEditor> {
   late String _question =
       widget.existing?.question.isNotEmpty == true ? widget.existing!.question : questionFor(widget.date);
   late final _answer = TextEditingController(text: widget.existing?.answer);
+  late String? _photo = widget.existing?.photoPath;
+  bool _saved = false;
+
+  Future<void> _pickPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Fotó készítése'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Választás a galériából'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    final path = await Photos.pick(source);
+    if (path == null) return;
+    // Az ebben a szerkesztésben korábban választott, de lecserélt fotó már nem kell.
+    if (_photo != widget.existing?.photoPath) await Photos.delete(_photo);
+    setState(() => _photo = path);
+  }
+
+  Future<void> _removePhoto() async {
+    if (_photo != widget.existing?.photoPath) await Photos.delete(_photo);
+    setState(() => _photo = null);
+  }
 
   void _save() {
     final answer = _answer.text.trim();
+    final oldPhoto = widget.existing?.photoPath;
+    if (oldPhoto != _photo) Photos.delete(oldPhoto);
     StoreScope.of(context).saveEntry(
       (widget.existing ?? JournalEntry(id: newId(), date: widget.date, mood: _mood))
         ..mood = _mood
         ..gratitude = _gratitude.text.trim()
         ..note = _note.text.trim()
         ..question = answer.isEmpty ? '' : _question
-        ..answer = answer,
+        ..answer = answer
+        ..photoPath = _photo,
     );
+    _saved = true;
     Navigator.pop(context);
   }
 
   @override
   void dispose() {
+    // Mentés nélkül kilépve az újonnan választott fotót eldobjuk.
+    if (!_saved && _photo != widget.existing?.photoPath) Photos.delete(_photo);
     _gratitude.dispose();
     _note.dispose();
     _answer.dispose();
@@ -225,6 +288,9 @@ class _JournalEditorState extends State<JournalEditor> {
               tooltip: 'Törlés',
               icon: const Icon(Icons.delete_outline),
               onPressed: () {
+                Photos.delete(widget.existing!.photoPath);
+                if (_photo != widget.existing!.photoPath) Photos.delete(_photo);
+                _saved = true;
                 StoreScope.of(context).removeEntry(widget.existing!);
                 Navigator.pop(context);
               },
@@ -268,6 +334,54 @@ class _JournalEditorState extends State<JournalEditor> {
             decoration: const InputDecoration(hintText: 'pl. egy jó beszélgetés, a napsütés…'),
             maxLines: 2,
           ),
+          if (Photos.supported) ...[
+            const SectionTitle('A nap fotója 📷'),
+            if (_photo == null)
+              Card(
+                margin: EdgeInsets.zero,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: _pickPhoto,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 28),
+                    child: Column(
+                      children: [
+                        Icon(Icons.add_a_photo_outlined, size: 32, color: AppColors.primary),
+                        SizedBox(height: 8),
+                        Text('Egy kép, ami megörökíti a napot', style: TextStyle(color: AppColors.textMuted)),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            else
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Stack(
+                  children: [
+                    Image.file(File(_photo!), height: 240, width: double.infinity, fit: BoxFit.cover),
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Row(
+                        children: [
+                          IconButton.filledTonal(
+                            tooltip: 'Csere',
+                            icon: const Icon(Icons.swap_horiz),
+                            onPressed: _pickPhoto,
+                          ),
+                          IconButton.filledTonal(
+                            tooltip: 'Eltávolítás',
+                            icon: const Icon(Icons.close),
+                            onPressed: _removePhoto,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
           const SectionTitle('A nap kérdése ❓'),
           Card(
             margin: EdgeInsets.zero,
