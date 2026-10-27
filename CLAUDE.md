@@ -23,12 +23,12 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 
 ## Ütemterv
 
-1. Emlékeztető értesítések
+1. ~~Emlékeztető értesítések~~ (kész)
 2. Kipróbálás a felhasználó telefonján
 3. Firebase: bejelentkezés, valódi barátok és meghívók
 4. Ikon, sötét mód, Google Play
 
-## �rtes�t�sek
+## Értesítések
 
-- `lib/notifications.dart`: helyi, �temezett �rtes�t�sek (flutter_local_notifications), csak Androidon. Minden store-v�ltoz�skor mindent �jra�temez (napi 7 nap el�re, programonk�nt el�z� este 18:00 + 1 �r�val el�tte).
-- Emul�tor: `Medium_Phone_API_37.0`; ind�t�s: `C:\Android\sdk\emulator\emulator.exe -avd Medium_Phone_API_37.0` (a `flutter emulators --launch` csendben nem ind�tja el).
+- `lib/notifications.dart`: helyi, ütemezett értesítések (flutter_local_notifications), csak Androidon. Minden store-változáskor mindent újraütemez (napi 7 nap előre, programonként előző este 18:00 + 1 órával előtte).
+- Emulátor: `Medium_Phone_API_37.0`; indítás: `C:\Android\sdk\emulator\emulator.exe -avd Medium_Phone_API_37.0` (a `flutter emulators --launch` csendben nem indítja el).
