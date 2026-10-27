@@ -10,18 +10,30 @@ import '../questions.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../stats.dart';
 import 'stats_screen.dart';
 import 'today_screen.dart' show MoodButton;
 
 /// Hangulat- és hálanapló: a hét hangulata és a korábbi bejegyzések.
-class JournalScreen extends StatelessWidget {
+class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
+
+  @override
+  State<JournalScreen> createState() => _JournalScreenState();
+}
+
+class _JournalScreenState extends State<JournalScreen> {
+  /// Kiválasztott címke a lista szűréséhez (null = mind).
+  String? _filter;
 
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final now = DateTime.now();
     final todayEntry = store.entryFor(now);
+    final usedTags = MoodStats(store).tagStats().map((t) => t.tag).toList();
+    final filter = usedTags.contains(_filter) ? _filter : null;
+    final entries = filter == null ? store.journal : store.journal.where((j) => j.tags.contains(filter)).toList();
 
     void openEditor(DateTime date, JournalEntry? existing) => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => JournalEditor(date: date, existing: existing)),
@@ -54,8 +66,27 @@ class JournalScreen extends StatelessWidget {
               child: EmptyState(emoji: '📔', text: 'Még nincs bejegyzésed.\nÍrd le, milyen napod volt és miért vagy hálás!'),
             )
           else ...[
-            const SectionTitle('Bejegyzések'),
-            for (final j in store.journal) _EntryCard(entry: j, onTap: () => openEditor(j.date, j)),
+            SectionTitle('Bejegyzések', trailing: filter == null ? null : '${entries.length}'),
+            if (usedTags.isNotEmpty)
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    for (final t in usedTags)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6, bottom: 6),
+                        child: ChoiceChip(
+                          label: Text(tagLabel(t)),
+                          showCheckmark: false,
+                          selected: filter == t,
+                          selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                          onSelected: (on) => setState(() => _filter = on ? t : null),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            for (final j in entries) _EntryCard(entry: j, onTap: () => openEditor(j.date, j)),
           ],
         ],
       ),
@@ -96,6 +127,14 @@ class _EntryCard extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleMedium),
                         ],
                       ),
+                      if (j.tags.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: [for (final t in j.tags) _TagPill(t)],
+                        ),
+                      ],
                       if (j.gratitude.isNotEmpty) ...[
                         const SizedBox(height: 8),
                         Text('🙏 ${j.gratitude}', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -132,6 +171,21 @@ class _EntryCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TagPill extends StatelessWidget {
+  const _TagPill(this.tag);
+
+  final String tag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10)),
+      child: Text(tagLabel(tag), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -211,6 +265,7 @@ class _JournalEditorState extends State<JournalEditor> {
       widget.existing?.question.isNotEmpty == true ? widget.existing!.question : questionFor(widget.date);
   late final _answer = TextEditingController(text: widget.existing?.answer);
   late String? _photo = widget.existing?.photoPath;
+  late final Set<String> _tags = {...?widget.existing?.tags};
   bool _saved = false;
 
   Future<void> _pickPhoto() async {
@@ -260,7 +315,8 @@ class _JournalEditorState extends State<JournalEditor> {
         ..note = _note.text.trim()
         ..question = answer.isEmpty ? '' : _question
         ..answer = answer
-        ..photoPath = _photo,
+        ..photoPath = _photo
+        ..tags = [for (final t in moodTags.keys) if (_tags.contains(t)) t],
     );
     _saved = true;
     Navigator.pop(context);
@@ -326,6 +382,21 @@ class _JournalEditorState extends State<JournalEditor> {
                 ],
               ),
             ),
+          ),
+          SectionTitle('Hogy érzed magad?', trailing: _tags.isEmpty ? null : '${_tags.length}'),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final t in moodTags.keys)
+                FilterChip(
+                  label: Text(tagLabel(t)),
+                  showCheckmark: false,
+                  selected: _tags.contains(t),
+                  selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                  onSelected: (on) => setState(() => on ? _tags.add(t) : _tags.remove(t)),
+                ),
+            ],
           ),
           const SectionTitle('Miért vagy ma hálás? 🙏'),
           TextField(

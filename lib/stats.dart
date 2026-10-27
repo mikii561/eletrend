@@ -11,6 +11,14 @@ class Insight {
   final String text;
 }
 
+class TagStat {
+  const TagStat(this.tag, this.count, this.average);
+
+  final String tag;
+  final int count;
+  final double average;
+}
+
 /// Hangulat-statisztikák számolása a naplóból és a szokásokból.
 class MoodStats {
   MoodStats(this.store);
@@ -86,6 +94,20 @@ class MoodStats {
       }
     }
 
+    // Címkék: melyik érzés jár együtt jobb vagy rosszabb nappal?
+    final overall = average(entries);
+    for (final t in tagStats()) {
+      if (t.count < minSamples || overall == null) continue;
+      final diff = t.average - overall;
+      if (diff.abs() < 0.5) continue;
+      result.add(Insight(
+        moodTags[t.tag] ?? '🏷️',
+        diff > 0
+            ? 'Amikor „${t.tag}” vagy, átlagosan ${_fmt(diff)} ponttal jobb a napod.'
+            : 'Amikor „${t.tag}” vagy, átlagosan ${_fmt(-diff)} ponttal rosszabb a napod. Érdemes figyelni rá.',
+      ));
+    }
+
     // A hét legjobb napja
     final byWeekday = <int, List<JournalEntry>>{};
     for (final e in entries) {
@@ -100,6 +122,19 @@ class MoodStats {
     }
 
     return result;
+  }
+
+  /// Címkénként: hányszor használtad és milyen volt átlagosan a hangulat. Gyakoriság szerint.
+  List<TagStat> tagStats() {
+    final byTag = <String, List<JournalEntry>>{};
+    for (final e in store.journal) {
+      for (final t in e.tags) {
+        byTag.putIfAbsent(t, () => []).add(e);
+      }
+    }
+    return [
+      for (final t in byTag.entries) TagStat(t.key, t.value.length, average(t.value)!),
+    ]..sort((a, b) => b.count.compareTo(a.count));
   }
 
   static String _fmt(double v) => v.toStringAsFixed(1).replaceAll('.', ',');

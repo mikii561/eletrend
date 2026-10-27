@@ -27,6 +27,7 @@ class _StatsScreenState extends State<StatsScreen> {
     final stats = MoodStats(store);
     final avg = stats.monthAverage(_month);
     final insights = stats.insights();
+    final tags = stats.tagStats();
     final isCurrentMonth = _month.year == DateTime.now().year && _month.month == DateTime.now().month;
 
     return Scaffold(
@@ -89,6 +90,37 @@ class _StatsScreenState extends State<StatsScreen> {
               child: SizedBox(height: 180, child: _MoodTrend(days: stats.lastDays(30))),
             ),
           ),
+
+          // Címkék
+          if (tags.isNotEmpty) ...[
+            const SectionTitle('Leggyakoribb érzéseid'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    for (final t in tags.take(6))
+                      ListTile(
+                        dense: true,
+                        leading: Text(moodTags[t.tag] ?? '🏷️', style: const TextStyle(fontSize: 24)),
+                        title: Text(t.tag, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        subtitle: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: t.count / tags.first.count,
+                            minHeight: 6,
+                            backgroundColor: AppColors.background,
+                            color: AppColors.moods[t.average.round() - 1],
+                          ),
+                        ),
+                        trailing: Text('${t.count}×  ${moodEmojis[t.average.round() - 1]}',
+                            style: const TextStyle(fontWeight: FontWeight.w700)),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
 
           // Összefüggések
           const SectionTitle('Amit észrevettem'),

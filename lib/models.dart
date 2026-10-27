@@ -97,7 +97,8 @@ class JournalEntry {
     this.question = '',
     this.answer = '',
     this.photoPath,
-  });
+    List<String>? tags,
+  }) : tags = tags ?? [];
 
   final String id;
   DateTime date;
@@ -114,6 +115,9 @@ class JournalEntry {
   /// A nap fotója a telefon tárhelyén (null, ha nincs).
   String? photoPath;
 
+  /// Hangulatcímkék a [moodTags] nevei közül.
+  List<String> tags;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'date': date.toIso8601String(),
@@ -123,6 +127,7 @@ class JournalEntry {
         'question': question,
         'answer': answer,
         'photoPath': photoPath,
+        'tags': tags,
       };
 
   factory JournalEntry.fromJson(Map<String, dynamic> j) => JournalEntry(
@@ -134,8 +139,31 @@ class JournalEntry {
         question: j['question'] as String? ?? '',
         answer: j['answer'] as String? ?? '',
         photoPath: j['photoPath'] as String?,
+        tags: List<String>.from(j['tags'] as List? ?? []),
       );
 }
+
+/// Választható hangulatcímkék: név → emoji.
+const moodTags = {
+  'boldog': '🥳',
+  'nyugodt': '😌',
+  'hálás': '🙏',
+  'motivált': '💪',
+  'produktív': '✅',
+  'kreatív': '🎨',
+  'szerelmes': '😍',
+  'társasági': '👯',
+  'fáradt': '😴',
+  'stresszes': '😰',
+  'szorongó': '😟',
+  'ideges': '😠',
+  'szomorú': '😢',
+  'magányos': '🫥',
+  'unatkozó': '🥱',
+  'beteg': '🤒',
+};
+
+String tagLabel(String tag) => '${moodTags[tag] ?? '🏷️'} $tag';
 
 const moodEmojis = ['😞', '🙁', '😐', '🙂', '😄'];
 const moodLabels = ['Nagyon rossz', 'Rossz', 'Átlagos', 'Jó', 'Nagyon jó'];

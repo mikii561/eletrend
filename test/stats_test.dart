@@ -32,6 +32,24 @@ void main() {
     expect(insights.any((i) => i.text.contains('Edzés') && i.text.contains('jobb')), isTrue);
   });
 
+  test('címkék: gyakoriság, átlag és összefüggés', () async {
+    final store = await emptyStore();
+    final start = DateTime(2026, 10, 1);
+    for (var i = 0; i < 6; i++) {
+      final calm = i < 3;
+      store.saveEntry(entry(start.add(Duration(days: i)), calm ? 5 : 2)..tags = [calm ? 'nyugodt' : 'stresszes']);
+    }
+    store.journal.first.tags.add('fáradt');
+
+    final stats = MoodStats(store);
+    final tags = stats.tagStats();
+    expect(tags.first.count, 3);
+    expect(tags.firstWhere((t) => t.tag == 'nyugodt').average, 5);
+    final texts = stats.insights().map((i) => i.text).join('\n');
+    expect(texts, contains('„nyugodt” vagy, átlagosan 1,5 ponttal jobb'));
+    expect(texts, contains('„stresszes” vagy, átlagosan 1,5 ponttal rosszabb'));
+  });
+
   test('kevés adatnál nincs összefüggés', () async {
     final store = await emptyStore();
     store.addHabit('Olvasás');
