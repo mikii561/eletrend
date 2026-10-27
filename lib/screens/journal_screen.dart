@@ -68,20 +68,20 @@ class _JournalScreenState extends State<JournalScreen> {
           else ...[
             SectionTitle('Bejegyzések', trailing: filter == null ? null : '${entries.length}'),
             if (usedTags.isNotEmpty)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
                   children: [
-                    for (final t in usedTags)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6, bottom: 6),
-                        child: ChoiceChip(
-                          label: Text(tagLabel(t)),
-                          showCheckmark: false,
-                          selected: filter == t,
-                          selectedColor: AppColors.primary.withValues(alpha: 0.18),
-                          onSelected: (on) => setState(() => _filter = on ? t : null),
-                        ),
+                    // A leggyakoribbak (a tagStats gyakoriság szerint rendez)
+                    for (final t in usedTags.take(8))
+                      ChoiceChip(
+                        label: Text(tagLabel(t)),
+                        showCheckmark: false,
+                        selected: filter == t,
+                        selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                        onSelected: (on) => setState(() => _filter = on ? t : null),
                       ),
                   ],
                 ),
@@ -466,6 +466,10 @@ class _JournalEditorState extends State<JournalEditor> {
                       Expanded(
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 200),
+                          layoutBuilder: (current, previous) => Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [...previous, ?current],
+                          ),
                           child: Text(
                             _question,
                             key: ValueKey(_question),
