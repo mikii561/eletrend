@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'notifications.dart';
 import 'screens/events_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/journal_screen.dart';
@@ -15,6 +18,8 @@ Future<void> main() async {
   await initializeDateFormatting('hu');
   final store = await AppStore.load();
   runApp(EletrendApp(store: store));
+  // Az app megjelenése után, hogy az engedélykérő ablak az app fölött jelenjen meg.
+  unawaited(Notifications.init(store));
 }
 
 class EletrendApp extends StatelessWidget {

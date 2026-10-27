@@ -27,3 +27,8 @@ Magyar nyelvÅ± Ã©letmÃ³d app Flutterben (elsÅ‘sorban Android): programszervezÃ©s
 2. KiprÃ³bÃ¡lÃ¡s a felhasznÃ¡lÃ³ telefonjÃ¡n
 3. Firebase: bejelentkezÃ©s, valÃ³di barÃ¡tok Ã©s meghÃ­vÃ³k
 4. Ikon, sÃ¶tÃ©t mÃ³d, Google Play
+
+## Értesítések
+
+- `lib/notifications.dart`: helyi, ütemezett értesítések (flutter_local_notifications), csak Androidon. Minden store-változáskor mindent újraütemez (napi 7 nap elõre, programonként elõzõ este 18:00 + 1 órával elõtte).
+- Emulátor: `Medium_Phone_API_37.0`; indítás: `C:\Android\sdk\emulator\emulator.exe -avd Medium_Phone_API_37.0` (a `flutter emulators --launch` csendben nem indítja el).

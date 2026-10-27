@@ -7,6 +7,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'events_screen.dart';
 import 'journal_screen.dart';
+import 'settings_screen.dart';
 
 /// Főoldal: mai hangulat, mai szokások és a következő programok.
 class TodayScreen extends StatelessWidget {
@@ -196,8 +197,21 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(date, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(date, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
+                    ),
+                    IconButton(
+                      tooltip: 'Beállítások',
+                      visualDensity: VisualDensity.compact,
+                      icon: const Icon(Icons.settings_outlined, color: Colors.white),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      ),
+                    ),
+                  ],
+                ),
                 Text(greeting,
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
               ],

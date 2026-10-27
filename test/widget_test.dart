@@ -2,6 +2,7 @@ import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
 import 'package:eletrend/screens/today_screen.dart';
 import 'package:eletrend/store.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +18,19 @@ void main() {
     expect(h.streak(now), 3);
   });
 
+  test('emlékeztető beállítások megmaradnak újraindítás után', () async {
+    SharedPreferences.setMockInitialValues({});
+    final store = await AppStore.load();
+    expect(store.dailyReminder, isTrue);
+    expect(store.reminderTime, const TimeOfDay(hour: 20, minute: 0));
+
+    store.setReminders(daily: false, time: const TimeOfDay(hour: 21, minute: 30), events: false);
+    final reloaded = await AppStore.load();
+    expect(reloaded.dailyReminder, isFalse);
+    expect(reloaded.reminderTime, const TimeOfDay(hour: 21, minute: 30));
+    expect(reloaded.eventReminders, isFalse);
+  });
+
   testWidgets('a főoldal betölt és a szokás kipipálható', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
@@ -26,11 +40,15 @@ void main() {
     expect(find.text('Mai szokások'), findsOneWidget);
     expect(find.text('Olvasás'), findsOneWidget);
 
+    await tester.ensureVisible(find.byType(CheckCircle));
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(CheckCircle));
     await tester.pump();
     expect(store.habits.first.isDoneOn(DateTime.now()), isTrue);
 
     // Gyors hangulat a főoldalon
+    await tester.ensureVisible(find.text(moodEmojis[3]));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(moodEmojis[3]));
     await tester.pump();
     expect(store.entryFor(DateTime.now())?.mood, 4);

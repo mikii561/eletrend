@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models.dart';
@@ -15,6 +15,11 @@ class AppStore extends ChangeNotifier {
   List<Habit> habits = [];
   List<JournalEntry> journal = [];
   List<String> friends = [];
+
+  // Emlékeztetők beállításai
+  bool dailyReminder = true;
+  TimeOfDay reminderTime = const TimeOfDay(hour: 20, minute: 0);
+  bool eventReminders = true;
 
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
@@ -33,6 +38,12 @@ class AppStore extends ChangeNotifier {
     habits = list('habits').map(Habit.fromJson).toList();
     journal = list('journal').map(JournalEntry.fromJson).toList();
     friends = _prefs.getStringList('friends') ?? [];
+    dailyReminder = _prefs.getBool('dailyReminder') ?? true;
+    reminderTime = TimeOfDay(
+      hour: _prefs.getInt('reminderHour') ?? 20,
+      minute: _prefs.getInt('reminderMinute') ?? 0,
+    );
+    eventReminders = _prefs.getBool('eventReminders') ?? true;
   }
 
   void _save() {
@@ -40,8 +51,26 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('habits', jsonEncode(habits.map((h) => h.toJson()).toList()));
     _prefs.setString('journal', jsonEncode(journal.map((j) => j.toJson()).toList()));
     _prefs.setStringList('friends', friends);
+    _prefs.setBool('dailyReminder', dailyReminder);
+    _prefs.setInt('reminderHour', reminderTime.hour);
+    _prefs.setInt('reminderMinute', reminderTime.minute);
+    _prefs.setBool('eventReminders', eventReminders);
     notifyListeners();
   }
+
+  // Emlékeztetők
+
+  void setReminders({bool? daily, TimeOfDay? time, bool? events}) {
+    dailyReminder = daily ?? dailyReminder;
+    reminderTime = time ?? reminderTime;
+    eventReminders = events ?? eventReminders;
+    _save();
+  }
+
+  /// Ma még hány szokás nincs kipipálva.
+  int get habitsLeftToday => habits.where((h) => !h.isDoneOn(DateTime.now())).length;
+
+  bool get journalDoneToday => entryFor(DateTime.now()) != null;
 
   // Programok
 
