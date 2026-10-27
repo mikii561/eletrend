@@ -1,0 +1,109 @@
+import 'package:intl/intl.dart';
+
+import 'models.dart';
+import 'store.dart';
+
+/// Egy felfedezett összefüggés a statisztika képernyőn.
+class Insight {
+  const Insight(this.emoji, this.text);
+
+  final String emoji;
+  final String text;
+}
+
+/// Hangulat-statisztikák számolása a naplóból és a szokásokból.
+class MoodStats {
+  MoodStats(this.store);
+
+  final AppStore store;
+
+  /// Legalább ennyi nap kell mindkét oldalon egy összefüggéshez.
+  static const minSamples = 3;
+
+  /// Ekkora (pontban mért) különbség alatt nem szólunk.
+  static const minDiff = 0.3;
+
+  Iterable<JournalEntry> entriesBetween(DateTime from, DateTime to) =>
+      store.journal.where((j) => !j.date.isBefore(from) && j.date.isBefore(to));
+
+  static double? average(Iterable<JournalEntry> entries) {
+    if (entries.isEmpty) return null;
+    return entries.map((e) => e.mood).reduce((a, b) => a + b) / entries.length;
+  }
+
+  double? monthAverage(DateTime month) => average(entriesBetween(
+        DateTime(month.year, month.month),
+        DateTime(month.year, month.month + 1),
+      ));
+
+  int monthCount(DateTime month) => entriesBetween(
+        DateTime(month.year, month.month),
+        DateTime(month.year, month.month + 1),
+      ).length;
+
+  /// Hány egymást követő napon írtál naplót (ma még nem kötelező).
+  int journalStreak([DateTime? now]) {
+    var day = now ?? DateTime.now();
+    if (store.entryFor(day) == null) day = day.subtract(const Duration(days: 1));
+    var count = 0;
+    while (store.entryFor(day) != null) {
+      count++;
+      day = day.subtract(const Duration(days: 1));
+    }
+    return count;
+  }
+
+  /// Az elmúlt [days] nap bejegyzései napi bontásban (null, ha nem írtál).
+  List<JournalEntry?> lastDays(int days, [DateTime? now]) {
+    final today = now ?? DateTime.now();
+    return [for (var i = days - 1; i >= 0; i--) store.entryFor(today.subtract(Duration(days: i)))];
+  }
+
+  List<Insight> insights() {
+    final result = <Insight>[];
+    final entries = store.journal;
+
+    // Szokások: jobb-e a hangulat azokon a napokon, amikor teljesítetted?
+    for (final h in store.habits) {
+      final done = entries.where((e) => h.isDoneOn(e.date)).toList();
+      final notDone = entries.where((e) => !h.isDoneOn(e.date)).toList();
+      if (done.length < minSamples || notDone.length < minSamples) continue;
+      final diff = average(done)! - average(notDone)!;
+      if (diff.abs() < minDiff) continue;
+      result.add(diff > 0
+          ? Insight('✨', 'Azokon a napokon, amikor teljesítetted ezt: „${h.name}”, átlagosan ${_fmt(diff)} ponttal jobb volt a hangulatod.')
+          : Insight('🤔', 'Azokon a napokon, amikor teljesítetted ezt: „${h.name}”, átlagosan ${_fmt(-diff)} ponttal rosszabb volt a hangulatod.'));
+    }
+
+    // Programok: milyen a hangulat azokon a napokon, amikor volt program?
+    final eventDays = store.events.map((e) => dayKey(e.date)).toSet();
+    final withEvent = entries.where((e) => eventDays.contains(dayKey(e.date))).toList();
+    final withoutEvent = entries.where((e) => !eventDays.contains(dayKey(e.date))).toList();
+    if (withEvent.length >= minSamples && withoutEvent.length >= minSamples) {
+      final diff = average(withEvent)! - average(withoutEvent)!;
+      if (diff >= minDiff) {
+        result.add(Insight('🎉', 'Amikor programod van a barátaiddal, átlagosan ${_fmt(diff)} ponttal jobb a hangulatod.'));
+      }
+    }
+
+    // A hét legjobb napja
+    final byWeekday = <int, List<JournalEntry>>{};
+    for (final e in entries) {
+      byWeekday.putIfAbsent(e.date.weekday, () => []).add(e);
+    }
+    final usable = byWeekday.entries.where((w) => w.value.length >= 2).toList();
+    if (usable.length >= 3) {
+      usable.sort((a, b) => average(b.value)!.compareTo(average(a.value)!));
+      final best = usable.first;
+      final name = DateFormat.EEEE('hu').format(_dateForWeekday(best.key));
+      result.add(Insight('📅', 'A hét legjobb napja nálad: $name (átlag ${_fmt(average(best.value)!)}).'));
+    }
+
+    return result;
+  }
+
+  static String _fmt(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
+
+  /// Egy tetszőleges dátum a megadott hétköznapra (1 = hétfő), a napnév kiírásához.
+  static DateTime _dateForWeekday(int weekday) => DateTime(2024, 1, weekday); // 2024.01.01 hétfő volt
+}

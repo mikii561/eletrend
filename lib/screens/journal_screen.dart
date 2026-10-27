@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'stats_screen.dart';
 import 'today_screen.dart' show MoodButton;
 
 /// Hangulat- és hálanapló: a hét hangulata és a korábbi bejegyzések.
@@ -22,7 +23,17 @@ class JournalScreen extends StatelessWidget {
         );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Napló')),
+      appBar: AppBar(
+        title: const Text('Napló'),
+        actions: [
+          IconButton.filledTonal(
+            tooltip: 'Statisztika',
+            icon: const Icon(Icons.insights),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StatsScreen())),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => openEditor(now, todayEntry),
         icon: const Icon(Icons.edit_outlined),
