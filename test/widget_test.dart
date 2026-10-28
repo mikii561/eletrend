@@ -2,6 +2,7 @@ import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
 import 'package:eletrend/screens/today_screen.dart';
 import 'package:eletrend/store.dart';
+import 'package:eletrend/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -56,5 +57,45 @@ void main() {
     await tester.tap(find.text('Napló'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Bejegyzések'), findsOneWidget);
+  });
+
+  testWidgets('első indításkor bemutató, a kiválasztott szokások felkerülnek', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    final store = await AppStore.load();
+    await tester.pumpWidget(EletrendApp(store: store));
+    expect(find.text('Üdv az Életrendben!'), findsOneWidget);
+
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('📖 10 perc olvasás'));
+    await tester.pump();
+    await tester.tap(find.text('Kezdjük 3 szokással!'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mai szokások'), findsOneWidget);
+    expect(store.habits.map((h) => h.name), ['💧 2 liter víz', '🚶 10 perc séta', '📖 10 perc olvasás']);
+    expect((await AppStore.load()).onboarded, isTrue);
+  });
+
+  testWidgets('sötét mód bekapcsolása azonnal átszínezi az appot', (tester) async {
+    SharedPreferences.setMockInitialValues({'onboarded': true});
+    final store = await AppStore.load();
+    await tester.pumpWidget(EletrendApp(store: store));
+    expect(AppColors.dark, isFalse);
+
+    store.setThemeMode(ThemeMode.dark);
+    await tester.pumpAndSettle();
+    expect(AppColors.dark, isTrue);
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).last);
+    expect(Theme.of(tester.element(find.byWidget(scaffold))).brightness, Brightness.dark);
+
+    store.setThemeMode(ThemeMode.light);
+    await tester.pumpAndSettle();
+    expect(AppColors.dark, isFalse);
   });
 }

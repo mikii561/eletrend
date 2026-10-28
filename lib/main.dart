@@ -8,6 +8,7 @@ import 'notifications.dart';
 import 'screens/events_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/journal_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/today_screen.dart';
 import 'store.dart';
 import 'theme.dart';
@@ -47,20 +48,24 @@ class EletrendApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoreScope(
       store: store,
-      child: MaterialApp(
-        title: 'Életrend',
-        debugShowCheckedModeBanner: false,
-        locale: const Locale('hu'),
-        supportedLocales: const [Locale('hu')],
-        localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        theme: buildTheme(),
-        darkTheme: buildTheme(dark: true),
-        themeMode: store.themeMode,
-        builder: (context, child) {
-          _applyBrightness(context);
-          return PhoneFrame(child: child!);
-        },
-        home: const HomeShell(),
+      // A téma és a kezdőképernyő a beállításoktól függ, ezért változáskor újraépül.
+      child: ListenableBuilder(
+        listenable: store,
+        builder: (context, _) => MaterialApp(
+          title: 'Életrend',
+          debugShowCheckedModeBanner: false,
+          locale: const Locale('hu'),
+          supportedLocales: const [Locale('hu')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          theme: buildTheme(),
+          darkTheme: buildTheme(dark: true),
+          themeMode: store.themeMode,
+          builder: (context, child) {
+            _applyBrightness(context);
+            return PhoneFrame(child: child!);
+          },
+          home: store.needsOnboarding ? const OnboardingScreen() : const HomeShell(),
+        ),
       ),
     );
   }
@@ -81,12 +86,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      TodayScreen(onNavigate: _goTo),
-      const EventsScreen(),
-      const HabitsScreen(),
-      const JournalScreen(),
-    ];
+    final screens = [TodayScreen(onNavigate: _goTo), const EventsScreen(), const HabitsScreen(), const JournalScreen()];
     return Scaffold(
       body: screens[_index],
       bottomNavigationBar: NavigationBar(
@@ -95,7 +95,11 @@ class _HomeShellState extends State<HomeShell> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.wb_sunny_outlined), selectedIcon: Icon(Icons.wb_sunny), label: 'Ma'),
           NavigationDestination(icon: Icon(Icons.event_outlined), selectedIcon: Icon(Icons.event), label: 'Programok'),
-          NavigationDestination(icon: Icon(Icons.check_circle_outline), selectedIcon: Icon(Icons.check_circle), label: 'Szokások'),
+          NavigationDestination(
+            icon: Icon(Icons.check_circle_outline),
+            selectedIcon: Icon(Icons.check_circle),
+            label: 'Szokások',
+          ),
           NavigationDestination(icon: Icon(Icons.book_outlined), selectedIcon: Icon(Icons.book), label: 'Napló'),
         ],
       ),

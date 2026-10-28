@@ -30,6 +30,9 @@ class AppStore extends ChangeNotifier {
   /// Megjelenés: a telefon beállítása szerint, mindig világos vagy mindig sötét.
   ThemeMode themeMode = ThemeMode.system;
 
+  /// Végigment-e már a bemutatón.
+  bool onboarded = false;
+
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
     store._read();
@@ -59,6 +62,7 @@ class AppStore extends ChangeNotifier {
     );
     eventReminders = _prefs.getBool('eventReminders') ?? true;
     themeMode = ThemeMode.values.asNameMap()[_prefs.getString('themeMode')] ?? ThemeMode.system;
+    onboarded = _prefs.getBool('onboarded') ?? false;
   }
 
   void _save() {
@@ -73,6 +77,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setInt('reminderMinute', reminderTime.minute);
     _prefs.setBool('eventReminders', eventReminders);
     _prefs.setString('themeMode', themeMode.name);
+    _prefs.setBool('onboarded', onboarded);
     notifyListeners();
   }
 
@@ -82,6 +87,18 @@ class AppStore extends ChangeNotifier {
     dailyReminder = daily ?? dailyReminder;
     reminderTime = time ?? reminderTime;
     eventReminders = events ?? eventReminders;
+    _save();
+  }
+
+  /// A bemutató csak egy teljesen új, üres appnál jelenik meg.
+  bool get needsOnboarding => !onboarded && habits.isEmpty && journal.isEmpty && events.isEmpty;
+
+  /// A bemutató vége: a kiválasztott ajánlott szokások felvétele.
+  void finishOnboarding({List<String> habits = const []}) {
+    for (final name in habits) {
+      this.habits.add(Habit(id: '${newId()}-${this.habits.length}', name: name));
+    }
+    onboarded = true;
     _save();
   }
 
