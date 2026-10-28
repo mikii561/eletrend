@@ -155,3 +155,77 @@ class MoodStats {
   /// Egy tetszőleges dátum a megadott hétköznapra (1 = hétfő), a napnév kiírásához.
   static DateTime _dateForWeekday(int weekday) => DateTime(2024, 1, weekday); // 2024.01.01 hétfő volt
 }
+
+/// Egy hónap összefoglalója: hány napot írtál, milyen volt a hangulat, mi volt a legjobb nap.
+class MonthSummary {
+  MonthSummary(this.store, DateTime month) : month = DateTime(month.year, month.month) {
+    final stats = MoodStats(store);
+    final next = DateTime(month.year, month.month + 1);
+    entries = stats.entriesBetween(this.month, next).toList()..sort((a, b) => a.date.compareTo(b.date));
+    average = MoodStats.average(entries);
+    previousAverage = stats.monthAverage(DateTime(month.year, month.month - 1));
+    daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+
+    // Legjobb nap: a legmagasabb hangulat, egyenlőségnél amelyiknél többet írtál.
+    final sorted = [...entries]..sort((a, b) {
+        final byMood = b.mood.compareTo(a.mood);
+        if (byMood != 0) return byMood;
+        return (b.gratitude.length + b.note.length).compareTo(a.gratitude.length + a.note.length);
+      });
+    best = sorted.firstOrNull;
+    gratitudes = [for (final e in sorted) if (e.gratitude.isNotEmpty) e.gratitude].take(3).toList();
+
+    final tagCounts = <String, int>{};
+    for (final e in entries) {
+      for (final t in e.tags) {
+        tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      }
+    }
+    topTags = (tagCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(3).toList();
+
+    // Melyik szokást teljesítetted a legtöbb napon.
+    final days = [for (var d = 1; d <= daysInMonth; d++) DateTime(month.year, month.month, d, 12)];
+    for (final h in store.habits) {
+      final n = days.where(h.isDoneOn).length;
+      if (n > topHabitDays) {
+        topHabit = h;
+        topHabitDays = n;
+      }
+    }
+
+    // A hónapon belüli leghosszabb naplósorozat.
+    var run = 0;
+    for (final d in days) {
+      run = store.entryFor(d) == null ? 0 : run + 1;
+      if (run > longestStreak) longestStreak = run;
+    }
+  }
+
+  final AppStore store;
+  final DateTime month;
+  late final List<JournalEntry> entries;
+  late final double? average;
+  late final double? previousAverage;
+  late final int daysInMonth;
+  late final JournalEntry? best;
+  late final List<String> gratitudes;
+  late final List<MapEntry<String, int>> topTags;
+  Habit? topHabit;
+  int topHabitDays = 0;
+  int longestStreak = 0;
+
+  bool get isEmpty => entries.isEmpty;
+
+  /// Pl. „októberben” (a hónap neve -ban/-ben raggal).
+  String get monthIn {
+    final name = DateFormat.MMMM('hu').format(month);
+    const back = {'január', 'február', 'március', 'április', 'május', 'június', 'július', 'augusztus'};
+    return back.contains(name) ? '${name}ban' : '${name}ben';
+  }
+}
+
+/// „az októberi”, „a szeptemberi”: a hónap mellékneve névelővel.
+String monthAdjective(DateTime month) {
+  final name = '${DateFormat.MMMM('hu').format(month)}i';
+  return '${'aáeéiíoóöőuúüű'.contains(name[0]) ? 'az' : 'a'} $name';
+}

@@ -64,6 +64,21 @@ class _JournalScreenState extends State<JournalScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
         children: [
           _MoodWeek(store: store),
+          // A hónap első hetében: kész az előző havi összefoglaló.
+          if (now.day <= 7 && !MonthSummary(store, DateTime(now.year, now.month - 1)).isEmpty)
+            Card(
+              color: AppColors.primary.withValues(alpha: 0.12),
+              child: ListTile(
+                leading: const Text('📅', style: TextStyle(fontSize: 26)),
+                title: Text('Kész ${monthAdjective(DateTime(now.year, now.month - 1))} összefoglalód',
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Hány napot írtál, mi volt a legjobb napod…'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => StatsScreen(initialMonth: DateTime(now.year, now.month - 1)),
+                )),
+              ),
+            ),
           if (store.journal.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),

@@ -11,14 +11,17 @@ import 'journal_screen.dart';
 
 /// Hangulat-statisztika: havi naptár, 30 napos trend, összefüggések.
 class StatsScreen extends StatefulWidget {
-  const StatsScreen({super.key});
+  const StatsScreen({super.key, this.initialMonth});
+
+  /// Melyik hónappal nyíljon meg (pl. a havi összefoglaló értesítőből).
+  final DateTime? initialMonth;
 
   @override
   State<StatsScreen> createState() => _StatsScreenState();
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
+  late DateTime _month = widget.initialMonth ?? DateTime(DateTime.now().year, DateTime.now().month);
 
   void _shiftMonth(int delta) => setState(() => _month = DateTime(_month.year, _month.month + delta));
 
@@ -83,6 +86,8 @@ class _StatsScreenState extends State<StatsScreen> {
               ),
             ),
           ),
+
+          _MonthSummaryCard(summary: MonthSummary(store, _month)),
 
           // Trend
           const SectionTitle('Az elmúlt 30 nap'),
@@ -336,4 +341,93 @@ class _TrendPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_TrendPainter old) => old.days != days;
+}
+
+/// Havi összefoglaló a kiválasztott hónapról.
+class _MonthSummaryCard extends StatelessWidget {
+  const _MonthSummaryCard({required this.summary});
+
+  final MonthSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = summary;
+    if (s.isEmpty) return const SizedBox.shrink();
+    final store = s.store;
+    final avg = s.average!;
+    final prev = s.previousAverage;
+    final best = s.best!;
+    String fmt(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
+
+    final lines = <(String, String)>[
+      // 28-ból, 29-ből, 30-ból, 31-ből
+      ('📔', '${s.entries.length} napot írtál a ${s.daysInMonth}-${const {28: 'ból', 29: 'ből', 30: 'ból', 31: 'ből'}[s.daysInMonth]}'),
+      if (s.longestStreak >= 3) ('🔥', 'Leghosszabb sorozat: ${s.longestStreak} nap egymás után'),
+      (
+        '📈',
+        prev == null
+            ? 'Átlagos hangulat: ${fmt(avg)}'
+            : avg > prev + 0.1
+                ? 'Átlagos hangulat: ${fmt(avg)}, jobb, mint előző hónapban (${fmt(prev)}) 🎉'
+                : avg < prev - 0.1
+                    ? 'Átlagos hangulat: ${fmt(avg)}, előző hónapban ${fmt(prev)} volt'
+                    : 'Átlagos hangulat: ${fmt(avg)}, ugyanolyan, mint előző hónapban',
+      ),
+      if (s.topHabit != null && s.topHabitDays > 0) ('✅', '„${s.topHabit!.name}”: ${s.topHabitDays} napon teljesítetted'),
+      if (s.topTags.isNotEmpty)
+        ('🏷️', 'Leggyakoribb érzéseid: ${s.topTags.map((t) => store.tagFor(t.key).name).join(', ')}'),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionTitle('${s.monthIn[0].toUpperCase()}${s.monthIn.substring(1)} röviden'),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final (emoji, text) in lines)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 18)),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(text, style: const TextStyle(fontWeight: FontWeight.w600))),
+                      ],
+                    ),
+                  ),
+                const Divider(height: 20),
+                Row(
+                  children: [
+                    EntryFace(best, size: 32),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('A legjobb napod: ${DateFormat('MMMM d., EEEE', 'hu').format(best.date)}',
+                              style: const TextStyle(fontWeight: FontWeight.w800)),
+                          if (best.gratitude.isNotEmpty)
+                            Text('🙏 ${best.gratitude}', style: TextStyle(color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (s.gratitudes.length > 1) ...[
+                  const SizedBox(height: 12),
+                  Text('Amiért hálás voltál', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                  for (final g in s.gratitudes.skip(1)) Text('• $g'),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

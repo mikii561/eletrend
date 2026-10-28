@@ -159,4 +159,27 @@ void main() {
       await expectLater(TagImages.squareThumbnail(Uint8List.fromList([1, 2, 3, 4])), throwsA(isA<UnsupportedImage>()));
     });
   });
+
+  test('havi összefoglaló: napok, sorozat, legjobb nap, szokás, magyar ragok', () async {
+    final store = await emptyStore();
+    store.addHabit('Séta');
+    for (var d = 1; d <= 5; d++) {
+      store.saveEntry(entry(DateTime(2026, 10, d, 12), d == 3 ? 5 : 3)..gratitude = d == 3 ? 'születésnap' : '');
+      store.habits.first.doneDays.add(dayKey(DateTime(2026, 10, d)));
+    }
+    store.saveEntry(entry(DateTime(2026, 10, 20, 12), 4));
+    store.saveEntry(entry(DateTime(2026, 9, 10, 12), 2));
+
+    final s = MonthSummary(store, DateTime(2026, 10));
+    expect(s.entries.length, 6);
+    expect(s.longestStreak, 5);
+    expect(s.best!.gratitude, 'születésnap');
+    expect(s.topHabitDays, 5);
+    expect(s.previousAverage, 2);
+    expect(s.monthIn, 'októberben');
+    expect(MonthSummary(store, DateTime(2026, 3)).monthIn, 'márciusban');
+    expect(MonthSummary(store, DateTime(2026, 3)).isEmpty, isTrue);
+    expect(monthAdjective(DateTime(2026, 10)), 'az októberi');
+    expect(monthAdjective(DateTime(2026, 9)), 'a szeptemberi');
+  });
 }
