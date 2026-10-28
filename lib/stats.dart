@@ -92,9 +92,9 @@ class MoodStats {
     }
 
     // Programok: milyen a hangulat azokon a napokon, amikor volt program?
-    final eventDays = store.events.map((e) => dayKey(e.date)).toSet();
-    final withEvent = entries.where((e) => eventDays.contains(dayKey(e.date))).toList();
-    final withoutEvent = entries.where((e) => !eventDays.contains(dayKey(e.date))).toList();
+    bool hadEvent(JournalEntry j) => store.events.any((e) => e.occursOn(j.date));
+    final withEvent = entries.where(hadEvent).toList();
+    final withoutEvent = entries.where((j) => !hadEvent(j)).toList();
     if (withEvent.length >= minSamples && withoutEvent.length >= minSamples) {
       final diff = average(withEvent)! - average(withoutEvent)!;
       if (diff >= minDiff) {

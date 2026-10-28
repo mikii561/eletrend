@@ -2,6 +2,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 /// Egy napot azonosító kulcs, pl. "2026-10-27".
@@ -24,7 +25,10 @@ class Event {
     this.lat,
     this.lng,
     List<String>? invited,
-  }) : invited = invited ?? [];
+    this.repeat = Repeat.none,
+    List<Expense>? expenses,
+  })  : invited = invited ?? [],
+        expenses = expenses ?? [];
 
   final String id;
   String title;
@@ -38,6 +42,49 @@ class Event {
 
   bool get hasLocation => lat != null && lng != null;
 
+  /// Ismétlődés; a [date] ilyenkor az első alkalom.
+  Repeat repeat;
+
+  /// Ki mennyit fizetett a programon.
+  List<Expense> expenses;
+
+  /// Az [i]-edik alkalom időpontja (0 = az első). Naptári napokkal számol, így
+  /// óraátállításkor sem csúszik el az időpont.
+  DateTime occurrence(int i) => switch (repeat) {
+        Repeat.none => date,
+        Repeat.weekly => DateTime(date.year, date.month, date.day + 7 * i, date.hour, date.minute),
+        Repeat.biweekly => DateTime(date.year, date.month, date.day + 14 * i, date.hour, date.minute),
+        Repeat.monthly => DateTime(
+            date.year,
+            date.month + i,
+            min(date.day, DateTime(date.year, date.month + i + 1, 0).day),
+            date.hour,
+            date.minute,
+          ),
+      };
+
+  /// A következő alkalom a mai naptól (ma is beleszámít). Nem ismétlődőnél maga a [date].
+  DateTime nextDate([DateTime? now]) {
+    if (repeat == Repeat.none) return date;
+    final today = now ?? DateTime.now();
+    final start = DateTime(today.year, today.month, today.day);
+    var i = 0;
+    while (occurrence(i).isBefore(start)) {
+      i++;
+    }
+    return occurrence(i);
+  }
+
+  /// Van-e alkalma az adott napon.
+  bool occursOn(DateTime day) {
+    final key = dayKey(day);
+    for (var i = 0;; i++) {
+      final d = occurrence(i);
+      if (dayKey(d) == key) return true;
+      if (repeat == Repeat.none || d.isAfter(DateTime(day.year, day.month, day.day, 23, 59))) return false;
+    }
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'title': title,
@@ -46,6 +93,8 @@ class Event {
         'lat': lat,
         'lng': lng,
         'invited': invited,
+        'repeat': repeat.name,
+        'expenses': expenses.map((x) => x.toJson()).toList(),
       };
 
   factory Event.fromJson(Map<String, dynamic> j) => Event(
@@ -56,6 +105,45 @@ class Event {
         lat: (j['lat'] as num?)?.toDouble(),
         lng: (j['lng'] as num?)?.toDouble(),
         invited: List<String>.from(j['invited'] as List? ?? []),
+        repeat: Repeat.values.asNameMap()[j['repeat']] ?? Repeat.none,
+        expenses: [for (final x in j['expenses'] as List? ?? []) Expense.fromJson(x as Map<String, dynamic>)],
+      );
+}
+
+/// Program ismétlődése.
+enum Repeat {
+  none('Nem ismétlődik'),
+  weekly('Hetente'),
+  biweekly('Kéthetente'),
+  monthly('Havonta');
+
+  const Repeat(this.label);
+
+  final String label;
+}
+
+/// Egy kiadás a programon: ki fizette, mennyit, és kik között oszlik meg.
+class Expense {
+  Expense({required this.id, required this.title, required this.amount, required this.payer, required this.shares});
+
+  final String id;
+  String title;
+
+  /// Forintban.
+  int amount;
+  String payer;
+
+  /// Akik között egyenlően oszlik meg (a fizető is lehet köztük).
+  List<String> shares;
+
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'amount': amount, 'payer': payer, 'shares': shares};
+
+  factory Expense.fromJson(Map<String, dynamic> j) => Expense(
+        id: j['id'] as String,
+        title: j['title'] as String? ?? '',
+        amount: j['amount'] as int,
+        payer: j['payer'] as String,
+        shares: List<String>.from(j['shares'] as List? ?? []),
       );
 }
 

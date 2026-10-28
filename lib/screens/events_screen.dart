@@ -9,6 +9,8 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/map_view.dart';
+import 'costs_section.dart';
+import 'idea_sheet.dart';
 import 'location_picker.dart';
 
 /// Közös programok listája.
@@ -24,6 +26,12 @@ class EventsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Programok'),
         actions: [
+          IconButton.filledTonal(
+            tooltip: 'Ötlet',
+            icon: const Icon(Icons.casino_outlined),
+            onPressed: () => showIdeaSheet(context),
+          ),
+          const SizedBox(width: 6),
           IconButton.filledTonal(
             tooltip: 'Barátok',
             icon: const Icon(Icons.people_alt_outlined),
@@ -43,9 +51,9 @@ class EventsScreen extends StatelessWidget {
           if (upcoming.isEmpty)
             EmptyState(
               emoji: '🎉',
-              text: 'Nincs tervezett program.\nMozi, főzés, túra? Hívd meg a barátaidat!',
-              action: 'Program szervezése',
-              onAction: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EventEditor())),
+              text: 'Nincs tervezett program.\nNem tudjátok, mit csináljatok? Dobj egy ötletet!',
+              action: '🎲 Ötletet kérek',
+              onAction: () => showIdeaSheet(context),
             )
           else
             for (final e in upcoming) EventCard(event: e),
@@ -64,6 +72,7 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final e = event;
+    final next = e.nextDate();
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -72,7 +81,7 @@ class EventCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              DateBadge(e.date),
+              DateBadge(next),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -80,7 +89,10 @@ class EventCard extends StatelessWidget {
                   children: [
                     Text(e.title, style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 2),
-                    _IconLine(Icons.schedule, DateFormat('EEEE HH:mm', 'hu').format(e.date)),
+                    _IconLine(
+                      e.repeat == Repeat.none ? Icons.schedule : Icons.repeat,
+                      [DateFormat('EEEE HH:mm', 'hu').format(next), if (e.repeat != Repeat.none) repeatLabel(e)].join(' • '),
+                    ),
                     if (e.place.isNotEmpty) _IconLine(Icons.location_on_outlined, e.place),
                   ],
                 ),
@@ -127,6 +139,7 @@ class EventDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
     final e = event;
+    final next = e.nextDate();
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -164,7 +177,7 @@ class EventDetail extends StatelessWidget {
         children: [
           Row(
             children: [
-              DateBadge(e.date, size: 64),
+              DateBadge(next, size: 64),
               const SizedBox(width: 16),
               Expanded(child: Text(e.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))),
             ],
@@ -175,9 +188,15 @@ class EventDetail extends StatelessWidget {
               children: [
                 ListTile(
                   leading: const Icon(Icons.schedule, color: AppColors.primary),
-                  title: Text(DateFormat('yyyy. MMMM d., EEEE', 'hu').format(e.date)),
-                  subtitle: Text(DateFormat('HH:mm', 'hu').format(e.date)),
+                  title: Text(DateFormat('yyyy. MMMM d., EEEE', 'hu').format(next)),
+                  subtitle: Text(DateFormat('HH:mm', 'hu').format(next)),
                 ),
+                if (e.repeat != Repeat.none)
+                  ListTile(
+                    leading: const Icon(Icons.repeat, color: AppColors.primary),
+                    title: Text(repeatLabel(e)),
+                    subtitle: const Text('Mindig a következő alkalom látszik'),
+                  ),
                 if (e.place.isNotEmpty)
                   ListTile(
                     leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
@@ -211,6 +230,7 @@ class EventDetail extends StatelessWidget {
                 ],
               ),
             ),
+          CostsSection(event: e),
         ],
       ),
     );
@@ -219,16 +239,20 @@ class EventDetail extends StatelessWidget {
 
 /// Program létrehozása vagy szerkesztése.
 class EventEditor extends StatefulWidget {
-  const EventEditor({super.key, this.existing});
+  const EventEditor({super.key, this.existing, this.initialTitle});
 
   final Event? existing;
+
+  /// Új programnál előre kitöltött név (pl. az ötletadóból).
+  final String? initialTitle;
 
   @override
   State<EventEditor> createState() => _EventEditorState();
 }
 
 class _EventEditorState extends State<EventEditor> {
-  late final _title = TextEditingController(text: widget.existing?.title);
+  late final _title = TextEditingController(text: widget.existing?.title ?? widget.initialTitle);
+  late Repeat _repeat = widget.existing?.repeat ?? Repeat.none;
   late DateTime _date = widget.existing?.date ?? DateTime.now().add(const Duration(days: 1));
   late TimeOfDay _time = widget.existing == null
       ? const TimeOfDay(hour: 18, minute: 0)
@@ -246,7 +270,8 @@ class _EventEditorState extends State<EventEditor> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _date,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
+      // Egy régebben kezdődött ismétlődő program első napja is maradhasson.
+      firstDate: _date.isBefore(DateTime.now()) ? _date : DateTime.now().subtract(const Duration(days: 1)),
       lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
     );
     if (picked != null) setState(() => _date = picked);
@@ -276,7 +301,8 @@ class _EventEditorState extends State<EventEditor> {
       ..place = _place?.name ?? ''
       ..lat = _place?.point.latitude
       ..lng = _place?.point.longitude
-      ..invited = _invited.toList();
+      ..invited = _invited.toList()
+      ..repeat = _repeat;
     StoreScope.of(context).saveEvent(e);
     Navigator.pop(context);
   }
@@ -328,6 +354,45 @@ class _EventEditorState extends State<EventEditor> {
                 child: _PickerTile(icon: Icons.schedule, label: 'Időpont', value: _time.format(context), onTap: _pickTime),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.repeat, color: AppColors.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _repeat == Repeat.none
+                              ? 'Ismétlődés'
+                              : repeatLabel(Event(id: '', title: '', date: _date, repeat: _repeat)),
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final r in Repeat.values)
+                        ChoiceChip(
+                          label: Text(r == Repeat.none ? 'Egyszeri' : r.label),
+                          selected: _repeat == r,
+                          onSelected: (_) => setState(() => _repeat = r),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -407,12 +472,15 @@ class _PickerTile extends StatelessWidget {
             children: [
               Icon(icon, color: AppColors.primary),
               const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                  Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    Text(value,
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  ],
+                ),
               ),
             ],
           ),
@@ -466,3 +534,22 @@ class FriendsScreen extends StatelessWidget {
     );
   }
 }
+
+/// „minden csütörtökön” alakhoz: hétfőnként, keddenként…
+String weekdayEvery(int weekday) => const [
+      'hétfőnként',
+      'keddenként',
+      'szerdánként',
+      'csütörtökönként',
+      'péntekenként',
+      'szombatonként',
+      'vasárnaponként',
+    ][weekday - 1];
+
+/// Az ismétlődés olvasható leírása, pl. „Hetente, csütörtökönként”.
+String repeatLabel(Event e) => switch (e.repeat) {
+      Repeat.none => '',
+      Repeat.weekly => 'Hetente, ${weekdayEvery(e.date.weekday)}',
+      Repeat.biweekly => 'Kéthetente, ${weekdayEvery(e.date.weekday)}',
+      Repeat.monthly => 'Havonta, minden hónap ${e.date.day}. napján',
+    };

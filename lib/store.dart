@@ -247,11 +247,12 @@ class AppStore extends ChangeNotifier {
 
   // Programok
 
+  /// A mai és későbbi programok a következő alkalmuk szerint; az ismétlődők mindig benne vannak.
   List<Event> get upcomingEvents {
     final today = DateTime.now();
     final start = DateTime(today.year, today.month, today.day);
-    return events.where((e) => !e.date.isBefore(start)).toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    return events.where((e) => !e.nextDate(today).isBefore(start)).toList()
+      ..sort((a, b) => a.nextDate(today).compareTo(b.nextDate(today)));
   }
 
   /// Új programot felvesz, meglévőt (ugyanaz az objektum) csak elment.

@@ -104,14 +104,16 @@ class Notifications {
       final events = store.upcomingEvents.take(40).toList();
       for (var i = 0; i < events.length; i++) {
         final e = events[i];
-        final time = DateFormat('HH:mm', 'hu').format(e.date);
+        // Ismétlődő programnál a következő alkalomra emlékeztetünk.
+        final date = e.nextDate();
+        final time = DateFormat('HH:mm', 'hu').format(date);
         final where = e.place.isEmpty ? '' : ' · ${e.place}';
 
-        final eveBefore = tz.TZDateTime(tz.local, e.date.year, e.date.month, e.date.day - 1, 18);
+        final eveBefore = tz.TZDateTime(tz.local, date.year, date.month, date.day - 1, 18);
         if (eveBefore.isAfter(now)) {
           await _schedule(_eventBase + i * 2, eveBefore, 'Holnap: ${e.title} 🎉', '$time$where', _eventDetails);
         }
-        final hourBefore = tz.TZDateTime.from(e.date, tz.local).subtract(const Duration(hours: 1));
+        final hourBefore = tz.TZDateTime.from(date, tz.local).subtract(const Duration(hours: 1));
         if (hourBefore.isAfter(now)) {
           await _schedule(_eventBase + i * 2 + 1, hourBefore, '1 óra múlva: ${e.title}', '$time$where', _eventDetails);
         }
