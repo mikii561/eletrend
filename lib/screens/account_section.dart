@@ -18,8 +18,10 @@ class AccountSection extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Kijelentkezel?'),
-        content: const Text('Az adataid a fiókodban maradnak, erről az eszközről viszont lekerülnek. '
-            'Bármikor visszajelentkezhetsz.'),
+        content: const Text(
+          'Az adataid a fiókodban maradnak, erről az eszközről viszont lekerülnek. '
+          'Bármikor visszajelentkezhetsz.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Mégse')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Kijelentkezés')),
@@ -44,6 +46,7 @@ class AccountSection extends StatelessWidget {
   Future<void> _delete(BuildContext context) async {
     final store = StoreScope.of(context);
     final navigator = Navigator.of(context);
+    final google = Account.instance.usesGoogle;
     final password = TextEditingController();
     String? error;
     var busy = false;
@@ -56,14 +59,17 @@ class AccountSection extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('A fiókod és minden adatod (napló, szokások, programok) végleg törlődik. '
-                  'Ezt nem lehet visszavonni. A megerősítéshez add meg a jelszavad.'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: password,
-                obscureText: true,
-                decoration: InputDecoration(labelText: 'Jelszó', errorText: error),
+              Text(
+                'A fiókod és minden adatod (napló, szokások, programok) végleg törlődik. '
+                'Ezt nem lehet visszavonni. ${google ? 'A megerősítéshez jelentkezz be újra a Google-fiókoddal.' : 'A megerősítéshez add meg a jelszavad.'}',
               ),
+              if (!google) const SizedBox(height: 12),
+              if (!google)
+                TextField(
+                  controller: password,
+                  obscureText: true,
+                  decoration: InputDecoration(labelText: 'Jelszó', errorText: error),
+                ),
             ],
           ),
           actions: [
@@ -76,7 +82,7 @@ class AccountSection extends StatelessWidget {
                       setState(() => busy = true);
                       try {
                         Account.instance.sync?.stop();
-                        await Account.instance.deleteAccount(password.text);
+                        await Account.instance.deleteAccount(google ? null : password.text);
                         if (context.mounted) Navigator.pop(context, true);
                       } on AccountException catch (e) {
                         setState(() {
@@ -149,8 +155,10 @@ class AccountSection extends StatelessWidget {
             children: [
               ListTile(
                 leading: NameAvatar(store.myName.isEmpty ? '?' : store.myName),
-                title: Text(store.myName.isEmpty ? (user?.displayName ?? 'Fiók') : store.myName,
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(
+                  store.myName.isEmpty ? (user?.displayName ?? 'Fiók') : store.myName,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
                 subtitle: Text('${user?.email ?? ''}\nAz adataid a fiókodban vannak, minden eszközödön ugyanazok.'),
                 isThreeLine: true,
               ),
@@ -169,7 +177,8 @@ class AccountSection extends StatelessWidget {
                           leading: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.accent),
                           title: const Text('Admin felület', style: TextStyle(fontWeight: FontWeight.w700)),
                           trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdminScreen())),
+                          onTap: () =>
+                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdminScreen())),
                         ),
                 ),
               ListTile(

@@ -117,4 +117,13 @@ void main() {
     expect((await tester.runAsync(() => count(db, uid, 'meta')))!, 1);
     Account.instance.sync?.stop();
   });
+
+  test('Google-belépés: új fiók, és névtelen vendégből is fiók lesz', () async {
+    final db = FakeFirebaseFirestore();
+    final google = MockUser(uid: 'g1', email: 'anna@gmail.com', displayName: 'Anna');
+    final account = Account(auth: MockFirebaseAuth(mockUser: google), db: db);
+    final u = await account.signInWithGoogle();
+    expect(u.email, 'anna@gmail.com');
+    expect(account.user, isNotNull);
+  });
 }

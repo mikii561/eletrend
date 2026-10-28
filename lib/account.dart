@@ -29,7 +29,12 @@ String _hungarian(FirebaseAuthException e) => switch (e.code) {
       'too-many-requests' => 'Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.',
       'network-request-failed' => 'Nincs internet. Ellenőrizd a kapcsolatot!',
       'requires-recent-login' => 'Biztonsági okból add meg újra a jelszavad.',
-      'operation-not-allowed' => 'Az e-mailes regisztráció nincs bekapcsolva a Firebase-ben.',
+      'operation-not-allowed' => 'Ez a bejelentkezési mód nincs bekapcsolva a Firebase-ben.',
+      'popup-closed-by-user' || 'cancelled-popup-request' || 'web-context-canceled' => 'Megszakítottad a bejelentkezést.',
+      'popup-blocked' => 'A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.',
+      'account-exists-with-different-credential' =>
+        'Ezzel az e-mail-címmel már jelszavas fiókod van. Jelentkezz be jelszóval.',
+      'unauthorized-domain' => 'Ez a weboldal nincs engedélyezve a Firebase-ben (Authorized domains).',
       _ => 'Valami hiba történt (${e.code}). Próbáld újra.',
     };
 
@@ -80,6 +85,29 @@ class Account {
         return result.user!;
       });
 
+  /// Bejelentkezés Google-fiókkal (böngészőben felugró ablakban, telefonon a Google oldalán).
+  /// Névtelen munkamenetből ez is fiókká alakít, mint a regisztráció.
+  Future<User> signInWithGoogle() => _guard(() async {
+        final provider = GoogleAuthProvider()..setCustomParameters({'prompt': 'select_account'});
+        final current = auth.currentUser;
+        if (current != null && current.isAnonymous) {
+          try {
+            final linked = kIsWeb ? await current.linkWithPopup(provider) : await current.linkWithProvider(provider);
+            return linked.user!;
+          } on FirebaseAuthException catch (e) {
+            // Ehhez a Google-fiókhoz már tartozik Életrend-fiók: abba lépünk be.
+            if (e.code != 'credential-already-in-use' && e.code != 'email-already-in-use') rethrow;
+          }
+        }
+        final result = kIsWeb ? await auth.signInWithPopup(provider) : await auth.signInWithProvider(provider);
+        return result.user!;
+      });
+
+  /// Google-fiókkal regisztrált (nincs jelszava).
+  bool get usesGoogle =>
+      user?.providerData.any((p) => p.providerId == 'google.com') == true &&
+      user?.providerData.any((p) => p.providerId == 'password') != true;
+
   Future<User> login({required String email, required String password}) => _guard(() async {
         final result = await auth.signInWithEmailAndPassword(email: email.trim(), password: password);
         return result.user!;
@@ -92,10 +120,16 @@ class Account {
 
   Future<void> logout() => auth.signOut();
 
-  /// A fiók és minden felhőbeli adat végleges törlése. Biztonsági okból a jelszó kell hozzá.
-  Future<void> deleteAccount(String password) => _guard(() async {
+  /// A fiók és minden felhőbeli adat végleges törlése. Biztonsági okból újra azonosítani kell:
+  /// jelszóval, vagy Google-fióknál a Google bejelentkezéssel.
+  Future<void> deleteAccount(String? password) => _guard(() async {
         final u = user!;
-        await u.reauthenticateWithCredential(EmailAuthProvider.credential(email: u.email!, password: password));
+        if (usesGoogle) {
+          final provider = GoogleAuthProvider();
+          kIsWeb ? await u.reauthenticateWithPopup(provider) : await u.reauthenticateWithProvider(provider);
+        } else {
+          await u.reauthenticateWithCredential(EmailAuthProvider.credential(email: u.email!, password: password ?? ''));
+        }
         await CloudSync(store: null, uid: u.uid, db: db).deleteAll();
         await u.delete();
       });

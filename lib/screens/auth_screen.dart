@@ -70,6 +70,25 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  Future<void> _google() async {
+    final store = StoreScope.of(context);
+    setState(() {
+      _busy = true;
+      _error = null;
+      _info = null;
+    });
+    try {
+      final user = await Account.instance.signInWithGoogle();
+      if (store.myName.isEmpty && (user.displayName ?? '').isNotEmpty) store.setMyName(user.displayName!);
+    } on AccountException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Valami hiba történt. Van internet? ($e)');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _forgot() async {
     final email = _email.text.trim();
     if (!email.contains('@')) return setState(() => _error = 'Írd be az e-mail-címed, és oda küldöm a linket.');
@@ -105,14 +124,19 @@ class _AuthScreenState extends State<AuthScreen> {
             padding: EdgeInsets.fromLTRB(24, MediaQuery.paddingOf(context).top + 40, 24, 32),
             child: Column(
               children: [
-                Image.asset('assets/icon/icon_foreground.png', width: 120, height: 120,
-                    errorBuilder: (_, _, _) => const Text('🌿', style: TextStyle(fontSize: 64))),
-                Text('Életrend',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                Image.asset(
+                  'assets/icon/icon_foreground.png',
+                  width: 120,
+                  height: 120,
+                  errorBuilder: (_, _, _) => const Text('🌿', style: TextStyle(fontSize: 64)),
+                ),
+                Text('Életrend', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
                 const SizedBox(height: 6),
-                const Text('Szokások, napló és programok a barátaiddal. Minden eszközödön ugyanaz.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Szokások, napló és programok a barátaiddal. Minden eszközödön ugyanaz.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
               ],
             ),
           ),
@@ -122,6 +146,28 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                    onPressed: _busy ? null : _google,
+                    icon: const Text(
+                      'G',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF4285F4)),
+                    ),
+                    label: const Text('Folytatás Google-fiókkal', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Divider()),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('vagy e-maillel', style: TextStyle(color: AppColors.textMuted)),
+                        ),
+                        const Expanded(child: Divider()),
+                      ],
+                    ),
+                  ),
                   SegmentedButton<bool>(
                     showSelectedIcon: false,
                     segments: const [
@@ -143,7 +189,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       autofillHints: const [AutofillHints.name],
                       maxLength: 40,
                       decoration: const InputDecoration(
-                          labelText: 'Neved', prefixIcon: Icon(Icons.person_outline), counterText: ''),
+                        labelText: 'Neved',
+                        prefixIcon: Icon(Icons.person_outline),
+                        counterText: '',
+                      ),
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -171,11 +220,17 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   if (_error != null) ...[
                     const SizedBox(height: 12),
-                    Text(_error!, style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w700)),
+                    Text(
+                      _error!,
+                      style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w700),
+                    ),
                   ],
                   if (_info != null) ...[
                     const SizedBox(height: 12),
-                    Text(_info!, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                    Text(
+                      _info!,
+                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                    ),
                   ],
                   const SizedBox(height: 20),
                   FilledButton(
@@ -196,7 +251,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           _register
                               ? '💾 Az ezen az eszközön lévő naplód, szokásaid és programjaid az új fiókodba kerülnek.'
                               : '⚠️ Bejelentkezéskor a fiókod adatai kerülnek az ezen az eszközön lévők helyére. '
-                                  'Ha ezeket is meg akarod tartani, inkább regisztrálj velük új fiókot.',
+                                    'Ha ezeket is meg akarod tartani, inkább regisztrálj velük új fiókot.',
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),
