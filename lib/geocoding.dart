@@ -55,6 +55,27 @@ class Geocoding {
     return _shortName(jsonDecode(res.body) as Map<String, dynamic>);
   }
 
+  /// A ponthoz tartozó város és ország (a közösségi ötletek szűréséhez), pl. ("Budapest", "Magyarország").
+  static Future<({String city, String country})?> region(LatLng point) async {
+    final uri = Uri.https(_host, '/reverse', {
+      'lat': '${point.latitude}',
+      'lon': '${point.longitude}',
+      'format': 'jsonv2',
+      'zoom': '10',
+      'accept-language': 'hu',
+    });
+    try {
+      final res = await http.get(uri, headers: _headers);
+      if (res.statusCode != 200) return null;
+      final a = ((jsonDecode(res.body) as Map<String, dynamic>)['address'] as Map?)?.cast<String, dynamic>() ?? {};
+      final city = (a['city'] ?? a['town'] ?? a['village'] ?? a['county'] ?? '') as String;
+      final country = (a['country'] ?? '') as String;
+      return (city: city, country: country);
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// A Nominatim válaszából rövid nevet készít: hely neve, utca házszám, város.
   static String? _shortName(Map<String, dynamic> j) {
     final a = (j['address'] as Map?)?.cast<String, dynamic>() ?? {};

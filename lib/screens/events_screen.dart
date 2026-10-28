@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../calendar_link.dart';
+import '../community.dart';
 import '../geocoding.dart';
 import '../models.dart';
 import '../social.dart';
@@ -14,6 +15,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/map_view.dart';
 import '../widgets/weather_tile.dart';
+import 'community_screen.dart';
 import 'costs_section.dart';
 import 'idea_sheet.dart';
 import 'invite_screen.dart';
@@ -33,6 +35,11 @@ class EventsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Programok'),
         actions: [
+          IconButton(
+            tooltip: 'Közösségi ötletek',
+            icon: const Icon(Icons.lightbulb_outline),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CommunityIdeasScreen())),
+          ),
           IconButton.filledTonal(
             tooltip: 'Ötlet',
             icon: const Icon(Icons.casino_outlined),
@@ -255,6 +262,15 @@ class EventDetail extends StatelessWidget {
             icon: const Icon(Icons.event_available_outlined),
             label: const Text('Mentés a naptárba'),
           ),
+          TextButton.icon(
+            onPressed: () => showShareIdeaSheet(
+              context,
+              title: e.title,
+              place: e.hasLocation ? IdeaPlace(name: e.place, lat: e.lat, lng: e.lng) : null,
+            ),
+            icon: const Icon(Icons.lightbulb_outline),
+            label: const Text('Megosztom ötletként mindenkivel'),
+          ),
           const SectionTitle('Meghívottak'),
           if (e.invited.isEmpty)
             Card(child: ListTile(title: Text('Még senkit nem hívtál meg.', style: TextStyle(color: AppColors.textMuted))))
@@ -276,12 +292,15 @@ class EventDetail extends StatelessWidget {
 
 /// Program létrehozása vagy szerkesztése.
 class EventEditor extends StatefulWidget {
-  const EventEditor({super.key, this.existing, this.initialTitle});
+  const EventEditor({super.key, this.existing, this.initialTitle, this.initialPlace});
 
   final Event? existing;
 
   /// Új programnál előre kitöltött név (pl. az ötletadóból).
   final String? initialTitle;
+
+  /// Új programnál előre kitöltött helyszín (pl. egy közösségi ötletből).
+  final Place? initialPlace;
 
   @override
   State<EventEditor> createState() => _EventEditorState();
@@ -299,7 +318,8 @@ class _EventEditorState extends State<EventEditor> {
 
   Place? _initialPlace() {
     final e = widget.existing;
-    if (e == null || e.place.isEmpty) return null;
+    if (e == null) return widget.initialPlace;
+    if (e.place.isEmpty) return null;
     return Place(name: e.place, point: e.hasLocation ? LatLng(e.lat!, e.lng!) : defaultCenter);
   }
 

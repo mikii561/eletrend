@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../admin.dart';
+import '../community.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
@@ -15,7 +16,7 @@ class AdminScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin'),
@@ -28,11 +29,12 @@ class AdminScreen extends StatelessWidget {
               Tab(text: 'Hibák'),
               Tab(text: 'Visszajelzések'),
               Tab(text: 'Programok'),
+              Tab(text: 'Ötletek'),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [_Overview(), _Users(), _Errors(), _FeedbackList(), _SharedEvents()],
+          children: [_Overview(), _Users(), _Errors(), _FeedbackList(), _SharedEvents(), _CommunityIdeas()],
         ),
       ),
     );
@@ -464,6 +466,54 @@ class _SharedEvents extends StatelessWidget {
                       );
                       if (ok != true) return;
                       await Admin.instance.deleteSharedEvent(e['id'] as String);
+                      reload();
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Közösségi ötletek moderálása: a jelentettek elöl, a jelentések okával.
+class _CommunityIdeas extends StatelessWidget {
+  const _CommunityIdeas();
+
+  static Future<(List<CommunityIdea>, Map<String, List<String>>)> _load() async =>
+      (await Community.instance.latest(), await Community.instance.reports());
+
+  @override
+  Widget build(BuildContext context) {
+    return _Loader<(List<CommunityIdea>, Map<String, List<String>>)>(
+      load: _load,
+      builder: (context, data, reload) {
+        final (ideas, reports) = data;
+        final sorted = [...ideas]..sort((a, b) => (reports[b.id]?.length ?? 0).compareTo(reports[a.id]?.length ?? 0));
+        if (sorted.isEmpty) {
+          return ListView(padding: const EdgeInsets.all(16), children: const [EmptyState(emoji: '💡', text: 'Még nincs közösségi ötlet.')]);
+        }
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            for (final i in sorted)
+              Card(
+                color: (reports[i.id]?.isNotEmpty ?? false) ? Colors.red.withValues(alpha: 0.08) : null,
+                child: ListTile(
+                  leading: Text(i.emoji, style: const TextStyle(fontSize: 26)),
+                  title: Text(i.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text([
+                    '${i.authorName} · ${i.place.label.isEmpty ? 'hely nélkül' : i.place.label}',
+                    if (reports[i.id] != null) '🚩 ${reports[i.id]!.length} jelentés: ${reports[i.id]!.where((r) => r.isNotEmpty).join('; ')}',
+                  ].join('\n')),
+                  isThreeLine: reports[i.id] != null,
+                  trailing: IconButton(
+                    tooltip: 'Törlés',
+                    icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
+                    onPressed: () async {
+                      await Community.instance.delete(i.id, asAdmin: true);
                       reload();
                     },
                   ),

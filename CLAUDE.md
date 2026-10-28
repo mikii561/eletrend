@@ -45,6 +45,11 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - „Ki mit hoz?”: `events/{id}/items`. Időjárás: Open-Meteo (`lib/weather.dart`), a megosztott programban `lat`/`lng` is van.
 - Jelvények: `lib/badges.dart` (számolt, `store.seenBadges`). Napközbeni hangulat: `store.checkIns`. Év visszatekintés: `YearReview`.
 
+## Közösségi ötletek
+
+- `lib/community.dart`: `ideas/{id}` (cím, leírás, emoji, címkék, hely: város/ország/koordináta), szavazat `ideas/{id}/votes/{uid}` (`liked`, `rating` 0–5), jelentés `ideas/{id}/reports/{uid}`. Az összesítés egyetlen `collectionGroup('votes')` lekérdezés; szűrés/rendezés a telefonon (`sortAndFilter`, legfeljebb 300 ötlet).
+- „Közelben”: a `store.homePlace`-től 30 km. Ötletadó: beépített vagy közösségi forrás.
+
 ## Admin
 
 - `lib/admin.dart` + `lib/screens/admin_screen.dart`: áttekintés, felhasználók (felfüggesztés `bans/{uid}`, adattörlés), hibák (`errors`, csak release buildben jelent az app), visszajelzések (`feedback`), megosztott programok moderálása.

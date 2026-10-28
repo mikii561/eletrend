@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'community.dart';
 import 'models.dart';
 
 /// Az app teljes állapota, a telefonon helyben tárolva.
@@ -50,6 +51,9 @@ class AppStore extends ChangeNotifier {
   /// Kihívás → hozzá kötött szokás (a szokás kipipálása a kihívásban is teljesít).
   Map<String, String> challengeHabits = {};
 
+  /// A lakóhelyem a „közelben” szűréshez (null, ha még nem adtam meg).
+  IdeaPlace? homePlace;
+
   /// Napközbeni gyors hangulatok (az utolsó egy év).
   List<CheckIn> checkIns = [];
 
@@ -93,6 +97,8 @@ class AppStore extends ChangeNotifier {
     challengeHabits = Map<String, String>.from(jsonDecode(_prefs.getString('challengeHabits') ?? '{}') as Map);
     checkIns = list('checkIns').map(CheckIn.fromJson).toList();
     checkInReminders = _prefs.getBool('checkInReminders') ?? false;
+    final home = _prefs.getString('homePlace');
+    homePlace = home == null ? null : IdeaPlace.fromJson(jsonDecode(home) as Map<String, dynamic>);
   }
 
   /// Újraolvas mindent a tárhelyről (pl. ha a widget közben módosított).
@@ -122,6 +128,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('challengeHabits', jsonEncode(challengeHabits));
     _prefs.setString('checkIns', jsonEncode(checkIns.map((c) => c.toJson()).toList()));
     _prefs.setBool('checkInReminders', checkInReminders);
+    homePlace == null ? _prefs.remove('homePlace') : _prefs.setString('homePlace', jsonEncode(homePlace!.toJson()));
     notifyListeners();
   }
 
@@ -152,6 +159,7 @@ class AppStore extends ChangeNotifier {
         'challengeHabits': challengeHabits,
         'checkIns': checkIns.map((c) => c.toJson()).toList(),
         'checkInReminders': checkInReminders,
+        if (homePlace != null) 'homePlace': homePlace!.toJson(),
       };
 
   /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
@@ -187,6 +195,8 @@ class AppStore extends ChangeNotifier {
       challengeHabits = Map<String, String>.from(settings['challengeHabits'] as Map? ?? {});
       checkIns = [for (final c in settings['checkIns'] as List? ?? []) CheckIn.fromJson(c as Map<String, dynamic>)];
       checkInReminders = settings['checkInReminders'] as bool? ?? false;
+      final home = settings['homePlace'] as Map<String, dynamic>?;
+      if (home != null) homePlace = IdeaPlace.fromJson(home);
     }
     _save();
   }
@@ -284,7 +294,7 @@ class AppStore extends ChangeNotifier {
     'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
     'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
     'myName', 'invites', 'shareStreaks', 'seenBadges', 'challengeHabits', 'checkIns',
-    'checkInReminders',
+    'checkInReminders', 'homePlace',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -365,6 +375,11 @@ class AppStore extends ChangeNotifier {
 
   /// Az utolsó gyors hangulat óta eltelt idő (null, ha még nem volt).
   CheckIn? get lastCheckIn => checkIns.isEmpty ? null : checkIns.last;
+
+  void setHomePlace(IdeaPlace? place) {
+    homePlace = place;
+    _save();
+  }
 
   void setCheckInReminders(bool on) {
     checkInReminders = on;

@@ -99,6 +99,8 @@ void main() {
     await tester.tap(find.byType(EventCard));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Ki mit fizetett? Írd fel!'), 200);
+    await tester.ensureVisible(find.text('Ki mit fizetett? Írd fel!'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Ki mit fizetett? Írd fel!'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).at(0), 'jegyek');

@@ -120,6 +120,57 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() <= 100;
     }
 
+    // Közösségi ötletek: minden bejelentkezett felhasználó látja; megosztani valódi fiókkal lehet,
+    // módosítani a szerző, törölni a szerző vagy az admin.
+    match /ideas/{id} {
+      allow read: if signedIn();
+      allow create: if realUser() && !banned()
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['title', 'text', 'emoji', 'tags', 'authorUid', 'authorName',
+          'placeName', 'city', 'country', 'lat', 'lng', 'createdAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.text is string && request.resource.data.text.size() <= 300
+        && request.resource.data.tags is list && request.resource.data.tags.size() <= 5
+        && request.resource.data.authorName is string && request.resource.data.authorName.size() <= 40
+        && request.resource.data.createdAt == request.time;
+      allow update: if realUser() && !banned()
+        && resource.data.authorUid == request.auth.uid
+        && request.resource.data.authorUid == request.auth.uid
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.text.size() <= 300;
+      allow delete: if realUser() && (resource.data.authorUid == request.auth.uid || isAdmin());
+
+      // Kedvelés és csillag: mindenki csak a sajátját.
+      match /votes/{uid} {
+        allow write: if realUser() && !banned() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['ideaId', 'liked', 'rating'])
+          && request.resource.data.ideaId == id
+          && request.resource.data.liked is bool
+          && request.resource.data.rating is int
+          && request.resource.data.rating >= 0 && request.resource.data.rating <= 5;
+        allow delete: if realUser() && (request.auth.uid == uid || isAdmin());
+      }
+
+      // Jelentés: bárki (valódi fiókkal) jelezheti; csak az admin látja.
+      match /reports/{uid} {
+        allow create, update: if realUser() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['ideaId', 'reason', 'at'])
+          && request.resource.data.ideaId == id
+          && request.resource.data.reason is string && request.resource.data.reason.size() <= 200;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Összesítéshez: a szavazatokat mindenki, a jelentéseket csak az admin kérdezheti le egyben.
+    match /{path=**}/votes/{uid} {
+      allow read: if signedIn();
+    }
+    match /{path=**}/reports/{uid} {
+      allow read: if isAdmin();
+    }
+
     // Közös kihívás: csak a tagjai látják; a szervező kezeli, a többiek kiléphetnek.
     match /challenges/{cid} {
       allow read: if realUser() && request.auth.uid in resource.data.members;
