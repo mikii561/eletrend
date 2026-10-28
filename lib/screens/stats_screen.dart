@@ -8,6 +8,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/tag_icon.dart';
 import 'journal_screen.dart';
+import 'year_review_screen.dart';
 
 /// Hangulat-statisztika: havi naptár, 30 napos trend, összefüggések.
 class StatsScreen extends StatefulWidget {
@@ -35,7 +36,19 @@ class _StatsScreenState extends State<StatsScreen> {
     final isCurrentMonth = _month.year == DateTime.now().year && _month.month == DateTime.now().month;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Statisztika')),
+      appBar: AppBar(
+        title: const Text('Statisztika'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => YearReviewScreen(year: _month.year)),
+            ),
+            icon: const Icon(Icons.auto_awesome_outlined),
+            label: Text('${_month.year}'),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [

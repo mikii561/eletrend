@@ -296,3 +296,66 @@ bool entryMatches(JournalEntry e, String query, AppStore store) {
   }
   return null;
 }
+
+/// Év végi visszatekintés: számok, a legjobb hónap és napok, a szokások, a fotók.
+class YearReview {
+  YearReview(this.store, this.year) {
+    entries = store.journal.where((e) => e.date.year == year).toList()..sort((a, b) => a.date.compareTo(b.date));
+    average = MoodStats.average(entries);
+    monthAverages = [
+      for (var m = 1; m <= 12; m++) MoodStats.average(entries.where((e) => e.date.month == m)),
+    ];
+    final usable = [
+      for (var m = 1; m <= 12; m++)
+        if (entries.where((e) => e.date.month == m).length >= 5) (m, monthAverages[m - 1]!),
+    ]..sort((a, b) => b.$2.compareTo(a.$2));
+    bestMonth = usable.firstOrNull?.$1;
+
+    bestDays = ([...entries]..sort((a, b) {
+            final byMood = b.mood.compareTo(a.mood);
+            return byMood != 0 ? byMood : (b.gratitude.length + b.note.length).compareTo(a.gratitude.length + a.note.length);
+          }))
+        .where((e) => e.gratitude.isNotEmpty || e.note.isNotEmpty)
+        .take(5)
+        .toList();
+
+    final tagCounts = <String, int>{};
+    for (final e in entries) {
+      for (final t in e.tags) {
+        tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      }
+    }
+    topTags = (tagCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(5).toList();
+
+    habitDays = [
+      for (final h in store.habits) (h, h.doneDays.where((d) => d.startsWith('$year-')).length),
+    ]..sort((a, b) => b.$2.compareTo(a.$2));
+    habitDays.removeWhere((h) => h.$2 == 0);
+
+    photos = entries.where((e) => e.moodImage != null || e.photoPath != null).toList();
+    gratitudes = entries.where((e) => e.gratitude.isNotEmpty).length;
+    events = store.events.where((e) => e.date.year == year).length;
+
+    var run = 0;
+    for (var d = DateTime(year, 1, 1, 12); d.year == year; d = addDays(d, 1)) {
+      run = store.entryFor(d) == null ? 0 : run + 1;
+      if (run > longestStreak) longestStreak = run;
+    }
+  }
+
+  final AppStore store;
+  final int year;
+  late final List<JournalEntry> entries;
+  late final double? average;
+  late final List<double?> monthAverages;
+  late final int? bestMonth;
+  late final List<JournalEntry> bestDays;
+  late final List<MapEntry<String, int>> topTags;
+  late final List<(Habit, int)> habitDays;
+  late final List<JournalEntry> photos;
+  late final int gratitudes;
+  late final int events;
+  int longestStreak = 0;
+
+  bool get isEmpty => entries.isEmpty;
+}

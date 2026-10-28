@@ -39,6 +39,12 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - `lib/friends.dart`: barátkód (`codes/{KÓD}`), névjegy (`people/{uid}`, sorozatok csak ha `shareStreaks`), jelölés (`requests/{címzett}/items/{küldő}`), barátság (`friendships/{uid}/list/{barát}`, csak meglévő jelölés elfogadásával), meghívás egy gombnyomással (`inbox/{uid}/items/{programId}` → a „Meghívásaim” közé kerül).
 - Szokások: heti cél (`perWeek`), mennyiség (`target`, `unit`, `counts`), saját emlékeztető (`reminderMinutes`, csak Androidon). A `doneDays` mindig a „kész” napokat tartalmazza.
 
+## Közösségi és egyéb
+
+- Kihívások: `lib/challenges.dart` (`challenges/{id}`, tagok `members`, haladás `progress/{uid}`, buzdítás csak +1). Szokáshoz köthető (`store.challengeHabits`).
+- „Ki mit hoz?”: `events/{id}/items`. Időjárás: Open-Meteo (`lib/weather.dart`), a megosztott programban `lat`/`lng` is van.
+- Jelvények: `lib/badges.dart` (számolt, `store.seenBadges`). Napközbeni hangulat: `store.checkIns`. Év visszatekintés: `YearReview`.
+
 ## Admin
 
 - `lib/admin.dart` + `lib/screens/admin_screen.dart`: áttekintés, felhasználók (felfüggesztés `bans/{uid}`, adattörlés), hibák (`errors`, csak release buildben jelent az app), visszajelzések (`feedback`), megosztott programok moderálása.

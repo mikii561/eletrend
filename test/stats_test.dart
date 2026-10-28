@@ -5,7 +5,9 @@ import 'package:eletrend/models.dart';
 import 'package:eletrend/photos.dart';
 import 'package:eletrend/questions.dart';
 import 'package:eletrend/stats.dart';
+import 'package:eletrend/screens/year_review_screen.dart';
 import 'package:eletrend/store.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -224,5 +226,36 @@ void main() {
     expect(texts, contains('Reggel a legjobb a kedved (5,0), délután a legrosszabb (2,0).'));
     expect((await AppStore.load()).checkIns.length, 9);
     expect(partOfDay(DateTime(2026, 1, 1, 23)), 'éjjel');
+  });
+
+  test('év visszatekintés: legjobb hónap, sorozat, szokások, fotók', () async {
+    final store = await emptyStore();
+    for (var d = 1; d <= 6; d++) {
+      store.saveEntry(entry(DateTime(2026, 3, d, 12), 5)..gratitude = 'tavasz $d');
+      store.saveEntry(entry(DateTime(2026, 7, d, 12), 3));
+    }
+    store.saveEntry(entry(DateTime(2026, 8, 1, 12), 4)..moodImage = 'AAEC');
+    store.saveEntry(entry(DateTime(2025, 12, 31, 12), 1));
+    store.addHabit('Séta');
+    store.habits.single.doneDays.addAll(['2026-03-01', '2026-03-02', '2025-12-30']);
+
+    final r = YearReview(store, 2026);
+    expect(r.entries.length, 13);
+    expect(r.bestMonth, 3);
+    expect(r.longestStreak, 6);
+    expect(r.habitDays.single.$2, 2);
+    expect(r.photos.length, 1);
+    expect(r.bestDays.first.gratitude, startsWith('tavasz'));
+    expect(YearReview(store, 2024).isEmpty, isTrue);
+  });
+
+  testWidgets('év visszatekintés képernyő megnyílik', (tester) async {
+    await initializeDateFormatting('hu');
+    SharedPreferences.setMockInitialValues({});
+    final store = (await tester.runAsync(AppStore.load))!;
+    store.saveEntry(entry(DateTime(2026, 3, 1, 12), 5)..gratitude = 'napsütés');
+    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: YearReviewScreen(year: 2026))));
+    expect(find.text('2026'), findsOneWidget);
+    expect(find.text('1 napot írtál le'), findsOneWidget);
   });
 }

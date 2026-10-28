@@ -15,6 +15,7 @@ import '../widgets/tag_icon.dart';
 import 'pdf_export_sheet.dart';
 import 'pin_screen.dart';
 import 'stats_screen.dart';
+import 'year_review_screen.dart';
 import 'tags_screen.dart';
 import 'today_screen.dart' show MoodButton;
 
@@ -89,6 +90,23 @@ class _JournalScreenState extends State<JournalScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
         children: [
           if (search == null) _MoodWeek(store: store),
+          // December közepétől január végéig: az év visszatekintése.
+          if (search == null &&
+              ((now.month == 12 && now.day >= 15) || now.month == 1) &&
+              !YearReview(store, now.month == 1 ? now.year - 1 : now.year).isEmpty)
+            Card(
+              color: AppColors.accent.withValues(alpha: 0.15),
+              child: ListTile(
+                leading: const Text('✨', style: TextStyle(fontSize: 26)),
+                title: Text('Itt a ${now.month == 1 ? now.year - 1 : now.year}-es visszatekintésed',
+                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Legjobb hónap, legszebb napok, az év képekben'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => YearReviewScreen(year: now.month == 1 ? now.year - 1 : now.year),
+                )),
+              ),
+            ),
           // A hónap első hetében: kész az előző havi összefoglaló.
           if (search == null && now.day <= 7 && !MonthSummary(store, DateTime(now.year, now.month - 1)).isEmpty)
             Card(
