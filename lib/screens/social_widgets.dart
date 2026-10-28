@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../friends.dart';
 import '../models.dart';
 import '../social.dart';
 import '../store.dart';
@@ -381,6 +382,47 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
     }
   }
 
+  /// Barátok meghívása egy gombnyomással: a program (ha kell) megosztódik, és a barátaid
+  /// „Meghívásaim” listájába kerül, link küldése nélkül.
+  Future<void> _inviteFriends() async {
+    final store = StoreScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final List<Friend> all;
+    try {
+      all = await Friends.instance.watchFriends().first;
+    } catch (e) {
+      if (mounted) _showError(context, e);
+      return;
+    }
+    if (!mounted) return;
+    if (all.isEmpty) {
+      messenger.showSnackBar(const SnackBar(content: Text('Még nincs barátod az appban. A Barátok oldalon add meg a kódjukat!')));
+      return;
+    }
+    final picked = await showModalBottomSheet<List<String>>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => _FriendPicker(friends: all),
+    );
+    if (picked == null || picked.isEmpty || !mounted) return;
+    final name = await ensureMyName(context);
+    if (name == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      if (widget.event.shareId == null) {
+        widget.event.shareId = await Social.instance.publish(widget.event, ownerName: name);
+        store.saveEvent(widget.event);
+        _listen();
+      }
+      await Friends.instance.invite(widget.event, picked);
+      messenger.showSnackBar(SnackBar(content: Text('Meghívtad: ${picked.length} barát. 🎉')));
+    } catch (e) {
+      if (mounted) _showError(context, e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _startPoll(SharedEvent shared) async {
     final options = await showModalBottomSheet<List<DateTime>>(
       context: context,
@@ -427,6 +469,14 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                   const Text('Küldj meghívólinket a barátaidnak! Visszajelezhetnek, szavazhatnak az időpontról, '
                       'és írhatnak az üzenőfalra. Nem kell hozzá telepíteniük az appot.'),
                   const SizedBox(height: 12),
+                  if (Friends.instance.ready) ...[
+                    FilledButton.icon(
+                      onPressed: _busy ? null : _inviteFriends,
+                      icon: const Icon(Icons.group_add_outlined),
+                      label: const Text('Barátok meghívása'),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   FilledButton.icon(
                     onPressed: _busy ? null : _publish,
                     icon: _busy
@@ -465,6 +515,13 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       RsvpSummary(rsvps: rsvps),
+                      if (Friends.instance.ready)
+                        ListTile(
+                          leading: const Icon(Icons.group_add_outlined, color: AppColors.primary),
+                          title: const Text('Barátok meghívása',
+                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                          onTap: _busy ? null : _inviteFriends,
+                        ),
                       ListTile(
                         leading: const Icon(Icons.share_outlined, color: AppColors.primary),
                         title: const Text('Meghívólink küldése',
@@ -572,6 +629,56 @@ class _PollEditorState extends State<_PollEditor> {
             FilledButton(
               onPressed: _options.length < 2 ? null : () => Navigator.pop(context, _options),
               child: const Text('Szavazás indítása'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Kiket hívsz meg az app-beli barátaid közül.
+class _FriendPicker extends StatefulWidget {
+  const _FriendPicker({required this.friends});
+
+  final List<Friend> friends;
+
+  @override
+  State<_FriendPicker> createState() => _FriendPickerState();
+}
+
+class _FriendPickerState extends State<_FriendPicker> {
+  final Set<String> _picked = {};
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Kiket hívsz meg?', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final f in widget.friends)
+                    CheckboxListTile(
+                      secondary: NameAvatar(f.name),
+                      title: Text(f.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                      value: _picked.contains(f.uid),
+                      onChanged: (on) => setState(() => on == true ? _picked.add(f.uid) : _picked.remove(f.uid)),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: _picked.isEmpty ? null : () => Navigator.pop(context, _picked.toList()),
+              child: Text(_picked.isEmpty ? 'Válassz barátot' : 'Meghívás (${_picked.length})'),
             ),
           ],
         ),

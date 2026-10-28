@@ -41,6 +41,9 @@ class AppStore extends ChangeNotifier {
   /// Végigment-e már a bemutatón.
   bool onboarded = false;
 
+  /// Láthatják-e a barátaim a szokás-sorozataimat (alapból nem).
+  bool shareStreaks = false;
+
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
     store._read();
@@ -73,6 +76,7 @@ class AppStore extends ChangeNotifier {
     eventReminders = _prefs.getBool('eventReminders') ?? true;
     themeMode = ThemeMode.values.asNameMap()[_prefs.getString('themeMode')] ?? ThemeMode.system;
     onboarded = _prefs.getBool('onboarded') ?? false;
+    shareStreaks = _prefs.getBool('shareStreaks') ?? false;
   }
 
   /// Újraolvas mindent a tárhelyről (pl. ha a widget közben módosított).
@@ -97,6 +101,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setBool('eventReminders', eventReminders);
     _prefs.setString('themeMode', themeMode.name);
     _prefs.setBool('onboarded', onboarded);
+    _prefs.setBool('shareStreaks', shareStreaks);
     notifyListeners();
   }
 
@@ -122,6 +127,7 @@ class AppStore extends ChangeNotifier {
         'eventReminders': eventReminders,
         'themeMode': themeMode.name,
         'onboarded': onboarded,
+        'shareStreaks': shareStreaks,
       };
 
   /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
@@ -152,6 +158,7 @@ class AppStore extends ChangeNotifier {
       eventReminders = settings['eventReminders'] as bool? ?? eventReminders;
       themeMode = ThemeMode.values.asNameMap()[settings['themeMode']] ?? themeMode;
       onboarded = settings['onboarded'] as bool? ?? true;
+      shareStreaks = settings['shareStreaks'] as bool? ?? false;
     }
     _save();
   }
@@ -248,7 +255,7 @@ class AppStore extends ChangeNotifier {
   static const _backupKeys = [
     'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
     'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
-    'myName', 'invites',
+    'myName', 'invites', 'shareStreaks',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -315,6 +322,11 @@ class AppStore extends ChangeNotifier {
       this.habits.add(Habit(id: '${newId()}-${this.habits.length}', name: name));
     }
     onboarded = true;
+    _save();
+  }
+
+  void setShareStreaks(bool on) {
+    shareStreaks = on;
     _save();
   }
 

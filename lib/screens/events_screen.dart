@@ -13,6 +13,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/map_view.dart';
 import 'costs_section.dart';
+import 'friends_screen.dart';
 import 'idea_sheet.dart';
 import 'invite_screen.dart';
 import 'location_picker.dart';
@@ -512,51 +513,6 @@ class _PickerTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Barátlista kezelése.
-class FriendsScreen extends StatelessWidget {
-  const FriendsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final store = StoreScope.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('Barátok')),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final name = await showTextInputSheet(context, title: 'Új barát', hint: 'Név', action: 'Hozzáadás');
-          if (name != null) store.addFriend(name);
-        },
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Új barát', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-        children: [
-          if (store.friends.isEmpty)
-            const EmptyState(emoji: '👋', text: 'Még nincs barátod a listán.\nAdd hozzá, akikkel programokat szervezel!')
-          else
-            Card(
-              child: Column(
-                children: [
-                  for (final f in store.friends)
-                    ListTile(
-                      leading: NameAvatar(f, radius: 20),
-                      title: Text(f, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      trailing: IconButton(
-                        tooltip: 'Eltávolítás',
-                        icon: Icon(Icons.close, color: AppColors.textMuted),
-                        onPressed: () => store.removeFriend(f),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-        ],
       ),
     );
   }

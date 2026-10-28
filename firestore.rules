@@ -71,6 +71,55 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Barátkód → felhasználó. Aki ismeri a kódot, megnézheti; mindenki csak a sajátját hozhatja létre.
+    match /codes/{code} {
+      allow get: if realUser();
+      allow list, update, delete: if false;
+      allow create: if realUser()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid']);
+    }
+
+    // Névjegy (név, kód, megosztott sorozatok): saját maga és a barátai olvashatják.
+    match /people/{uid} {
+      allow get: if realUser() && (request.auth.uid == uid
+        || exists(/databases/$(database)/documents/friendships/$(uid)/list/$(request.auth.uid)));
+      allow write: if realUser() && request.auth.uid == uid && !banned()
+        && request.resource.data.keys().hasOnly(['name', 'code', 'streaks', 'updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 40
+        && request.resource.data.streaks is list && request.resource.data.streaks.size() <= 5;
+      allow delete: if isAdmin();
+    }
+
+    // Barátjelölés: a küldő a saját nevében küldhet; a címzett látja és törli.
+    match /requests/{to}/items/{from} {
+      allow read: if realUser() && request.auth.uid == to;
+      allow create, update: if realUser() && request.auth.uid == from && from != to && !banned()
+        && request.resource.data.keys().hasOnly(['fromName', 'at'])
+        && request.resource.data.fromName is string && request.resource.data.fromName.size() <= 40;
+      allow delete: if realUser() && (request.auth.uid == to || request.auth.uid == from);
+    }
+
+    // Barátság: csak egy meglévő jelölés elfogadásával jöhet létre (mindkét oldalon).
+    match /friendships/{uid}/list/{friend} {
+      allow read: if realUser() && request.auth.uid == uid;
+      allow create, update: if realUser() && !banned()
+        && request.resource.data.keys().hasOnly(['name', 'since'])
+        && ((request.auth.uid == uid && exists(/databases/$(database)/documents/requests/$(uid)/items/$(friend)))
+          || (request.auth.uid == friend && exists(/databases/$(database)/documents/requests/$(friend)/items/$(uid))));
+      allow delete: if realUser() && (request.auth.uid == uid || request.auth.uid == friend);
+    }
+
+    // Meghívás egy gombnyomással: csak a barátod küldhet.
+    match /inbox/{uid}/items/{eventId} {
+      allow read, delete: if realUser() && request.auth.uid == uid;
+      allow create, update: if realUser() && !banned()
+        && request.resource.data.fromUid == request.auth.uid
+        && exists(/databases/$(database)/documents/friendships/$(uid)/list/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['title', 'date', 'fromUid', 'fromName', 'at'])
+        && request.resource.data.title is string && request.resource.data.title.size() <= 100;
+    }
+
     match /events/{eventId} {
       allow get: if signedIn();
       allow list: if isAdmin();

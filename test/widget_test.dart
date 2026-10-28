@@ -1,4 +1,5 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/friends.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
 import 'package:eletrend/screens/today_screen.dart';
@@ -64,6 +65,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Bejegyzések'), findsOneWidget);
     Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
+    Friends.instance.stop();
   });
 
   testWidgets('első indításkor bemutató, a kiválasztott szokások felkerülnek', (tester) async {
@@ -91,6 +93,7 @@ void main() {
     expect(store.habits.map((h) => h.name), ['💧 2 liter víz', '🚶 10 perc séta', '📖 10 perc olvasás']);
     expect((await AppStore.load()).onboarded, isTrue);
     Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
+    Friends.instance.stop();
   });
 
   testWidgets('sötét mód bekapcsolása azonnal átszínezi az appot', (tester) async {
@@ -110,5 +113,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(AppColors.dark, isFalse);
     Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
+    Friends.instance.stop();
   });
 }

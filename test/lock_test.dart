@@ -1,4 +1,5 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/friends.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/store.dart';
 import 'package:flutter/material.dart';
@@ -69,5 +70,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('A naplód zárolva van'), findsOneWidget);
     Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
+    Friends.instance.stop();
   });
 }
