@@ -189,21 +189,43 @@ class _HabitPicker extends StatelessWidget {
             runSpacing: 8,
             children: [
               for (final h in suggestedHabits)
-                FilterChip(
-                  label: Text(h),
-                  showCheckmark: false,
-                  selected: picked.contains(h),
-                  onSelected: (_) => onToggle(h),
-                  labelStyle: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: picked.contains(h) ? AppColors.primary : Colors.white,
-                  ),
-                  backgroundColor: Colors.white.withValues(alpha: 0.18),
-                  selectedColor: Colors.white,
-                ),
+                _HabitChip(label: h, selected: picked.contains(h), onTap: () => onToggle(h)),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Ajánlott szokás a színátmenetes háttéren: kiválasztva fehér, egyébként áttetsző.
+class _HabitChip extends StatelessWidget {
+  const _HabitChip({required this.label, required this.selected, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: selected ? 1 : 0.55), width: 1.5),
+          ),
+          child: Text(
+            selected ? '✓ $label' : label,
+            style: TextStyle(fontWeight: FontWeight.w700, color: selected ? AppColors.primary : Colors.white),
+          ),
+        ),
       ),
     );
   }

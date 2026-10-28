@@ -74,6 +74,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('📖 10 perc olvasás'));
     await tester.pump();
+    expect(find.text('✓ 📖 10 perc olvasás'), findsOneWidget);
+    await tester.pump();
     await tester.tap(find.text('Kezdjük 3 szokással!'));
     await tester.pumpAndSettle();
 
