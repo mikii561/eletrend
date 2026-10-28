@@ -159,7 +159,7 @@ class _NewChallengeState extends State<_NewChallenge> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+              leading: Icon(Icons.calendar_today_outlined, color: AppColors.primary),
               title: Text('Kezdés: ${DateFormat('MMMM d., EEEE', 'hu').format(_start)}'),
               onTap: () async {
                 final d = await showDatePicker(

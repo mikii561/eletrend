@@ -49,8 +49,10 @@ class _JournalScreenState extends State<JournalScreen> {
         .toList();
 
     void openEditor(DateTime date, JournalEntry? existing) => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => JournalEditor(date: date, existing: existing)),
-        );
+      MaterialPageRoute(
+        builder: (_) => JournalEditor(date: date, existing: existing),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -84,7 +86,10 @@ class _JournalScreenState extends State<JournalScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => openEditor(now, todayEntry),
         icon: const Icon(Icons.edit_outlined),
-        label: Text(todayEntry == null ? 'Mai bejegyzés' : 'Mai szerkesztése', style: const TextStyle(fontWeight: FontWeight.w700)),
+        label: Text(
+          todayEntry == null ? 'Mai bejegyzés' : 'Mai szerkesztése',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
@@ -97,14 +102,16 @@ class _JournalScreenState extends State<JournalScreen> {
             Card(
               color: AppColors.accent.withValues(alpha: 0.15),
               child: ListTile(
-                leading: const Text('✨', style: TextStyle(fontSize: 26)),
-                title: Text('Itt a ${now.month == 1 ? now.year - 1 : now.year}-es visszatekintésed',
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                leading: const IconTile(Icons.auto_awesome_outlined),
+                title: Text(
+                  'Itt a ${now.month == 1 ? now.year - 1 : now.year}-es visszatekintésed',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 subtitle: const Text('Legjobb hónap, legszebb napok, az év képekben'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => YearReviewScreen(year: now.month == 1 ? now.year - 1 : now.year),
-                )),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => YearReviewScreen(year: now.month == 1 ? now.year - 1 : now.year)),
+                ),
               ),
             ),
           // A hónap első hetében: kész az előző havi összefoglaló.
@@ -112,24 +119,31 @@ class _JournalScreenState extends State<JournalScreen> {
             Card(
               color: AppColors.primary.withValues(alpha: 0.12),
               child: ListTile(
-                leading: const Text('📅', style: TextStyle(fontSize: 26)),
-                title: Text('Kész ${monthAdjective(DateTime(now.year, now.month - 1))} összefoglalód',
-                    style: const TextStyle(fontWeight: FontWeight.w800)),
+                leading: const IconTile(Icons.calendar_month_outlined),
+                title: Text(
+                  'Kész ${monthAdjective(DateTime(now.year, now.month - 1))} összefoglalód',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
                 subtitle: const Text('Hány napot írtál, mi volt a legjobb napod…'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => StatsScreen(initialMonth: DateTime(now.year, now.month - 1)),
-                )),
+                onTap: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => StatsScreen(initialMonth: DateTime(now.year, now.month - 1)))),
               ),
             ),
           if (store.journal.isEmpty)
             const Padding(
               padding: EdgeInsets.only(top: 8),
-              child: EmptyState(emoji: '📔', text: 'Még nincs bejegyzésed.\nÍrd le, milyen napod volt és miért vagy hálás!'),
+              child: EmptyState(
+                emoji: '📔',
+                text: 'Még nincs bejegyzésed.\nÍrd le, milyen napod volt és miért vagy hálás!',
+              ),
             )
           else ...[
-            SectionTitle(search == null ? 'Bejegyzések' : 'Találatok',
-                trailing: filter == null && search == null ? null : '${entries.length}'),
+            SectionTitle(
+              search == null ? 'Bejegyzések' : 'Találatok',
+              trailing: filter == null && search == null ? null : '${entries.length}',
+            ),
             if (search != null && search.trim().isNotEmpty && entries.isEmpty)
               const EmptyState(emoji: '🔍', text: 'Nincs ilyen bejegyzés.\nPróbálj más szót, vagy kevesebbet.'),
             if (usedTags.isNotEmpty)
@@ -190,18 +204,18 @@ class _EntryCard extends StatelessWidget {
                           EntryFace(j, size: 26),
                           const SizedBox(width: 8),
                           Flexible(
-                            child: Text(DateFormat('MMMM d., EEEE', 'hu').format(j.date),
-                                maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
+                            child: Text(
+                              DateFormat('MMMM d., EEEE', 'hu').format(j.date),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
                         ],
                       ),
                       if (j.tags.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          children: [for (final t in j.tags) _TagPill(store.tagFor(t))],
-                        ),
+                        Wrap(spacing: 4, runSpacing: 4, children: [for (final t in j.tags) _TagPill(store.tagFor(t))]),
                       ],
                       if (j.gratitude.isNotEmpty) ...[
                         const SizedBox(height: 8),
@@ -209,12 +223,20 @@ class _EntryCard extends StatelessWidget {
                       ],
                       if (j.answer.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(j.question, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13)),
+                        Text(
+                          j.question,
+                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 13),
+                        ),
                         Text(j.answer),
                       ],
                       if (j.note.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(j.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textMuted)),
+                        Text(
+                          j.note,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: AppColors.textMuted),
+                        ),
                       ],
                     ],
                   ),
@@ -268,47 +290,56 @@ class _MoodWeek extends StatelessWidget {
   Widget build(BuildContext context) {
     final today = DateTime.now();
     final days = List.generate(7, (i) => addDays(today, i - 6));
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(gradient: AppColors.headerGradient, borderRadius: BorderRadius.circular(24)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Az elmúlt hét', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 110,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                for (final d in days)
-                  Builder(builder: (context) {
-                    final e = store.entryFor(d);
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        e == null ? const SizedBox(height: 18) : EntryFace(e, size: 18),
-                        const SizedBox(height: 4),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          width: 22,
-                          height: e == null ? 6 : 10.0 + e.mood * 10,
-                          decoration: BoxDecoration(
-                            color: e == null ? Colors.white24 : Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(DateFormat.E('hu').format(d),
-                            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700)),
-                      ],
-                    );
-                  }),
-              ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Az elmúlt hét', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 110,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (final d in days)
+                    Builder(
+                      builder: (context) {
+                        final e = store.entryFor(d);
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            e == null ? const SizedBox(height: 18) : EntryFace(e, size: 18),
+                            const SizedBox(height: 4),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              width: 22,
+                              height: e == null ? 6 : 10.0 + e.mood * 10,
+                              decoration: BoxDecoration(
+                                color: e == null ? AppColors.divider : AppColors.moods[e.mood - 1],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              DateFormat.E('hu').format(d),
+                              style: TextStyle(
+                                color: dayKey(d) == dayKey(today) ? AppColors.text : AppColors.textMuted,
+                                fontSize: 11,
+                                fontWeight: dayKey(d) == dayKey(today) ? FontWeight.w700 : FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -329,8 +360,9 @@ class _JournalEditorState extends State<JournalEditor> {
   late int _mood = widget.existing?.mood ?? 3;
   late final _gratitude = TextEditingController(text: widget.existing?.gratitude);
   late final _note = TextEditingController(text: widget.existing?.note);
-  late String _question =
-      widget.existing?.question.isNotEmpty == true ? widget.existing!.question : questionFor(widget.date);
+  late String _question = widget.existing?.question.isNotEmpty == true
+      ? widget.existing!.question
+      : questionFor(widget.date);
   late final _answer = TextEditingController(text: widget.existing?.answer);
   late String? _photo = widget.existing?.photoPath;
   late final Set<String> _tags = {...?widget.existing?.tags};
@@ -407,8 +439,10 @@ class _JournalEditorState extends State<JournalEditor> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _moodImageError =
-            e is UnsupportedImage ? e.toString() : 'Nem sikerült betölteni a képet. Próbáld újra.');
+        setState(
+          () =>
+              _moodImageError = e is UnsupportedImage ? e.toString() : 'Nem sikerült betölteni a képet. Próbáld újra.',
+        );
       }
     }
   }
@@ -431,7 +465,10 @@ class _JournalEditorState extends State<JournalEditor> {
         ..answer = answer
         ..photoPath = _photo
         ..moodImage = _moodImage
-        ..tags = [for (final t in StoreScope.of(context).moodTags) if (_tags.contains(t.id)) t.id],
+        ..tags = [
+          for (final t in StoreScope.of(context).moodTags)
+            if (_tags.contains(t.id)) t.id,
+        ],
     );
     _saved = true;
     Navigator.pop(context);
@@ -523,11 +560,16 @@ class _JournalEditorState extends State<JournalEditor> {
                   ),
                   const SizedBox(height: 10),
                   if (_editFaces)
-                    Text('Emoji, saját kép vagy felirat, mindennap ez a sáv látszik.',
-                        textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 13))
+                    Text(
+                      'Emoji, saját kép vagy felirat, mindennap ez a sáv látszik.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    )
                   else ...[
-                    Text(store.moodFace(_mood).name,
-                        style: TextStyle(color: AppColors.moods[_mood - 1], fontWeight: FontWeight.w800)),
+                    Text(
+                      store.moodFace(_mood).name,
+                      style: TextStyle(color: AppColors.moods[_mood - 1], fontWeight: FontWeight.w800),
+                    ),
                     const SizedBox(height: 4),
                     if (_moodImage == null)
                       TextButton.icon(
@@ -552,9 +594,11 @@ class _JournalEditorState extends State<JournalEditor> {
                         ],
                       ),
                     if (_moodImageError != null)
-                      Text(_moodImageError!,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+                      Text(
+                        _moodImageError!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600),
+                      ),
                   ],
                 ],
               ),
@@ -576,13 +620,16 @@ class _JournalEditorState extends State<JournalEditor> {
                     onSelected: (on) => setState(() => on ? _tags.add(t.id) : _tags.remove(t.id)),
                   ),
               ActionChip(
-                avatar: const Icon(Icons.tune, size: 18, color: AppColors.primary),
-                label: const Text('Szerkesztés', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                avatar: Icon(Icons.tune, size: 18, color: AppColors.primary),
+                label: Text(
+                  'Szerkesztés',
+                  style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                ),
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
               ),
             ],
           ),
-          const SectionTitle('Miért vagy ma hálás? 🙏'),
+          const SectionTitle('Miért vagy ma hálás?'),
           TextField(
             controller: _gratitude,
             textCapitalization: TextCapitalization.sentences,
@@ -590,7 +637,7 @@ class _JournalEditorState extends State<JournalEditor> {
             maxLines: 2,
           ),
           if (Photos.supported) ...[
-            const SectionTitle('A nap fotója 📷'),
+            const SectionTitle('A nap fotója'),
             if (_photo == null)
               Card(
                 margin: EdgeInsets.zero,
@@ -637,7 +684,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 ),
               ),
           ],
-          const SectionTitle('A nap kérdése ❓'),
+          const SectionTitle('A nap kérdése'),
           Card(
             margin: EdgeInsets.zero,
             child: Padding(
@@ -650,10 +697,8 @@ class _JournalEditorState extends State<JournalEditor> {
                       Expanded(
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 200),
-                          layoutBuilder: (current, previous) => Stack(
-                            alignment: Alignment.centerLeft,
-                            children: [...previous, ?current],
-                          ),
+                          layoutBuilder: (current, previous) =>
+                              Stack(alignment: Alignment.centerLeft, children: [...previous, ?current]),
                           child: Text(
                             _question,
                             key: ValueKey(_question),
@@ -673,10 +718,7 @@ class _JournalEditorState extends State<JournalEditor> {
                     child: TextField(
                       controller: _answer,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: InputDecoration(
-                        hintText: 'Válaszod (nem kötelező)',
-                        fillColor: AppColors.background,
-                      ),
+                      decoration: InputDecoration(hintText: 'Válaszod (nem kötelező)', fillColor: AppColors.background),
                       maxLines: 3,
                       minLines: 1,
                     ),

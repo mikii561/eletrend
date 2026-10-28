@@ -109,7 +109,7 @@ class IdeaFilterBar extends StatelessWidget {
         if (filter.sort == IdeaSort.nearby)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.home_outlined, color: AppColors.primary),
+            leading: Icon(Icons.home_outlined, color: AppColors.primary),
             title: Text(home == null ? 'Add meg, hol laksz' : '30 km-en belül innen: ${home.label.isEmpty ? home.name : home.label}'),
             trailing: TextButton(onPressed: () => _setHome(context), child: Text(home == null ? 'Megadás' : 'Módosítás')),
           )

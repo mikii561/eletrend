@@ -33,9 +33,9 @@ class CostsSection extends StatelessWidget {
                   onTap: () => showExpenseEditor(context, event, existing: x),
                 ),
               ListTile(
-                leading: const Icon(Icons.add_card_outlined, color: AppColors.primary),
+                leading: Icon(Icons.add_card_outlined, color: AppColors.primary),
                 title: Text(event.expenses.isEmpty ? 'Ki mit fizetett? Írd fel!' : 'Új kiadás',
-                    style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
                 onTap: () => showExpenseEditor(context, event),
               ),
             ],
@@ -57,7 +57,7 @@ class CostsSection extends StatelessWidget {
                   for (final t in transfers)
                     ListTile(
                       dense: true,
-                      leading: const Icon(Icons.east, color: AppColors.primary),
+                      leading: Icon(Icons.east, color: AppColors.primary),
                       title: Text.rich(TextSpan(children: [
                         TextSpan(text: t.from, style: const TextStyle(fontWeight: FontWeight.w800)),
                         TextSpan(text: t.from == me ? ' utalj ' : ' utal '),

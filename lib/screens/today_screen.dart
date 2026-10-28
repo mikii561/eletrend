@@ -21,9 +21,9 @@ class TodayScreen extends StatelessWidget {
   final ValueChanged<int> onNavigate;
 
   String _greeting(int hour) {
-    if (hour < 10) return 'Jó reggelt! ☀️';
-    if (hour < 18) return 'Szép napot! 🌿';
-    return 'Jó estét! 🌙';
+    if (hour < 10) return 'Jó reggelt';
+    if (hour < 18) return 'Szép napot';
+    return 'Jó estét';
   }
 
   void _quickMood(BuildContext context, int mood) {
@@ -59,10 +59,8 @@ class TodayScreen extends StatelessWidget {
               children: [
                 // Hangulat
                 Transform.translate(
-                  offset: const Offset(0, -28),
+                  offset: Offset.zero,
                   child: Card(
-                    elevation: 6,
-                    shadowColor: Colors.black12,
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
@@ -190,59 +188,56 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, top + 20, 20, 52),
-      decoration: const BoxDecoration(
-        gradient: AppColors.headerGradient,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
+    final name = StoreScope.of(context).myName;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, top + 16, 12, 16),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(date, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w700)),
-                    ),
-                    IconButton(
-                      tooltip: 'Beállítások',
-                      visualDensity: VisualDensity.compact,
-                      icon: const Icon(Icons.settings_outlined, color: Colors.white),
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                      ),
-                    ),
-                  ],
+                Text(
+                  date.toUpperCase(),
+                  style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 0.8),
                 ),
-                Text(greeting,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                const SizedBox(height: 2),
+                Text(
+                  name.isEmpty ? greeting : '$greeting, ${name.split(' ').first}',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               ],
             ),
           ),
           if (total > 0)
-            SizedBox(
-              width: 64,
-              height: 64,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  CircularProgressIndicator(
-                    value: done / total,
-                    strokeWidth: 6,
-                    backgroundColor: Colors.white24,
-                    color: Colors.white,
-                    strokeCap: StrokeCap.round,
-                  ),
-                  Center(
-                    child: Text('${(done / total * 100).round()}%',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
-                  ),
-                ],
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: SizedBox(
+                width: 46,
+                height: 46,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CircularProgressIndicator(
+                      value: done / total,
+                      strokeWidth: 4,
+                      backgroundColor: AppColors.divider,
+                      color: AppColors.primary,
+                      strokeCap: StrokeCap.round,
+                    ),
+                    Center(
+                      child: Text('$done/$total', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+                    ),
+                  ],
+                ),
               ),
             ),
+          IconButton(
+            tooltip: 'Beállítások',
+            icon: Icon(Icons.settings_outlined, color: AppColors.textMuted),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          ),
         ],
       ),
     );
@@ -287,12 +282,20 @@ class StreakChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: days > 0 ? AppColors.accent.withValues(alpha: 0.15) : AppColors.background,
-        borderRadius: BorderRadius.circular(12),
+        color: days > 0 ? AppColors.accent.withValues(alpha: 0.12) : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(unit == 'nap' ? '🔥 $days' : '🔥 $days $unit', style: const TextStyle(fontWeight: FontWeight.w800)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.local_fire_department_rounded, size: 16, color: days > 0 ? AppColors.accent : AppColors.textMuted),
+          const SizedBox(width: 2),
+          Text(unit == 'nap' ? '$days' : '$days $unit',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: days > 0 ? AppColors.accent : AppColors.textMuted)),
+        ],
+      ),
     );
   }
 }

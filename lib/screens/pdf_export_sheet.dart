@@ -60,7 +60,7 @@ class _PdfExportSheetState extends State<_PdfExportSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Napló PDF-ben 📄', style: Theme.of(context).textTheme.titleLarge),
+            Text('Napló PDF-ben', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             Text('Elmentheted, elküldheted vagy kinyomtathatod. A fotók is benne lesznek.',
                 style: TextStyle(color: AppColors.textMuted)),
@@ -72,19 +72,19 @@ class _PdfExportSheetState extends State<_PdfExportSheet> {
               )
             else ...[
               ListTile(
-                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.primary),
+                leading: Icon(Icons.calendar_today_outlined, color: AppColors.primary),
                 title: Text('Ez a hónap (${name(thisMonth)})'),
                 onTap: () => _export('Napló – ${name(thisMonth)}', 'eletrend-naplo-${fileMonth(thisMonth)}.pdf',
                     (e) => inMonth(e, thisMonth)),
               ),
               ListTile(
-                leading: const Icon(Icons.history, color: AppColors.primary),
+                leading: Icon(Icons.history, color: AppColors.primary),
                 title: Text('Előző hónap (${name(lastMonth)})'),
                 onTap: () => _export('Napló – ${name(lastMonth)}', 'eletrend-naplo-${fileMonth(lastMonth)}.pdf',
                     (e) => inMonth(e, lastMonth)),
               ),
               ListTile(
-                leading: const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+                leading: Icon(Icons.menu_book_outlined, color: AppColors.primary),
                 title: const Text('A teljes napló'),
                 onTap: () => _export('Napló', 'eletrend-naplo.pdf', (_) => true),
               ),

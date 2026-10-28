@@ -243,13 +243,13 @@ class EventDetail extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.schedule, color: AppColors.primary),
+                  leading: Icon(Icons.schedule, color: AppColors.primary),
                   title: Text(DateFormat('yyyy. MMMM d., EEEE', 'hu').format(next)),
                   subtitle: Text(DateFormat('HH:mm', 'hu').format(next)),
                 ),
                 if (e.repeat != Repeat.none)
                   ListTile(
-                    leading: const Icon(Icons.repeat, color: AppColors.primary),
+                    leading: Icon(Icons.repeat, color: AppColors.primary),
                     title: Text(repeatLabel(e)),
                     subtitle: const Text('Mindig a következő alkalom látszik'),
                   ),
@@ -476,7 +476,7 @@ class _EventEditorState extends State<EventEditor> {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.repeat, color: AppColors.primary),
+                      Icon(Icons.repeat, color: AppColors.primary),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(

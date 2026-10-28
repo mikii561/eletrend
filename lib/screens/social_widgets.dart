@@ -145,7 +145,7 @@ class PollCard extends StatelessWidget {
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Text('🗳️ Melyik időpont jó?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+              child: Text('Melyik időpont jó?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
@@ -324,7 +324,7 @@ class _Bubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!mine)
-                Text(m.name, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary)),
+                Text(m.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary)),
               Text(m.text, style: TextStyle(color: mine ? Colors.white : null)),
               if (m.at != null)
                 Text(DateFormat('MMM d. HH:mm', 'hu').format(m.at!),
@@ -518,15 +518,15 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                       RsvpSummary(rsvps: rsvps),
                       if (Friends.instance.ready)
                         ListTile(
-                          leading: const Icon(Icons.group_add_outlined, color: AppColors.primary),
-                          title: const Text('Barátok meghívása',
+                          leading: Icon(Icons.group_add_outlined, color: AppColors.primary),
+                          title: Text('Barátok meghívása',
                               style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
                           onTap: _busy ? null : _inviteFriends,
                         ),
                       if (Friends.instance.ready)
                         ListTile(
-                          leading: const Text('👋', style: TextStyle(fontSize: 22)),
-                          title: const Text('Bump a barátoknak',
+                          leading: const IconTile(Icons.waving_hand_outlined),
+                          title: Text('Bump a barátoknak',
                               style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
                           subtitle: const Text('Emlékeztető képpel, hanggal, konfettivel'),
                           onTap: () async {
@@ -550,8 +550,8 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                           },
                         ),
                       ListTile(
-                        leading: const Icon(Icons.share_outlined, color: AppColors.primary),
-                        title: const Text('Meghívólink küldése',
+                        leading: Icon(Icons.share_outlined, color: AppColors.primary),
+                        title: Text('Meghívólink küldése',
                             style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
                         onTap: () => shareInvite(context, widget.event.title, Social.instance.linkFor(id)),
                       ),
@@ -575,7 +575,7 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                   ),
                 Card(
                   child: ListTile(
-                    leading: const Icon(Icons.how_to_vote_outlined, color: AppColors.primary),
+                    leading: Icon(Icons.how_to_vote_outlined, color: AppColors.primary),
                     title: Text(shared.pollOpen ? 'Lehetőségek módosítása' : 'Időpont-szavazás indítása',
                         style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: shared.pollOpen
@@ -643,7 +643,7 @@ class _PollEditorState extends State<_PollEditor> {
               Card(
                 margin: const EdgeInsets.only(bottom: 6),
                 child: ListTile(
-                  leading: const Icon(Icons.event, color: AppColors.primary),
+                  leading: Icon(Icons.event, color: AppColors.primary),
                   title: Text(formatOption(o), style: const TextStyle(fontWeight: FontWeight.w700)),
                   trailing: IconButton(
                     tooltip: 'Eltávolítás',

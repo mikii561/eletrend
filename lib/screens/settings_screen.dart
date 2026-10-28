@@ -62,7 +62,7 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 SwitchListTile(
-                  secondary: const Text('🌙', style: TextStyle(fontSize: 24)),
+                  secondary: const IconTile(Icons.nightlight_outlined),
                   title: const Text('Esti emlékeztető', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text(
                     'Ha még van kipipálatlan célod, vagy nem írtál naplót. Ha mindennel kész vagy, nem zavar.',
@@ -73,7 +73,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 ListTile(
                   enabled: store.dailyReminder,
-                  leading: const Icon(Icons.schedule, color: AppColors.primary),
+                  leading: Icon(Icons.schedule, color: AppColors.primary),
                   title: const Text('Időpont'),
                   trailing: Text(
                     store.reminderTime.format(context),
@@ -87,7 +87,7 @@ class SettingsScreen extends StatelessWidget {
           const SectionTitle('Programok'),
           Card(
             child: SwitchListTile(
-              secondary: const Text('🎉', style: TextStyle(fontSize: 24)),
+              secondary: const IconTile(Icons.celebration_outlined),
               title: const Text('Program emlékeztetők', style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: const Text('Előző este 18:00-kor, és 1 órával a kezdés előtt.'),
               value: store.eventReminders,
@@ -141,7 +141,7 @@ class SettingsScreen extends StatelessWidget {
           const SectionTitle('Napló'),
           Card(
             child: ListTile(
-              leading: const Text('🏷️', style: TextStyle(fontSize: 24)),
+              leading: const IconTile(Icons.sell_outlined),
               title: const Text('Hangulatok és címkék', style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Text('Saját arcok a napokhoz, ${store.visibleTags.length} látható címke'),
               trailing: const Icon(Icons.chevron_right),
@@ -150,7 +150,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           Card(
             child: SwitchListTile(
-              secondary: const Text('🕐', style: TextStyle(fontSize: 24)),
+              secondary: const IconTile(Icons.schedule),
               title: const Text('„Hogy vagy most?” napközben', style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: const Text('11:00-kor és 15:00-kor rákérdez a telefon (a Ma képernyőn mindig ott van).'),
               value: store.checkInReminders,
@@ -169,7 +169,7 @@ class SettingsScreen extends StatelessWidget {
                       const SectionTitle('Kezdőképernyő'),
                       Card(
                         child: ListTile(
-                          leading: const Text('📱', style: TextStyle(fontSize: 24)),
+                          leading: const IconTile(Icons.widgets_outlined),
                           title: const Text('Célok a kezdőképernyőn', style: TextStyle(fontWeight: FontWeight.w700)),
                           subtitle: const Text('Widget, amin a mai céljaid az app megnyitása nélkül kipipálhatók.'),
                           trailing: const Icon(Icons.add_to_home_screen),
@@ -186,7 +186,7 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 SwitchListTile(
-                  secondary: const Text('🔒', style: TextStyle(fontSize: 24)),
+                  secondary: const IconTile(Icons.lock_outline),
                   title: const Text('PIN-kód a naplóhoz', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text('A Napló csak PIN-kóddal nyílik meg. Ha az app háttérbe kerül, újra bezár.'),
                   value: store.journalLocked,
@@ -228,13 +228,13 @@ class SettingsScreen extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.download_outlined, color: AppColors.primary),
+                  leading: Icon(Icons.download_outlined, color: AppColors.primary),
                   title: const Text('Mentés fájlba', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text('Minden adatod egy fájlban. Tedd el, vagy vidd át egy másik eszközre.'),
                   onTap: () => Backup.export(context, store),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.upload_outlined, color: AppColors.primary),
+                  leading: Icon(Icons.upload_outlined, color: AppColors.primary),
                   title: const Text('Visszatöltés fájlból', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text('Egy korábbi mentés visszaállítása.'),
                   onTap: () => Backup.restore(context, store),

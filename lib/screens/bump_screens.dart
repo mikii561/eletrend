@@ -505,7 +505,7 @@ class _BumpSettingsCardState extends State<BumpSettingsCard> {
         children: [
           if (Bumps.instance.ready)
             SwitchListTile(
-              secondary: const Text('👋', style: TextStyle(fontSize: 24)),
+              secondary: const IconTile(Icons.waving_hand_outlined),
               title: const Text('Bumpok fogadása', style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: const Text('Ha kikapcsolod, a barátaid nem tudnak bumpolni. Egy-egy barátot a Barátok fülön is némíthatsz.'),
               value: _receive ?? true,
@@ -521,7 +521,7 @@ class _BumpSettingsCardState extends State<BumpSettingsCard> {
                     },
             ),
           SwitchListTile(
-            secondary: const Text('🎊', style: TextStyle(fontSize: 24)),
+            secondary: const IconTile(Icons.auto_awesome_outlined),
             title: const Text('Animációk lejátszása', style: TextStyle(fontWeight: FontWeight.w700)),
             subtitle: const Text('Konfetti, tűzijáték, felugró képek a bumpoknál.'),
             value: store.effectsOn,

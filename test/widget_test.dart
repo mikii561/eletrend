@@ -138,4 +138,23 @@ void main() {
     Friends.instance.stop();
     Challenges.instance.stop();
   });
+
+  testWidgets('jelvények: a már meglévők miatt nincs ünneplés az első indításkor', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({'onboarded': true});
+    final store = await AppStore.load();
+    store.addHabit('Olvasás');
+    store.saveEntry(JournalEntry(id: '1', date: DateTime(2026, 10, 1), mood: 4));
+    await tester.pumpWidget(EletrendApp(store: store));
+    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Új jelvény'), findsNothing);
+    expect(store.seenBadges, containsAll(['first_entry', 'first_habit']));
+    Account.instance.sync?.stop();
+    Friends.instance.stop();
+    Challenges.instance.stop();
+  });
 }

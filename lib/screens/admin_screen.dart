@@ -113,10 +113,10 @@ class _Overview extends StatelessWidget {
           const SectionTitle('Tartalom összesen'),
           Card(
             child: Column(children: [
-              ListTile(leading: const Text('📔', style: TextStyle(fontSize: 22)), title: const Text('Naplóbejegyzés'), trailing: _Num(s.totals['journal'])),
-              ListTile(leading: const Text('✅', style: TextStyle(fontSize: 22)), title: const Text('Cél'), trailing: _Num(s.totals['habits'])),
-              ListTile(leading: const Text('🎉', style: TextStyle(fontSize: 22)), title: const Text('Program'), trailing: _Num(s.totals['events'])),
-              ListTile(leading: const Text('🔗', style: TextStyle(fontSize: 22)), title: const Text('Megosztott program'), trailing: _Num(s.sharedEvents)),
+              ListTile(leading: const IconTile(Icons.menu_book_outlined), title: const Text('Naplóbejegyzés'), trailing: _Num(s.totals['journal'])),
+              ListTile(leading: const IconTile(Icons.task_alt), title: const Text('Cél'), trailing: _Num(s.totals['habits'])),
+              ListTile(leading: const IconTile(Icons.celebration_outlined), title: const Text('Program'), trailing: _Num(s.totals['events'])),
+              ListTile(leading: const IconTile(Icons.link), title: const Text('Megosztott program'), trailing: _Num(s.sharedEvents)),
             ]),
           ),
           const SectionTitle('Platformok'),
@@ -291,7 +291,7 @@ class _UserDetailState extends State<_UserDetail> {
           Card(
             child: Column(children: [
               SwitchListTile(
-                secondary: const Text('⛔', style: TextStyle(fontSize: 22)),
+                secondary: const IconTile(Icons.block),
                 title: const Text('Felfüggesztve'),
                 subtitle: const Text('Nem tudja használni az appot, amíg vissza nem kapcsolod.'),
                 value: _banned,

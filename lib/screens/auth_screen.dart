@@ -117,7 +117,7 @@ class _AuthScreenState extends State<AuthScreen> {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: AppColors.headerGradient,
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
             ),
@@ -229,7 +229,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     const SizedBox(height: 12),
                     Text(
                       _info!,
-                      style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                      style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
                     ),
                   ],
                   const SizedBox(height: 20),

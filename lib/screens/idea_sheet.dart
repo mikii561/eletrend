@@ -95,7 +95,7 @@ class _IdeaSheetState extends State<_IdeaSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Mit csináljunk? 🎲', style: theme.textTheme.titleLarge),
+            Text('Mit csináljunk?', style: theme.textTheme.titleLarge),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
               showSelectedIcon: false,

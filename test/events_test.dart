@@ -87,7 +87,7 @@ void main() {
     await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: EventsScreen())));
     await tester.tap(find.text('🎲 Ötletet kérek'));
     await tester.pumpAndSettle();
-    expect(find.text('Mit csináljunk? 🎲'), findsOneWidget);
+    expect(find.text('Mit csináljunk?'), findsOneWidget);
     await tester.tap(find.text('Ezt szervezem!'));
     await tester.pumpAndSettle();
     expect(find.text('Új program'), findsOneWidget);

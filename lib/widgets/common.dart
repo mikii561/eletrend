@@ -14,26 +14,23 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 4),
+      padding: const EdgeInsets.only(top: 22, bottom: 6, left: 2),
       child: Row(
         children: [
           Expanded(
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Flexible(
                   child: Text(title,
-                      maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleLarge),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
                 ),
                 if (trailing != null) ...[
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(trailing!, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
-                  ),
+                  Text(trailing!, style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w500, fontSize: 14)),
                 ],
               ],
             ),
@@ -61,8 +58,14 @@ class EmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 40)),
-            const SizedBox(height: 8),
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: AppColors.background, shape: BoxShape.circle),
+              child: Text(emoji, style: const TextStyle(fontSize: 26)),
+            ),
+            const SizedBox(height: 12),
             Text(text, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
             if (action != null) ...[
               const SizedBox(height: 12),
@@ -88,17 +91,17 @@ class DateBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: AppColors.headerGradient,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.primary.withValues(alpha: AppColors.dark ? 0.18 : 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             DateFormat.MMM('hu').format(date).replaceAll('.', '').toUpperCase(),
-            style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800),
+            style: TextStyle(color: AppColors.primary, fontSize: size * 0.18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
           ),
-          Text('${date.day}', style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900, height: 1.1)),
+          Text('${date.day}', style: TextStyle(color: AppColors.text, fontSize: size * 0.38, fontWeight: FontWeight.w700, height: 1.1)),
         ],
       ),
     );
@@ -113,8 +116,8 @@ class NameAvatar extends StatelessWidget {
   final double radius;
 
   static const _colors = [
-    Color(0xFF7986CB), Color(0xFF4DB6AC), Color(0xFFFF8A65),
-    Color(0xFFBA68C8), Color(0xFF4FC3F7), Color(0xFFAED581),
+    Color(0xFF0F766E), Color(0xFFB45309), Color(0xFF4338CA),
+    Color(0xFFBE185D), Color(0xFF0369A1), Color(0xFF4D7C0F),
   ];
 
   @override
@@ -125,7 +128,7 @@ class NameAvatar extends StatelessWidget {
       backgroundColor: color,
       child: Text(
         name.characters.first.toUpperCase(),
-        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: radius * 0.9),
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: radius * 0.85),
       ),
     );
   }
@@ -196,4 +199,25 @@ Future<String?> showTextInputSheet(BuildContext context, {required String title,
       ),
     ),
   );
+}
+
+/// Ikon halványan színezett, lekerekített négyzetben (listák elején, emoji helyett).
+class IconTile extends StatelessWidget {
+  const IconTile(this.icon, {super.key, this.color});
+
+  final IconData icon;
+
+  /// Alapból a márkaszín.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? AppColors.primary;
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(color: c.withValues(alpha: AppColors.dark ? 0.18 : 0.09), borderRadius: BorderRadius.circular(10)),
+      child: Icon(icon, size: 20, color: c),
+    );
+  }
 }

@@ -59,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final last = _page == _intro.length;
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(gradient: AppColors.headerGradient),
+        decoration: BoxDecoration(gradient: AppColors.headerGradient),
         child: SafeArea(
           child: Column(
             children: [

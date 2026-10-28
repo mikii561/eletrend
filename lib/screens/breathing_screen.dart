@@ -173,7 +173,7 @@ class _BreathingScreenState extends State<BreathingScreen> with SingleTickerProv
                 child: ListTile(
                   title: Text(p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: Text(p.text),
-                  trailing: p == _pattern ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
+                  trailing: p == _pattern ? Icon(Icons.check_circle, color: AppColors.primary) : null,
                   onTap: () => setState(() => _pattern = p),
                 ),
               ),

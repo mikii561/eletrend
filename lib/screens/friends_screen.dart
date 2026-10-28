@@ -77,7 +77,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
           else ...[
             Card(
               child: ListTile(
-                leading: const Text('👋', style: TextStyle(fontSize: 26)),
+                leading: const IconTile(Icons.waving_hand_outlined),
                 title: const Text('Kapott bumpok', style: TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: const Text('A barátaid üzenetei, képei, hangüzenetei.'),
                 trailing: const Icon(Icons.chevron_right),
@@ -87,7 +87,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             Card(
               color: AppColors.accent.withValues(alpha: 0.12),
               child: ListTile(
-                leading: const Text('🏁', style: TextStyle(fontSize: 26)),
+                leading: const IconTile(Icons.flag_outlined),
                 title: const Text('Közös kihívások', style: TextStyle(fontWeight: FontWeight.w800)),
                 subtitle: const Text('Pl. 30 nap edzés a barátaiddal, ranglistával.'),
                 trailing: const Icon(Icons.chevron_right),
@@ -105,7 +105,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     const SizedBox(height: 4),
                     SelectableText(
                       friends.myCode ?? '…',
-                      style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 6, color: AppColors.primary),
+                      style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 6, color: AppColors.primary),
                     ),
                     const SizedBox(height: 4),
                     Text('Add meg a barátodnak, vagy kérd el az övét.',
@@ -126,7 +126,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(44)),
                             onPressed: () => _addByCode(context),
                             icon: const Icon(Icons.person_add_alt_1),
-                            label: const Text('Kód megadása'),
+                            label: const Text('Kód beírása'),
                           ),
                         ),
                       ],
@@ -224,7 +224,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
             ),
             Card(
               child: SwitchListTile(
-                secondary: const Text('🔥', style: TextStyle(fontSize: 22)),
+                secondary: const IconTile(Icons.local_fire_department_outlined),
                 title: const Text('Sorozataim megosztása', style: TextStyle(fontWeight: FontWeight.w700)),
                 subtitle: const Text('A barátaid látják, hány napja tartod a céljaidat. A naplód nem látszik.'),
                 value: store.shareStreaks,
@@ -249,8 +249,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     ),
                   ),
                 ListTile(
-                  leading: const Icon(Icons.person_add_alt_outlined, color: AppColors.primary),
-                  title: const Text('Név hozzáadása', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                  leading: Icon(Icons.person_add_alt_outlined, color: AppColors.primary),
+                  title: Text('Név hozzáadása', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
                   subtitle: const Text('Akinek nincs fiókja: meghívólinkkel hívhatod, és a költségeknél is szerepelhet.'),
                   onTap: () async {
                     final name = await showTextInputSheet(context, title: 'Új név', hint: 'Név', action: 'Hozzáadás');

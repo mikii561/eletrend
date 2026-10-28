@@ -163,7 +163,7 @@ class AccountSection extends StatelessWidget {
                 isThreeLine: true,
               ),
               ListTile(
-                leading: const Icon(Icons.feedback_outlined, color: AppColors.primary),
+                leading: Icon(Icons.feedback_outlined, color: AppColors.primary),
                 title: const Text('Hiba bejelentése / ötlet'),
                 subtitle: const Text('Írd meg, mi nem működik, vagy mit látnál szívesen.'),
                 onTap: () => _feedback(context),
@@ -182,7 +182,7 @@ class AccountSection extends StatelessWidget {
                         ),
                 ),
               ListTile(
-                leading: const Icon(Icons.logout, color: AppColors.primary),
+                leading: Icon(Icons.logout, color: AppColors.primary),
                 title: const Text('Kijelentkezés'),
                 onTap: () => _logout(context),
               ),
