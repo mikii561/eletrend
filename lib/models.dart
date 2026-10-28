@@ -28,6 +28,8 @@ class Event {
     this.repeat = Repeat.none,
     List<Expense>? expenses,
     this.shareId,
+    this.bgTheme,
+    this.bgImage,
   })  : invited = invited ?? [],
         expenses = expenses ?? [];
 
@@ -51,6 +53,10 @@ class Event {
 
   /// A felhőbe kitett példány azonosítója, ha megosztottad a barátaiddal (a meghívólinkben is ez van).
   String? shareId;
+
+  /// Háttér: kész téma kulcsa, vagy saját fotó (base64 JPEG). A fotó az erősebb.
+  String? bgTheme;
+  String? bgImage;
 
   /// Az [i]-edik alkalom időpontja (0 = az első). Naptári napokkal számol, így
   /// óraátállításkor sem csúszik el az időpont.
@@ -100,6 +106,8 @@ class Event {
         'repeat': repeat.name,
         'expenses': expenses.map((x) => x.toJson()).toList(),
         'shareId': shareId,
+        if (bgTheme != null) 'bgTheme': bgTheme,
+        if (bgImage != null) 'bgImage': bgImage,
       };
 
   factory Event.fromJson(Map<String, dynamic> j) => Event(
@@ -113,6 +121,8 @@ class Event {
         repeat: Repeat.values.asNameMap()[j['repeat']] ?? Repeat.none,
         expenses: [for (final x in j['expenses'] as List? ?? []) Expense.fromJson(x as Map<String, dynamic>)],
         shareId: j['shareId'] as String?,
+        bgTheme: j['bgTheme'] as String?,
+        bgImage: j['bgImage'] as String?,
       );
 }
 

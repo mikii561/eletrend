@@ -31,6 +31,8 @@ class SharedEvent {
     this.repeat = Repeat.none,
     this.lat,
     this.lng,
+    this.bgTheme,
+    this.bgImage,
     this.pollOptions = const [],
     this.pollClosed = false,
   });
@@ -46,6 +48,10 @@ class SharedEvent {
   /// A helyszín koordinátái (az időjáráshoz), ha a szervező térképen választotta.
   final double? lat;
   final double? lng;
+
+  /// A szervező által választott háttér.
+  final String? bgTheme;
+  final String? bgImage;
 
   /// Az időpont-szavazás lehetőségei (üres, ha nincs szavazás).
   final List<DateTime> pollOptions;
@@ -66,6 +72,8 @@ class SharedEvent {
       place: d['place'] as String? ?? '',
       lat: (d['lat'] as num?)?.toDouble(),
       lng: (d['lng'] as num?)?.toDouble(),
+      bgTheme: d['bgTheme'] as String?,
+      bgImage: d['bgImage'] as String?,
       repeat: Repeat.values.asNameMap()[d['repeat']] ?? Repeat.none,
       pollOptions: [for (final o in d['pollOptions'] as List? ?? []) DateTime.parse(o as String)],
       pollClosed: d['pollClosed'] as bool? ?? false,
@@ -200,6 +208,8 @@ class Social {
       'lat': e.lat,
       'lng': e.lng,
       'repeat': e.repeat.name,
+      'bgTheme': e.bgTheme,
+      'bgImage': e.bgImage,
       'ownerUid': uid,
       'ownerName': ownerName,
       'updatedAt': FieldValue.serverTimestamp(),

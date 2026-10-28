@@ -1,12 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../calendar_link.dart';
 import '../community.dart';
+import '../event_background.dart';
+import '../photos.dart';
 import '../geocoding.dart';
 import '../models.dart';
 import '../social.dart';
@@ -201,13 +204,40 @@ class EventDetail extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
-          Row(
-            children: [
-              DateBadge(next, size: 64),
-              const SizedBox(width: 16),
-              Expanded(child: Text(e.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))),
-            ],
-          ),
+          if (e.bgTheme != null || e.bgImage != null)
+            // Egyedi háttér: a cím a kép\/téma fölött.
+            SizedBox(
+              height: 170,
+              child: EventBackdrop(
+                theme: e.bgTheme,
+                image: e.bgImage,
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        DateBadge(next, size: 58),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(e.title,
+                              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+          else
+            Row(
+              children: [
+                DateBadge(next, size: 64),
+                const SizedBox(width: 16),
+                Expanded(child: Text(e.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))),
+              ],
+            ),
           const SizedBox(height: 20),
           Card(
             child: Column(
@@ -315,6 +345,25 @@ class _EventEditorState extends State<EventEditor> {
       : TimeOfDay.fromDateTime(widget.existing!.date);
   late final Set<String> _invited = {...?widget.existing?.invited};
   late Place? _place = _initialPlace();
+  late String? _bgTheme = widget.existing?.bgTheme;
+  late String? _bgImage = widget.existing?.bgImage;
+  String? _bgError;
+
+  Future<void> _pickBackground() async {
+    try {
+      final image = await EventBackgrounds.pick(ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _bgImage = image;
+          _bgError = null;
+        });
+      } else if (mounted) {
+        setState(() => _bgError = null);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _bgError = 'Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.');
+    }
+  }
 
   Place? _initialPlace() {
     final e = widget.existing;
@@ -359,7 +408,9 @@ class _EventEditorState extends State<EventEditor> {
       ..lat = _place?.point.latitude
       ..lng = _place?.point.longitude
       ..invited = _invited.toList()
-      ..repeat = _repeat;
+      ..repeat = _repeat
+      ..bgTheme = _bgTheme
+      ..bgImage = _bgImage;
     final store = StoreScope.of(context);
     store.saveEvent(e);
     // A megosztott példányt is frissítjük, hogy a meghívottak a változást lássák.
@@ -480,6 +531,48 @@ class _EventEditorState extends State<EventEditor> {
             ),
           ),
 
+          // Háttér
+          const SectionTitle('Háttér'),
+          SizedBox(
+            height: 64,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _BgSwatch(
+                  selected: _bgTheme == null && _bgImage == null,
+                  onTap: () => setState(() {
+                    _bgTheme = null;
+                    _bgImage = null;
+                  }),
+                  colors: const [Color(0xFF9E9E9E), Color(0xFF757575)],
+                  child: const Icon(Icons.block, color: Colors.white70),
+                ),
+                _BgSwatch(
+                  selected: _bgImage != null,
+                  onTap: _pickBackground,
+                  image: _bgImage,
+                  colors: const [Color(0xFF5B5BD6), Color(0xFF9B6BE0)],
+                  child: _bgImage == null ? const Icon(Icons.add_photo_alternate_outlined, color: Colors.white) : null,
+                ),
+                for (final t in backgroundThemes)
+                  _BgSwatch(
+                    selected: _bgImage == null && _bgTheme == t.key,
+                    onTap: () => setState(() {
+                      _bgTheme = t.key;
+                      _bgImage = null;
+                    }),
+                    colors: t.colors,
+                    child: Text(t.emoji, style: const TextStyle(fontSize: 24)),
+                  ),
+              ],
+            ),
+          ),
+          if (_bgError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(_bgError!, style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+            ),
+
           // Meghívottak
           SectionTitle('Kiket hívsz meg?', trailing: _invited.isEmpty ? null : '${_invited.length}'),
           Wrap(
@@ -568,3 +661,36 @@ String repeatLabel(Event e) => switch (e.repeat) {
       Repeat.biweekly => 'Kéthetente, ${weekdayEvery(e.date.weekday)}',
       Repeat.monthly => 'Havonta, minden hónap ${e.date.day}. napján',
     };
+
+/// Egy háttér-választó négyzet.
+class _BgSwatch extends StatelessWidget {
+  const _BgSwatch({required this.selected, required this.onTap, required this.colors, this.child, this.image});
+
+  final bool selected;
+  final VoidCallback onTap;
+  final List<Color> colors;
+  final Widget? child;
+  final String? image;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 64,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: selected ? AppColors.primary : Colors.transparent, width: 3),
+            gradient: image == null ? LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
+            image: image == null ? null : DecorationImage(image: MemoryImage(TagImages.decode(image!)), fit: BoxFit.cover),
+          ),
+          alignment: Alignment.center,
+          child: child,
+        ),
+      ),
+    );
+  }
+}

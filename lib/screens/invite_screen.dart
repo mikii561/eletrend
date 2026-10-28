@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../calendar_link.dart';
+import '../event_background.dart';
 import '../models.dart';
 import '../social.dart';
 import '../store.dart';
@@ -98,6 +99,25 @@ class _InviteScreenState extends State<InviteScreen> {
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
                 children: [
+                  if (event.bgTheme != null || event.bgImage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: SizedBox(
+                        height: 140,
+                        child: EventBackdrop(
+                          theme: event.bgTheme,
+                          image: event.bgImage,
+                          child: Align(
+                            alignment: Alignment.bottomLeft,
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text('Meghívtak! 🎉',
+                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(16),
