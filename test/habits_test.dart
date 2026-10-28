@@ -137,4 +137,30 @@ void main() {
     expect(store.habits.length, 4);
     expect(find.text('Ezek már mind megvannak. 🙂'), findsOneWidget);
   });
+
+  testWidgets('légzőgyakorlat: 1 perc után kész, és kipipálja a meditációt', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await initializeDateFormatting('hu');
+    final store = (await tester.runAsync(emptyStore))!;
+    store.addHabit('🧘 5 perc meditáció');
+    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
+    await tester.tap(find.byTooltip('Légzőgyakorlat'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('1 perc'));
+    await tester.pump();
+    await tester.scrollUntilVisible(find.text('Indítás'), 300);
+    await tester.tap(find.text('Indítás'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Belégzés'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.text('Tartsd'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 56));
+    await tester.pump();
+    expect(find.text('Kész! Szép munka.'), findsOneWidget);
+    expect(store.habits.single.isDoneOn(DateTime.now()), isTrue);
+  });
 }
