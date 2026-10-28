@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../account.dart';
 import '../backup.dart';
 import '../habits_widget.dart';
 import '../notifications.dart';
+import '../push.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -117,14 +119,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   static List<Widget> _notifications(BuildContext context, AppStore store) => [
-        if (!Notifications.supported)
-          Card(
-            color: AppColors.accent.withValues(alpha: 0.12),
-            child: const ListTile(
-              leading: Icon(Icons.info_outline),
-              title: Text('Böngészőben az app nem tud értesítést küldeni, ezért ezek a Ma képernyőn jelennek meg.'),
-            ),
-          ),
+        if (!Notifications.supported) const _WebPushCard(),
         Card(
           child: Column(
             children: [
@@ -393,4 +388,63 @@ class _SettingsPage extends StatelessWidget {
           children: children(context, StoreScope.of(context)),
         ),
       );
+}
+
+/// Böngészőben: push értesítések ezen az eszközön (ha a szerveroldal be van állítva).
+class _WebPushCard extends StatefulWidget {
+  const _WebPushCard();
+
+  @override
+  State<_WebPushCard> createState() => _WebPushCardState();
+}
+
+class _WebPushCardState extends State<_WebPushCard> {
+  bool _busy = false;
+
+  Future<void> _enable() async {
+    final uid = Account.instance.user?.uid;
+    if (uid == null) return;
+    setState(() => _busy = true);
+    try {
+      await Push.register(uid, ask: true);
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Nem sikerült: $e')));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String text;
+    Widget? action;
+    if (!Push.configured) {
+      text = 'Böngészőben az emlékeztetők egyelőre a Ma képernyőn jelennek meg.';
+    } else if (Push.needsInstall) {
+      text = 'iPhone-on értesítést csak a kezdőképernyőre tett app kaphat: Megosztás → „Főképernyőhöz adás”, '
+          'majd nyisd meg az új ikonról.';
+    } else if (!Push.supported) {
+      text = 'Ez a böngésző nem tud értesítést fogadni.';
+    } else if (Push.permission == 'granted') {
+      text = 'Ezen az eszközön be vannak kapcsolva: bumpok, meghívók, üzenetek, és az alábbi emlékeztetők.';
+    } else if (Push.permission == 'denied') {
+      text = 'Le vannak tiltva. A böngésző vagy a telefon beállításaiban engedélyezheted.';
+    } else {
+      text = 'Bumpok, meghívók, üzenetek és emlékeztetők akkor is, ha az app be van zárva.';
+      action = FilledButton(
+        style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+        onPressed: _busy ? null : _enable,
+        child: Text(_busy ? 'Bekapcsolás…' : 'Bekapcsolom'),
+      );
+    }
+    return Card(
+      child: ListTile(
+        leading: IconTile(Push.permission == 'granted' ? Icons.notifications_active_outlined : Icons.info_outline),
+        title: const Text('Értesítések ezen az eszközön'),
+        subtitle: Text(text),
+        trailing: action,
+        isThreeLine: true,
+      ),
+    );
+  }
 }

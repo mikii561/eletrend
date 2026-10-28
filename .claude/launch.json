@@ -6,6 +6,12 @@
       "runtimeExecutable": "flutter",
       "runtimeArgs": ["run", "-d", "web-server", "--web-port", "8099"],
       "port": 8099
+    },
+    {
+      "name": "eletrend-release",
+      "runtimeExecutable": "dart",
+      "runtimeArgs": ["run", "C:/Temp/claude/C--dev-eletrend/8e16d8ae-6663-49ec-96a7-2a55836c6ad7/scratchpad/serve.dart"],
+      "port": 8123
     }
   ]
 }

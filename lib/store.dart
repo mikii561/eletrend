@@ -76,6 +76,14 @@ class AppStore extends ChangeNotifier {
   /// Melyik hét összefoglaló-kártyáját zárta be (csak ezen az eszközön).
   String? get weekCardClosed => _prefs.getString('weekCardClosed');
 
+  /// Egy-egy tipp-kártya, amit ezen az eszközön bezárt.
+  bool hintClosed(String id) => _prefs.getBool('hint_$id') ?? false;
+
+  void closeHint(String id) {
+    _prefs.setBool('hint_$id', true);
+    notifyListeners();
+  }
+
   void closeWeekCard(String mondayKey) {
     _prefs.setString('weekCardClosed', mondayKey);
     notifyListeners();

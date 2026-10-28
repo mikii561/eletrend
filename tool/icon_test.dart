@@ -6,7 +6,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const _gradient = [Color(0xFF6D5BD6), Color(0xFF9B6BE0), Color(0xFFFF9A8B)];
+// A márkaszín (theme.dart), egy árnyalaton belül, hogy ne legyen tarka.
+const _gradient = [Color(0xFF0F766E), Color(0xFF115E59)];
 
 /// A jel: kör, benne pipa, a kör nyílásában egy kis nap. [scale] a 1024-es vászonhoz képest.
 void _drawSymbol(Canvas c, double scale) {
@@ -27,7 +28,7 @@ void _drawSymbol(Canvas c, double scale) {
       ..lineTo(668, 420),
     white..strokeWidth = 84,
   );
-  c.drawCircle(const Offset(536, 213), 58, Paint()..color = const Color(0xFFFFD166));
+  c.drawCircle(const Offset(536, 213), 58, Paint()..color = const Color(0xFFF59E0B));
   c.restore();
 }
 

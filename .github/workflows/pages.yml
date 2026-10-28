@@ -34,6 +34,20 @@ jobs:
         with:
           path: build/web
 
+  # A push értesítések szerveroldali kódja (functions/): betölthető-e. A telepítés kézzel megy (firebase deploy).
+  functions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: node -e "console.log('Függvények:', Object.keys(require('./index.js')).join(', '))"
+
   deploy:
     needs: build
     runs-on: ubuntu-latest

@@ -101,3 +101,12 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - Heti összefoglaló: `WeekSummary` (stats.dart) + `week_summary_screen.dart`; értesítés vasárnap 19:00 (`payload: weekly`), böngészőben a Ma képernyő kártyája (`widgets/nudge_cards.dart`, ott az esti napló-kártya is).
 - Közös cél: a kihívás-rendszert használja `kind: 'goal'`-lal (`Challenges.shareGoal` / `joinSharedGoal`, `screens/shared_goal_widgets.dart`); a Kihívások listája ezeket kiszűri. Szabálymódosítás nem kellett.
 - Offline: a `CloudSync` mindig a szerverről olvas (`Source.server`), és nem tölt le, amíg helyi, fel nem töltött változás van.
+
+## Telepíthető webapp (PWA) és push
+
+- `web/sw.js`: saját service worker (a Flutteré elavult, a `web/flutter_bootstrap.js` nem tölti be): „előbb a hálózat” gyorsítótár + Firebase Messaging. A `web/push.js` regisztrálja, és ad JS függvényeket (`eletrendPush`) a `lib/push_web.dart`-nak.
+- A beépített böngészőpanel nem támogat service workert; ott csak szimulálva ellenőrizhető.
+- `lib/push.dart`: `Push.vapidKey` (Firebase konzol → Cloud Messaging → Web Push), token: `users/{uid}/push/{sha1}`. iPhone-on csak kezdőképernyőről (iOS 16.4+). Kártya a Ma képernyőn: `InstallAndPushCard`.
+- Értesítésből nyíló link: `?n=bump:<id>` / `?n=weekly` → `Notifications.pendingTap`; program: `?e=<id>`.
+- `functions/index.js`: Cloud Functions (bump, meghívó, jelölés, üzenőfal, közös cél/kihívás, 15 percenkénti esti/heti emlékeztető). Blaze kell. A `REGION` a Firestore helyéhez igazodjon. Telepítés Google Cloud Shellből: `firebase deploy --only functions`. A GitHub workflow csak betölti (ellenőrzés).
+- Ikon: `tool/icon_test.dart` (márkaszín), utána `dart run flutter_launcher_icons` és `flutter_native_splash:create` (a styles.xml-eket vissza kell állítani).

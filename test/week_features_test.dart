@@ -7,6 +7,7 @@ import 'package:eletrend/screens/week_summary_screen.dart';
 import 'package:eletrend/stats.dart';
 import 'package:eletrend/store.dart';
 import 'package:eletrend/widgets/nudge_cards.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -108,6 +109,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Értesítések'), findsOneWidget);
+    await tester.tap(find.text('Értesítések'));
+    await tester.pumpAndSettle();
+    expect(find.text('Heti összefoglaló'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    // Ahol nincs helyi értesítés (pl. böngésző), a push kártya látszik.
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    await tester.tap(find.text('Értesítések'));
+    await tester.pumpAndSettle();
+    expect(find.text('Értesítések ezen az eszközön'), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
+    expect(find.text('Heti összefoglaló'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Funkciók'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Közös kihívások'));

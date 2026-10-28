@@ -62,6 +62,9 @@ class Notifications {
   /// Értesítésre koppintáskor (pl. `bump:azonosító`).
   static void Function(String payload)? onTap;
 
+  /// Webes push értesítésből nyitott link (…/?n=bump:azonosító): a bejelentkezés után dolgozzuk fel.
+  static String? pendingTap;
+
   /// Indításkor egyszer: időzóna, plugin, engedélykérés, és figyeli a store-t.
   static Future<void> init(AppStore store) async {
     if (!supported) return;

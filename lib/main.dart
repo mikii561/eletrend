@@ -57,6 +57,8 @@ Future<void> main() async {
 /// Ha meghívólinkkel nyitották meg a weboldalt (…/eletrend/?e=azonosító), rögtön a meghívás jön.
 void _openInviteFromLink() {
   if (!kIsWeb) return;
+  final tap = Uri.base.queryParameters['n'];
+  if (tap != null && RegExp(r'^(weekly|bump:[A-Za-z0-9]{10,40})$').hasMatch(tap)) Notifications.pendingTap = tap;
   final id = Uri.base.queryParameters['e'];
   if (id == null || !RegExp(r'^[A-Za-z0-9]{10,40}$').hasMatch(id)) return;
   WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -1,11 +1,14 @@
 {
+    "id": "./",
     "name": "Életrend",
     "short_name": "Életrend",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#6D5BD6",
-    "theme_color": "#5B5BD6",
     "description": "Programok barátokkal, célkövető, hangulat- és hálanapló.",
+    "lang": "hu",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#0F766E",
+    "theme_color": "#0F766E",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

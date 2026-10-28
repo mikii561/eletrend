@@ -10,6 +10,7 @@ import '../bumps.dart';
 import '../challenges.dart';
 import '../friends.dart';
 import '../notifications.dart';
+import '../push.dart';
 import '../widgets/effects.dart';
 import 'bump_screens.dart';
 import '../store.dart';
@@ -63,6 +64,8 @@ class _AuthGateState extends State<AuthGate> {
     final store = StoreScope.of(context);
     Admin.currentUid = user.uid;
     unawaited(_checkAccount(user, store));
+    // Ha már engedélyezte az értesítéseket, a token frissítése (az FCM időnként újat ad).
+    unawaited(Push.register(user.uid).then((_) {}, onError: (Object e) => debugPrint('Push később: $e')));
     unawaited(_startFriends(user, store));
     final sync = CloudSync(store: store, uid: user.uid, db: Account.instance.db);
     if (sync.knownDevice) {
@@ -92,6 +95,10 @@ class _AuthGateState extends State<AuthGate> {
       Challenges.instance.start(user.uid, store);
       Bumps.instance.start(user.uid, (b) => _onBump(b, store));
       Notifications.onTap = _onNotificationTap;
+      if (Notifications.pendingTap case final tap?) {
+        Notifications.pendingTap = null;
+        unawaited(_onNotificationTap(tap));
+      }
       await Friends.instance.start(user.uid, store);
       await _inbox?.cancel();
       _inbox = Friends.instance.listenInbox();

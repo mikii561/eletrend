@@ -303,7 +303,7 @@ class CloudSync {
 
   /// A fiók összes adatának törlése a felhőből.
   Future<void> deleteAll() async {
-    for (final kind in kinds) {
+    for (final kind in [...kinds, 'push']) {
       final q = await _col(kind).get();
       for (var i = 0; i < q.docs.length; i += 400) {
         final batch = _db.batch();
