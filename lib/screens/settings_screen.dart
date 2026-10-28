@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../backup.dart';
+import '../habits_widget.dart';
 import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -27,9 +28,13 @@ class SettingsScreen extends StatelessWidget {
     if (!Notifications.supported) return;
     final ok = await Notifications.requestPermission();
     if (!ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Az értesítések le vannak tiltva. A telefon Beállítások → Alkalmazások → Életrend menüjében engedélyezheted.'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Az értesítések le vannak tiltva. A telefon Beállítások → Alkalmazások → Életrend menüjében engedélyezheted.',
+          ),
+        ),
+      );
     }
   }
 
@@ -56,11 +61,12 @@ class SettingsScreen extends StatelessWidget {
                 SwitchListTile(
                   secondary: const Text('🌙', style: TextStyle(fontSize: 24)),
                   title: const Text('Esti emlékeztető', style: TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: const Text('Ha még van kipipálatlan szokásod, vagy nem írtál naplót. Ha mindennel kész vagy, nem zavar.'),
+                  subtitle: const Text(
+                    'Ha még van kipipálatlan szokásod, vagy nem írtál naplót. Ha mindennel kész vagy, nem zavar.',
+                  ),
                   value: store.dailyReminder,
-                  onChanged: (on) => on
-                      ? _enable(context, () => store.setReminders(daily: true))
-                      : store.setReminders(daily: false),
+                  onChanged: (on) =>
+                      on ? _enable(context, () => store.setReminders(daily: true)) : store.setReminders(daily: false),
                 ),
                 ListTile(
                   enabled: store.dailyReminder,
@@ -82,9 +88,8 @@ class SettingsScreen extends StatelessWidget {
               title: const Text('Program emlékeztetők', style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: const Text('Előző este 18:00-kor, és 1 órával a kezdés előtt.'),
               value: store.eventReminders,
-              onChanged: (on) => on
-                  ? _enable(context, () => store.setReminders(events: true))
-                  : store.setReminders(events: false),
+              onChanged: (on) =>
+                  on ? _enable(context, () => store.setReminders(events: true)) : store.setReminders(events: false),
             ),
           ),
           if (Notifications.supported) ...[
@@ -112,8 +117,16 @@ class SettingsScreen extends StatelessWidget {
                 child: SegmentedButton<ThemeMode>(
                   showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto_outlined), label: Text('Auto')),
-                    ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('Világos')),
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      icon: Icon(Icons.brightness_auto_outlined),
+                      label: Text('Auto'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined),
+                      label: Text('Világos'),
+                    ),
                     ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Sötét')),
                   ],
                   selected: {store.themeMode},
@@ -131,6 +144,26 @@ class SettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
             ),
+          ),
+          FutureBuilder(
+            future: HabitsWidget.canPin(),
+            builder: (context, snap) => snap.data != true
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionTitle('Kezdőképernyő'),
+                      Card(
+                        child: ListTile(
+                          leading: const Text('📱', style: TextStyle(fontSize: 24)),
+                          title: const Text('Szokások a kezdőképernyőn', style: TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: const Text('Widget, amin a mai szokásaid az app megnyitása nélkül kipipálhatók.'),
+                          trailing: const Icon(Icons.add_to_home_screen),
+                          onTap: HabitsWidget.pin,
+                        ),
+                      ),
+                    ],
+                  ),
           ),
           const SectionTitle('Napló zárolása'),
           Card(
@@ -195,8 +228,10 @@ class SettingsScreen extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-            child: Text('A napló fotói nincsenek a mentésben, azok a telefonon maradnak.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            child: Text(
+              'A napló fotói nincsenek a mentésben, azok a telefonon maradnak.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
           ),
         ],
       ),

@@ -67,6 +67,13 @@ class AppStore extends ChangeNotifier {
     onboarded = _prefs.getBool('onboarded') ?? false;
   }
 
+  /// Újraolvas mindent a tárhelyről (pl. ha a widget közben módosított).
+  Future<void> reload() async {
+    await _prefs.reload();
+    _read();
+    notifyListeners();
+  }
+
   void _save() {
     _prefs.setString('events', jsonEncode(events.map((e) => e.toJson()).toList()));
     _prefs.setString('habits', jsonEncode(habits.map((h) => h.toJson()).toList()));

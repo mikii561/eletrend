@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'habits_widget.dart';
 import 'notifications.dart';
 import 'screens/events_screen.dart';
 import 'screens/habits_screen.dart';
@@ -21,6 +22,7 @@ Future<void> main() async {
   runApp(EletrendApp(store: store));
   // Az app megjelenése után, hogy az engedélykérő ablak az app fölött jelenjen meg.
   unawaited(Notifications.init(store));
+  unawaited(HabitsWidget.init(store));
 }
 
 class EletrendApp extends StatelessWidget {
@@ -97,8 +99,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   /// Ha az app háttérbe kerül (vagy böngészőben másik fülre váltasz), a napló újra zárolódik.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final store = StoreScope.of(context);
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
-      StoreScope.of(context).lockJournal();
+      store.lockJournal();
+    } else if (state == AppLifecycleState.resumed) {
+      // Közben a widgeten is kipipálhattál valamit.
+      store.reload();
     }
   }
 
