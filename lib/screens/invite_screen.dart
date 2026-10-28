@@ -64,16 +64,20 @@ class _InviteScreenState extends State<InviteScreen> {
         stream: _event,
         builder: (context, snap) {
           if (snap.hasError) {
-            return const EmptyState(emoji: '📡', text: 'Nem sikerült betölteni a meghívást.\nVan internet?');
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: const [EmptyState(emoji: '📡', text: 'Nem sikerült betölteni a meghívást.\nVan internet?')],
+            );
           }
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           final event = snap.data;
           if (event == null) {
-            return const Padding(
-              padding: EdgeInsets.all(16),
-              child: EmptyState(emoji: '🤷', text: 'Ez a program már nem létezik.\nLehet, hogy a szervező törölte.'),
+            // ListView-ban a kártya a tartalmához méreteződik, nem nyúlik meg.
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: const [EmptyState(emoji: '🤷', text: 'Ez a program már nem létezik.\nLehet, hogy a szervező törölte.')],
             );
           }
           // Megjegyezzük, hogy később a Programok között is megtaláld.
