@@ -104,6 +104,7 @@ class JournalEntry {
     this.question = '',
     this.answer = '',
     this.photoPath,
+    this.moodImage,
     List<String>? tags,
   }) : tags = tags ?? [];
 
@@ -122,6 +123,10 @@ class JournalEntry {
   /// A nap fotója a telefon tárhelyén (null, ha nincs).
   String? photoPath;
 
+  /// Saját kép a nap hangulatához (base64, kicsi négyzet), pl. egy szelfi.
+  /// Ha van, ez látszik a hangulatarc helyett ennél a napnál.
+  String? moodImage;
+
   /// A kiválasztott hangulatcímkék azonosítói ([MoodTag.id]).
   List<String> tags;
 
@@ -134,6 +139,7 @@ class JournalEntry {
         'question': question,
         'answer': answer,
         'photoPath': photoPath,
+        'moodImage': moodImage,
         'tags': tags,
       };
 
@@ -146,6 +152,7 @@ class JournalEntry {
         question: j['question'] as String? ?? '',
         answer: j['answer'] as String? ?? '',
         photoPath: j['photoPath'] as String?,
+        moodImage: j['moodImage'] as String?,
         tags: List<String>.from(j['tags'] as List? ?? []),
       );
 }

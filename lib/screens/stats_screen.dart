@@ -243,7 +243,11 @@ class _MoodCalendar extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: isFuture ? AppColors.divider : AppColors.textMuted,
                             ))
-                        : MoodFace(entry.mood, size: 20),
+                        // A napi fotó kitölti a kört, az emoji kisebb.
+                        : LayoutBuilder(
+                            builder: (context, box) =>
+                                EntryFace(entry, size: entry.moodImage != null ? box.biggest.shortestSide - 4 : 20),
+                          ),
                   ),
                 );
               }),

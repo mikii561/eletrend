@@ -47,18 +47,32 @@ class TagImages {
   /// Ekkora (px) négyzetes PNG lesz a képből.
   static const size = 128;
 
-  /// Kép választása vagy fotózása. Null, ha a felhasználó meggondolta magát;
-  /// [UnsupportedImage], ha a képet nem tudjuk megnyitni (pl. HEIC).
-  static Future<String?> pick(ImageSource source) async {
-    final picked = await pickFile(source);
-    if (picked == null) return null;
-    return base64Encode(await squareThumbnail(await picked.readAsBytes()));
+  /// A napi hangulatfotó mérete: kisebb, mert minden naphoz tartozhat egy.
+  static const dayPhotoSide = 112;
+
+  static final _decoded = <String, Uint8List>{};
+
+  /// base64 kép bájtjai; a legutóbbiakat megjegyzi, hogy ne dekódoljuk minden rajzoláskor.
+  static Uint8List decode(String base64) {
+    final hit = _decoded.remove(base64);
+    final bytes = hit ?? base64Decode(base64);
+    _decoded[base64] = bytes;
+    if (_decoded.length > 60) _decoded.remove(_decoded.keys.first);
+    return bytes;
   }
 
-  /// A kép közepéből kivágott, [size] méretű négyzet PNG-ként.
+  /// Kép választása vagy fotózása. Null, ha a felhasználó meggondolta magát;
+  /// [UnsupportedImage], ha a képet nem tudjuk megnyitni (pl. HEIC).
+  static Future<String?> pick(ImageSource source, {int side = size}) async {
+    final picked = await pickFile(source);
+    if (picked == null) return null;
+    return base64Encode(await squareThumbnail(await picked.readAsBytes(), side: side));
+  }
+
+  /// A kép közepéből kivágott, [side] méretű négyzet PNG-ként.
   /// Nem a böngészőre bízzuk a kicsinyítést, mert az néha az eredeti, több MB-os
   /// képet adja vissza, ami nem fér el a tárhelyen.
-  static Future<Uint8List> squareThumbnail(Uint8List bytes) async {
+  static Future<Uint8List> squareThumbnail(Uint8List bytes, {int side = size}) async {
     final ui.Image src;
     try {
       final codec = await ui.instantiateImageCodec(bytes);
@@ -66,15 +80,15 @@ class TagImages {
     } catch (_) {
       throw const UnsupportedImage();
     }
-    final side = min(src.width, src.height).toDouble();
+    final crop = min(src.width, src.height).toDouble();
     final recorder = ui.PictureRecorder();
     Canvas(recorder).drawImageRect(
       src,
-      Rect.fromLTWH((src.width - side) / 2, (src.height - side) / 2, side, side),
-      Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+      Rect.fromLTWH((src.width - crop) / 2, (src.height - crop) / 2, crop, crop),
+      Rect.fromLTWH(0, 0, side.toDouble(), side.toDouble()),
       Paint()..filterQuality = FilterQuality.medium,
     );
-    final thumb = await recorder.endRecording().toImage(size, size);
+    final thumb = await recorder.endRecording().toImage(side, side);
     final data = await thumb.toByteData(format: ui.ImageByteFormat.png);
     return data!.buffer.asUint8List();
   }

@@ -126,7 +126,7 @@ class _EntryCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          MoodFace(j.mood, size: 26),
+                          EntryFace(j, size: 26),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(DateFormat('MMMM d., EEEE', 'hu').format(j.date),
@@ -227,7 +227,7 @@ class _MoodWeek extends StatelessWidget {
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        e == null ? const SizedBox(height: 18) : MoodFace(e.mood, size: 18),
+                        e == null ? const SizedBox(height: 18) : EntryFace(e, size: 18),
                         const SizedBox(height: 4),
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
@@ -273,6 +273,11 @@ class _JournalEditorState extends State<JournalEditor> {
   late final _answer = TextEditingController(text: widget.existing?.answer);
   late String? _photo = widget.existing?.photoPath;
   late final Set<String> _tags = {...?widget.existing?.tags};
+  late String? _moodImage = widget.existing?.moodImage;
+  String? _moodImageError;
+
+  /// Az arcsáv szerkesztő módja: ilyenkor egy arcra koppintva annak a képét/feliratát cseréled.
+  bool _editFaces = false;
   bool _saved = false;
 
   Future<void> _pickPhoto() async {
@@ -306,6 +311,47 @@ class _JournalEditorState extends State<JournalEditor> {
     setState(() => _photo = path);
   }
 
+  /// Saját fotó a mai hangulathoz (pl. egy szelfi), az arc helyett.
+  Future<void> _pickMoodImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_front_outlined),
+              title: const Text('Szelfi / fotó készítése'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Választás a galériából'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    try {
+      final image = await TagImages.pick(source, side: TagImages.dayPhotoSide);
+      if (image != null) {
+        setState(() {
+          _moodImage = image;
+          _moodImageError = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _moodImageError =
+            e is UnsupportedImage ? e.toString() : 'Nem sikerült betölteni a képet. Próbáld újra.');
+      }
+    }
+  }
+
   Future<void> _removePhoto() async {
     if (_photo != widget.existing?.photoPath) await Photos.delete(_photo);
     setState(() => _photo = null);
@@ -323,6 +369,7 @@ class _JournalEditorState extends State<JournalEditor> {
         ..question = answer.isEmpty ? '' : _question
         ..answer = answer
         ..photoPath = _photo
+        ..moodImage = _moodImage
         ..tags = [for (final t in StoreScope.of(context).moodTags) if (_tags.contains(t.id)) t.id],
     );
     _saved = true;
@@ -378,12 +425,24 @@ class _JournalEditorState extends State<JournalEditor> {
                   Row(
                     children: [
                       const SizedBox(width: 40),
-                      Expanded(child: Text('Milyen napod van?', textAlign: TextAlign.center, style: theme.textTheme.titleMedium)),
-                      IconButton(
-                        tooltip: 'Arcok cseréje',
-                        icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
-                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
+                      Expanded(
+                        child: Text(
+                          _editFaces ? 'Koppints egy arcra a cseréjéhez' : 'Milyen napod van?',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium,
+                        ),
                       ),
+                      _editFaces
+                          ? IconButton.filledTonal(
+                              tooltip: 'Kész',
+                              icon: const Icon(Icons.check, size: 20),
+                              onPressed: () => setState(() => _editFaces = false),
+                            )
+                          : IconButton(
+                              tooltip: 'Arcok szerkesztése',
+                              icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
+                              onPressed: () => setState(() => _editFaces = true),
+                            ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -391,12 +450,51 @@ class _JournalEditorState extends State<JournalEditor> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       for (var i = 1; i <= 5; i++)
-                        MoodButton(mood: i, selected: _mood == i, size: 56, onTap: () => setState(() => _mood = i)),
+                        MoodButton(
+                          mood: i,
+                          selected: !_editFaces && _mood == i,
+                          size: 56,
+                          photo: _moodImage,
+                          editing: _editFaces,
+                          onTap: () => _editFaces ? showMoodEditor(context, i) : setState(() => _mood = i),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(store.moodFace(_mood).name,
-                      style: TextStyle(color: AppColors.moods[_mood - 1], fontWeight: FontWeight.w800)),
+                  if (_editFaces)
+                    Text('Emoji, saját kép vagy felirat, mindennap ez a sáv látszik.',
+                        textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 13))
+                  else ...[
+                    Text(store.moodFace(_mood).name,
+                        style: TextStyle(color: AppColors.moods[_mood - 1], fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    if (_moodImage == null)
+                      TextButton.icon(
+                        onPressed: _pickMoodImage,
+                        icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+                        label: const Text('Mai arcom fotóval'),
+                      )
+                    else
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        children: [
+                          TextButton.icon(
+                            onPressed: _pickMoodImage,
+                            icon: const Icon(Icons.cached, size: 18),
+                            label: const Text('Fotó cseréje'),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => setState(() => _moodImage = null),
+                            icon: const Icon(Icons.close, size: 18),
+                            label: const Text('Fotó törlése'),
+                          ),
+                        ],
+                      ),
+                    if (_moodImageError != null)
+                      Text(_moodImageError!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+                  ],
                 ],
               ),
             ),

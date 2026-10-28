@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models.dart';
+import '../photos.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -72,7 +73,7 @@ class TodayScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               for (var i = 1; i <= 5; i++)
-                                MoodButton(mood: i, selected: entry?.mood == i, onTap: () => _quickMood(context, i)),
+                                MoodButton(mood: i, selected: entry?.mood == i, photo: entry?.moodImage, onTap: () => _quickMood(context, i)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -290,17 +291,31 @@ class StreakChip extends StatelessWidget {
 
 /// Egy hangulat emoji gombként, kiválasztva kiemelve.
 class MoodButton extends StatelessWidget {
-  const MoodButton({super.key, required this.mood, required this.selected, required this.onTap, this.size = 52});
+  const MoodButton({
+    super.key,
+    required this.mood,
+    required this.selected,
+    required this.onTap,
+    this.size = 52,
+    this.photo,
+    this.editing = false,
+  });
 
   final int mood;
   final bool selected;
   final VoidCallback onTap;
   final double size;
 
+  /// A nap saját hangulatfotója (base64); kiválasztva ez látszik az arc helyett.
+  final String? photo;
+
+  /// Szerkesztő módban egy kis ceruza jelzi, hogy koppintásra szerkeszthető.
+  final bool editing;
+
   @override
   Widget build(BuildContext context) {
     final color = AppColors.moods[mood - 1];
-    return GestureDetector(
+    final button = GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
@@ -315,10 +330,32 @@ class MoodButton extends StatelessWidget {
         child: AnimatedScale(
           scale: selected ? 1.15 : 1,
           duration: const Duration(milliseconds: 180),
-          // A saját kép kitölti a kört, az emoji kisebb.
-          child: MoodFace(mood, size: StoreScope.of(context).moodFace(mood).image != null ? size - 6 : size * 0.62),
+          child: selected && photo != null
+              ? ClipOval(
+                  child: Image.memory(TagImages.decode(photo!), width: size - 6, height: size - 6, fit: BoxFit.cover),
+                )
+              // A saját kép kitölti a kört, az emoji kisebb.
+              : MoodFace(mood, size: StoreScope.of(context).moodFace(mood).image != null ? size - 6 : size * 0.62),
         ),
       ),
+    );
+    if (!editing) return button;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        button,
+        Positioned(
+          right: -2,
+          bottom: -2,
+          child: IgnorePointer(
+            child: CircleAvatar(
+              radius: 11,
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.edit, size: 13, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

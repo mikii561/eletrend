@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models.dart';
+import '../photos.dart';
 import '../store.dart';
 
 /// Egy hangulatcímke ikonja: a saját kép, vagy ha nincs, az emoji.
@@ -70,4 +71,28 @@ class MoodFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => TagIcon(StoreScope.of(context).moodFace(mood), size: size, circle: true);
+}
+
+/// Egy nap hangulata: a napra feltöltött saját fotó, vagy ha nincs, a hangulatarc.
+class EntryFace extends StatelessWidget {
+  const EntryFace(this.entry, {super.key, this.size = 22});
+
+  final JournalEntry entry;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final image = entry.moodImage;
+    if (image == null) return MoodFace(entry.mood, size: size);
+    return ClipOval(
+      child: Image.memory(
+        TagImages.decode(image),
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        errorBuilder: (_, _, _) => MoodFace(entry.mood, size: size),
+      ),
+    );
+  }
 }
