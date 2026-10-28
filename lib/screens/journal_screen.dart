@@ -12,6 +12,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../stats.dart';
 import '../widgets/tag_icon.dart';
+import 'pdf_export_sheet.dart';
 import 'pin_screen.dart';
 import 'stats_screen.dart';
 import 'tags_screen.dart';
@@ -60,6 +61,12 @@ class _JournalScreenState extends State<JournalScreen> {
                 onChanged: (v) => setState(() => _search = v),
               ),
         actions: [
+          if (search == null)
+            IconButton(
+              tooltip: 'Exportálás PDF-be',
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              onPressed: () => showPdfExportSheet(context),
+            ),
           IconButton(
             tooltip: search == null ? 'Keresés' : 'Keresés bezárása',
             icon: Icon(search == null ? Icons.search : Icons.close),
