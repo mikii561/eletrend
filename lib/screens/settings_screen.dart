@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../backup.dart';
 import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -129,6 +130,30 @@ class SettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
             ),
+          ),
+          const SectionTitle('Biztonsági mentés'),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.download_outlined, color: AppColors.primary),
+                  title: const Text('Mentés fájlba', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('Minden adatod egy fájlban. Tedd el, vagy vidd át egy másik eszközre.'),
+                  onTap: () => Backup.export(context, store),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.upload_outlined, color: AppColors.primary),
+                  title: const Text('Visszatöltés fájlból', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('Egy korábbi mentés visszaállítása.'),
+                  onTap: () => Backup.restore(context, store),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+            child: Text('A napló fotói nincsenek a mentésben, azok a telefonon maradnak.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
           ),
         ],
       ),

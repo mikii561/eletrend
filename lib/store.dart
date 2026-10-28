@@ -90,6 +90,69 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
+  // Biztonsági mentés
+
+  /// Ezek a beállítások kerülnek a mentésbe (a zárolás PIN-kódja szándékosan nem).
+  static const _backupKeys = [
+    'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
+    'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
+  ];
+
+  /// Minden adat egy JSON-szövegben, fájlba mentéshez.
+  String exportBackup() {
+    _save();
+    return const JsonEncoder.withIndent(' ').convert({
+      'app': 'eletrend',
+      'version': 1,
+      'exportedAt': DateTime.now().toIso8601String(),
+      'data': {for (final k in _backupKeys) if (_prefs.containsKey(k)) k: _prefs.get(k)},
+    });
+  }
+
+  /// Visszatölt egy mentést, a mostani adatok helyére.
+  /// [FormatException]-t dob, ha a fájl nem Életrend-mentés vagy sérült.
+  Future<void> importBackup(String text) async {
+    final Map<String, dynamic> data;
+    try {
+      final root = jsonDecode(text) as Map<String, dynamic>;
+      if (root['app'] != 'eletrend') throw const FormatException();
+      data = root['data'] as Map<String, dynamic>;
+      // Először csak ellenőrizzük, hogy minden beolvasható, és csak utána írunk.
+      for (final k in ['events', 'habits', 'journal', 'moodTags', 'moodFaces']) {
+        final raw = data[k];
+        if (raw == null) continue;
+        final list = jsonDecode(raw as String) as List;
+        final parse = switch (k) {
+          'events' => Event.fromJson,
+          'habits' => Habit.fromJson,
+          'journal' => JournalEntry.fromJson,
+          _ => MoodTag.fromJson,
+        };
+        for (final item in list) {
+          parse(item as Map<String, dynamic>);
+        }
+      }
+    } catch (_) {
+      throw const FormatException('Ez nem Életrend-mentés, vagy a fájl sérült.');
+    }
+    for (final k in _backupKeys) {
+      await _prefs.remove(k);
+      final v = data[k];
+      switch (v) {
+        case String():
+          await _prefs.setString(k, v);
+        case bool():
+          await _prefs.setBool(k, v);
+        case int():
+          await _prefs.setInt(k, v);
+        case List():
+          await _prefs.setStringList(k, v.cast<String>());
+      }
+    }
+    _read();
+    notifyListeners();
+  }
+
   /// A bemutató csak egy teljesen új, üres appnál jelenik meg.
   bool get needsOnboarding => !onboarded && habits.isEmpty && journal.isEmpty && events.isEmpty;
 
