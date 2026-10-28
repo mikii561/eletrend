@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'badges_screen.dart';
 import 'habit_editor.dart';
 import 'today_screen.dart' show CheckCircle, StreakChip, habitProgress;
 
@@ -24,6 +25,11 @@ class HabitsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Szokások'),
         actions: [
+          IconButton(
+            tooltip: 'Jelvények',
+            icon: const Icon(Icons.emoji_events_outlined),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BadgesScreen())),
+          ),
           TextButton.icon(
             onPressed: () => showHabitTemplates(context),
             icon: const Icon(Icons.auto_awesome_outlined),

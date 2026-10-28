@@ -8,11 +8,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'admin.dart';
+import 'badges.dart';
 import 'account.dart';
 import 'firebase_options.dart';
 import 'habits_widget.dart';
 import 'notifications.dart';
 import 'screens/auth_gate.dart';
+import 'screens/badges_screen.dart';
 import 'screens/events_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/invite_screen.dart';
@@ -120,6 +122,40 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _index = 0;
+  AppStore? _store;
+  Timer? _badgeCheck;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final store = StoreScope.of(context);
+    if (store != _store) {
+      _store?.removeListener(_onStoreChange);
+      _store = store..addListener(_onStoreChange);
+      _onStoreChange();
+    }
+  }
+
+  void _onStoreChange() {
+    _badgeCheck?.cancel();
+    _badgeCheck = Timer(const Duration(milliseconds: 800), _checkBadges);
+  }
+
+  /// Új jelvény? Ünnepeljük. (Elsőre a már meglévőket csendben „láttuk”-nak vesszük.)
+  void _checkBadges() {
+    final store = _store;
+    if (store == null || !mounted) return;
+    final earned = earnedBadges(store);
+    final seen = store.seenBadges;
+    if (seen == null) {
+      store.markBadgesSeen(earned);
+      return;
+    }
+    final fresh = [for (final a in achievements) if (earned.contains(a.id) && !seen.contains(a.id)) a];
+    if (fresh.isEmpty) return;
+    store.markBadgesSeen(fresh.map((a) => a.id));
+    showBadgeEarned(context, fresh.first, more: fresh.length - 1);
+  }
 
   @override
   void initState() {
@@ -129,6 +165,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _badgeCheck?.cancel();
+    _store?.removeListener(_onStoreChange);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
