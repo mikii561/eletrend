@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:eletrend/calendar_link.dart';
 import 'package:eletrend/costs.dart';
 import 'package:eletrend/ideas.dart';
 import 'package:eletrend/models.dart';
@@ -108,5 +109,19 @@ void main() {
     expect(find.text('Anna'), findsWidgets);
     expect(find.text('2 000 Ft'), findsOneWidget);
     expect((await AppStore.load()).events.single.expenses.single.amount, 4000);
+  });
+
+  test('naptár link: UTC idő, 2 óra, helyszín, heti ismétlődés', () {
+    final link = googleCalendarLink(
+      title: 'Foci',
+      start: DateTime.utc(2026, 11, 5, 17),
+      place: 'Margitsziget',
+      repeat: Repeat.weekly,
+    );
+    expect(link.host, 'calendar.google.com');
+    expect(link.queryParameters['dates'], '20261105T170000Z/20261105T190000Z');
+    expect(link.queryParameters['location'], 'Margitsziget');
+    expect(link.queryParameters['recur'], 'RRULE:FREQ=WEEKLY');
+    expect(googleCalendarLink(title: 'x', start: DateTime.utc(2026)).queryParameters.containsKey('recur'), isFalse);
   });
 }

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../calendar_link.dart';
 import '../geocoding.dart';
 import '../models.dart';
 import '../social.dart';
@@ -243,6 +244,22 @@ class EventDetail extends StatelessWidget {
               label: const Text('Útvonal Google Térképpel'),
             ),
           ],
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+            onPressed: () => launchUrl(
+              googleCalendarLink(
+                title: e.title,
+                start: next,
+                place: e.place,
+                repeat: e.repeat,
+                details: e.shareId == null ? '' : 'Visszajelzés: ${Social.instance.linkFor(e.shareId!)}',
+              ),
+              mode: LaunchMode.externalApplication,
+            ),
+            icon: const Icon(Icons.event_available_outlined),
+            label: const Text('Mentés a naptárba'),
+          ),
           const SectionTitle('Meghívottak'),
           if (e.invited.isEmpty)
             Card(child: ListTile(title: Text('Még senkit nem hívtál meg.', style: TextStyle(color: AppColors.textMuted))))

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../calendar_link.dart';
 import '../models.dart';
 import '../social.dart';
 import '../store.dart';
@@ -127,6 +129,21 @@ class _InviteScreenState extends State<InviteScreen> {
                       ),
                     ),
                   ),
+                  if (!event.pollOpen)
+                    OutlinedButton.icon(
+                      onPressed: () => launchUrl(
+                        googleCalendarLink(
+                          title: event.title,
+                          start: event.date,
+                          place: event.place,
+                          repeat: event.repeat,
+                          details: 'Szervező: ${event.ownerName}\n${Social.instance.linkFor(event.id)}',
+                        ),
+                        mode: LaunchMode.externalApplication,
+                      ),
+                      icon: const Icon(Icons.event_available_outlined),
+                      label: const Text('Mentés a naptárba'),
+                    ),
                   const SectionTitle('Jössz?'),
                   TextField(
                     controller: _name,
