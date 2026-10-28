@@ -1,3 +1,4 @@
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -134,14 +135,6 @@ Future<void> showMoodEditor(BuildContext context, int mood) => showModalBottomSh
       },
     );
 
-/// Gyorsan választható emojik; bármilyen más is beírható a billentyűzetről.
-const _emojiSuggestions = [
-  '😀', '😊', '🥰', '😎', '🤩', '🥳', '😇', '🤗', '😌', '😴', '🤔', '😬',
-  '😤', '😭', '😱', '🤯', '🥵', '🥶', '🤢', '😷', '🙃', '😏', '🫠', '🥺',
-  '❤️', '💔', '🔥', '⭐', '🌈', '☀️', '🌧️', '⚡', '🍀', '🌸', '🎵', '🎮',
-  '📚', '🏃', '🧘', '🍕', '☕', '🍷', '🐶', '🐱', '💼', '💸', '🏠', '✈️',
-];
-
 class _TagEditor extends StatefulWidget {
   const _TagEditor({required this.store, this.tag, this.mood});
 
@@ -157,7 +150,6 @@ class _TagEditor extends StatefulWidget {
 
 class _TagEditorState extends State<_TagEditor> {
   late final _name = TextEditingController(text: widget.tag?.name);
-  late final _emojiField = TextEditingController();
   late String _emoji = widget.tag?.emoji ?? '😊';
   late String? _image = widget.tag?.image;
   String? _error;
@@ -170,14 +162,6 @@ class _TagEditorState extends State<_TagEditor> {
         _emoji = e;
         _image = null;
       });
-
-  /// A mezőbe írt szövegből az utolsó karakter (emoji) lesz az ikon.
-  void _onEmojiTyped(String value) {
-    final chars = value.trim().characters;
-    if (chars.isEmpty) return;
-    _setEmoji(chars.last);
-    _emojiField.clear();
-  }
 
   Future<void> _pickImage() async {
     // Böngészőben is felajánljuk a kamerát: telefonon az nyitja meg a fényképezőt.
@@ -271,7 +255,6 @@ class _TagEditorState extends State<_TagEditor> {
   @override
   void dispose() {
     _name.dispose();
-    _emojiField.dispose();
     super.dispose();
   }
 
@@ -323,21 +306,9 @@ class _TagEditorState extends State<_TagEditor> {
               ],
             ),
             const SizedBox(height: 20),
-            Text('Ikon', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _emojiField,
-                    decoration: const InputDecoration(
-                      hintText: 'Írj be bármilyen emojit',
-                      prefixIcon: Icon(Icons.emoji_emotions_outlined),
-                    ),
-                    onChanged: _onEmojiTyped,
-                  ),
-                ),
-                const SizedBox(width: 8),
+                Expanded(child: Text('Ikon', style: theme.textTheme.titleMedium)),
                 OutlinedButton.icon(
                   onPressed: _pickImage,
                   icon: const Icon(Icons.image_outlined),
@@ -360,26 +331,41 @@ class _TagEditorState extends State<_TagEditor> {
                 ),
               ),
             const SizedBox(height: 10),
-            Wrap(
-              spacing: 2,
-              runSpacing: 2,
-              children: [
-                for (final e in _emojiSuggestions)
-                  InkWell(
-                    borderRadius: BorderRadius.circular(10),
-                    onTap: () => _setEmoji(e),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: _image == null && _emoji == e ? AppColors.primary.withValues(alpha: 0.18) : null,
-                      ),
-                      child: Text(e, style: const TextStyle(fontSize: 22)),
-                    ),
+            // Az összes emoji kategóriákra bontva, kereséssel és a legutóbb használtakkal.
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: EmojiPicker(
+                onEmojiSelected: (_, emoji) => _setEmoji(emoji.emoji),
+                config: Config(
+                  height: 300,
+                  emojiViewConfig: EmojiViewConfig(
+                    columns: 8,
+                    emojiSizeMax: 28,
+                    backgroundColor: AppColors.card,
+                    noRecents: Text('Itt lesznek a legutóbb választott emojik',
+                        textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
                   ),
-              ],
+                  categoryViewConfig: CategoryViewConfig(
+                    backgroundColor: AppColors.card,
+                    indicatorColor: AppColors.primary,
+                    iconColorSelected: AppColors.primary,
+                    iconColor: AppColors.textMuted,
+                    initCategory: Category.SMILEYS,
+                    recentTabBehavior: RecentTabBehavior.RECENT,
+                  ),
+                  bottomActionBarConfig: BottomActionBarConfig(
+                    showBackspaceButton: false,
+                    backgroundColor: AppColors.card,
+                    buttonColor: AppColors.card,
+                    buttonIconColor: AppColors.textMuted,
+                  ),
+                  searchViewConfig: SearchViewConfig(
+                    backgroundColor: AppColors.card,
+                    buttonIconColor: AppColors.textMuted,
+                    hintText: 'Keresés angolul (pl. smile, heart, cat)',
+                  ),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             Row(

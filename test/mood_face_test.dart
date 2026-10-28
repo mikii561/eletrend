@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:eletrend/photos.dart';
+import 'package:emoji_picker_flutter/emoji_picker_flutter.dart';
 import 'package:eletrend/screens/journal_screen.dart';
 import 'package:eletrend/screens/tags_screen.dart';
 import 'package:eletrend/screens/today_screen.dart';
@@ -24,6 +25,9 @@ Future<XFile> bigPhoto() async {
 
 void main() {
   testWidgets('saját kép a hangulatarcnak: kiválasztás, mentés, megjelenés', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
     final photo = (await tester.runAsync(bigPhoto))!;
@@ -43,6 +47,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Kép eltávolítása (vissza az emojihoz)'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Mentés'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Mentés'));
     await tester.pumpAndSettle();
     final face = store.moodFace(5);
@@ -109,5 +115,31 @@ void main() {
     expect(entry.moodImage, isNotNull);
     expect(entry.moodImage!.length, lessThan(40000));
     expect((await AppStore.load()).entryFor(day)!.moodImage, entry.moodImage);
+  });
+
+  testWidgets('teljes emojiválasztó: bármelyik emoji kiválasztható a címkéhez', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({});
+    final store = await AppStore.load();
+
+    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: TagsScreen())));
+    await tester.tap(find.text('Új címke'));
+    await tester.pumpAndSettle();
+    expect(find.byType(EmojiPicker), findsOneWidget);
+
+    // Állatok kategória, egy ott lévő emoji
+    await tester.tap(find.byIcon(Icons.pets));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('🦊'));
+    await tester.pump();
+    await tester.enterText(find.byType(TextField).first, 'ravasz');
+    await tester.ensureVisible(find.text('Mentés'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mentés'));
+    await tester.pumpAndSettle();
+    expect(store.moodTags.last.name, 'ravasz');
+    expect(store.moodTags.last.emoji, '🦊');
   });
 }
