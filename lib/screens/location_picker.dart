@@ -170,11 +170,11 @@ class _LocationPickerState extends State<LocationPicker> {
                 elevation: 6,
                 shadowColor: Colors.black26,
                 borderRadius: BorderRadius.circular(24),
-                color: Colors.white,
+                color: AppColors.card,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: picked == null
-                      ? const Row(
+                      ? Row(
                           children: [
                             Icon(Icons.touch_app_outlined, color: AppColors.textMuted),
                             SizedBox(width: 12),

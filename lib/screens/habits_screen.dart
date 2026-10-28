@@ -54,7 +54,7 @@ class HabitsScreen extends StatelessWidget {
                         Expanded(child: Text(h.name, style: Theme.of(context).textTheme.titleMedium)),
                         StreakChip(h.streak(today)),
                         PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
+                          icon: Icon(Icons.more_vert, color: AppColors.textMuted),
                           onSelected: (_) => store.removeHabit(h),
                           itemBuilder: (_) => const [PopupMenuItem(value: 'delete', child: Text('Törlés'))],
                         ),
@@ -117,7 +117,7 @@ class _DayDot extends StatelessWidget {
             ),
             child: done
                 ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
-                : Text('${day.day}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                : Text('${day.day}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
           ),
         ],
       ),

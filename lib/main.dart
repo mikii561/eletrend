@@ -27,6 +27,22 @@ class EletrendApp extends StatelessWidget {
 
   final AppStore store;
 
+  /// Beállítja az [AppColors] módját. Ha váltott, minden képernyőt újrarajzol,
+  /// hogy a const-ként megmaradt widgetek is az új színeket kapják.
+  static void _applyBrightness(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    if (AppColors.dark == dark) return;
+    AppColors.dark = dark;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      void rebuild(Element e) {
+        e.markNeedsBuild();
+        e.visitChildren(rebuild);
+      }
+
+      (context as Element).visitChildren(rebuild);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return StoreScope(
@@ -38,7 +54,12 @@ class EletrendApp extends StatelessWidget {
         supportedLocales: const [Locale('hu')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: buildTheme(),
-        builder: (context, child) => PhoneFrame(child: child!),
+        darkTheme: buildTheme(dark: true),
+        themeMode: store.themeMode,
+        builder: (context, child) {
+          _applyBrightness(context);
+          return PhoneFrame(child: child!);
+        },
         home: const HomeShell(),
       ),
     );

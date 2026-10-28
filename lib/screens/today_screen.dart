@@ -102,7 +102,7 @@ class TodayScreen extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                                  Icon(Icons.chevron_right, color: AppColors.textMuted),
                                 ],
                               ),
                             ),
@@ -258,7 +258,7 @@ class CheckCircle extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: done ? AppColors.headerGradient : null,
-          border: done ? null : Border.all(color: const Color(0xFFD5D3E3), width: 2.5),
+          border: done ? null : Border.all(color: AppColors.divider, width: 2.5),
         ),
         child: done ? Icon(Icons.check_rounded, color: Colors.white, size: size * 0.6) : null,
       ),

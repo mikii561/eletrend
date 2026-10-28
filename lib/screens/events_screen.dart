@@ -109,7 +109,7 @@ class _IconLine extends StatelessWidget {
           Icon(icon, size: 15, color: AppColors.textMuted),
           const SizedBox(width: 4),
           Expanded(
-            child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted)),
+            child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textMuted)),
           ),
         ],
       ),
@@ -202,7 +202,7 @@ class EventDetail extends StatelessWidget {
           ],
           const SectionTitle('Meghívottak'),
           if (e.invited.isEmpty)
-            const Card(child: ListTile(title: Text('Még senkit nem hívtál meg.', style: TextStyle(color: AppColors.textMuted))))
+            Card(child: ListTile(title: Text('Még senkit nem hívtál meg.', style: TextStyle(color: AppColors.textMuted))))
           else
             Card(
               child: Column(
@@ -410,7 +410,7 @@ class _PickerTile extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                   Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
                 ],
               ),
@@ -454,7 +454,7 @@ class FriendsScreen extends StatelessWidget {
                       title: Text(f, style: const TextStyle(fontWeight: FontWeight.w700)),
                       trailing: IconButton(
                         tooltip: 'Eltávolítás',
-                        icon: const Icon(Icons.close, color: AppColors.textMuted),
+                        icon: Icon(Icons.close, color: AppColors.textMuted),
                         onPressed: () => store.removeFriend(f),
                       ),
                     ),

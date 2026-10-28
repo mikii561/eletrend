@@ -31,7 +31,7 @@ class TagsScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SectionTitle('Milyen napod van?'),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
               child: Text('Koppints egy arcra, és cseréld le bármilyen emojira vagy saját képre.',
                   style: TextStyle(color: AppColors.textMuted)),
@@ -65,7 +65,7 @@ class TagsScreen extends StatelessWidget {
               ),
             ),
             const SectionTitle('Címkék'),
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(4, 0, 4, 10),
               child: Text(
                 'Koppints egy címkére az átnevezéshez vagy az ikon cseréjéhez. A kapcsolóval elrejtheted a naplóból, '
@@ -100,7 +100,7 @@ class TagsScreen extends StatelessWidget {
                   ),
                   ReorderableDragStartListener(
                     index: i,
-                    child: const Padding(
+                    child: Padding(
                       padding: EdgeInsets.all(8),
                       child: Icon(Icons.drag_indicator, color: AppColors.textMuted),
                     ),
@@ -294,7 +294,7 @@ class _TagEditorState extends State<_TagEditor> {
               style: theme.textTheme.titleLarge,
             ),
             if (_isMood)
-              const Text('Válassz emojit, vagy tölts fel képet, akár egy szelfit is a mostani arcodról.',
+              Text('Válassz emojit, vagy tölts fel képet, akár egy szelfit is a mostani arcodról.',
                   style: TextStyle(color: AppColors.textMuted)),
             const SizedBox(height: 16),
             Row(

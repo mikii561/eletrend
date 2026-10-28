@@ -63,7 +63,7 @@ class EmptyState extends StatelessWidget {
           children: [
             Text(emoji, style: const TextStyle(fontSize: 40)),
             const SizedBox(height: 8),
-            Text(text, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textMuted)),
+            Text(text, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
             if (action != null) ...[
               const SizedBox(height: 12),
               FilledButton.tonal(onPressed: onAction, child: Text(action!)),
@@ -151,7 +151,7 @@ class AvatarStack extends StatelessWidget {
             Positioned(
               left: i * 20.0,
               child: Container(
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.card),
                 padding: const EdgeInsets.all(2),
                 child: NameAvatar(shown[i], radius: 14),
               ),
@@ -159,7 +159,7 @@ class AvatarStack extends StatelessWidget {
           if (extra > 0)
             Positioned(
               left: shown.length * 20.0,
-              child: CircleAvatar(radius: 16, backgroundColor: Colors.white, child: Text('+$extra', style: const TextStyle(fontSize: 11))),
+              child: CircleAvatar(radius: 16, backgroundColor: AppColors.card, child: Text('+$extra', style: const TextStyle(fontSize: 11))),
             ),
         ],
       ),

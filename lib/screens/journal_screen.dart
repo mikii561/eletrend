@@ -151,7 +151,7 @@ class _EntryCard extends StatelessWidget {
                       ],
                       if (j.note.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(j.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.textMuted)),
+                        Text(j.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textMuted)),
                       ],
                     ],
                   ),
@@ -379,7 +379,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       Expanded(child: Text('Milyen napod van?', textAlign: TextAlign.center, style: theme.textTheme.titleMedium)),
                       IconButton(
                         tooltip: 'Arcok cseréje',
-                        icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
+                        icon: Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
                         onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
                       ),
                     ],
@@ -436,7 +436,7 @@ class _JournalEditorState extends State<JournalEditor> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: _pickPhoto,
-                  child: const Padding(
+                  child: Padding(
                     padding: EdgeInsets.symmetric(vertical: 28),
                     child: Column(
                       children: [
@@ -502,7 +502,7 @@ class _JournalEditorState extends State<JournalEditor> {
                       ),
                       IconButton(
                         tooltip: 'Másik kérdés',
-                        icon: const Icon(Icons.shuffle, color: AppColors.textMuted),
+                        icon: Icon(Icons.shuffle, color: AppColors.textMuted),
                         onPressed: () => setState(() => _question = nextQuestion(_question)),
                       ),
                     ],
@@ -512,7 +512,7 @@ class _JournalEditorState extends State<JournalEditor> {
                     child: TextField(
                       controller: _answer,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         hintText: 'Válaszod (nem kötelező)',
                         fillColor: AppColors.background,
                       ),

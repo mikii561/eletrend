@@ -27,6 +27,9 @@ class AppStore extends ChangeNotifier {
   TimeOfDay reminderTime = const TimeOfDay(hour: 20, minute: 0);
   bool eventReminders = true;
 
+  /// Megjelenés: a telefon beállítása szerint, mindig világos vagy mindig sötét.
+  ThemeMode themeMode = ThemeMode.system;
+
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
     store._read();
@@ -55,6 +58,7 @@ class AppStore extends ChangeNotifier {
       minute: _prefs.getInt('reminderMinute') ?? 0,
     );
     eventReminders = _prefs.getBool('eventReminders') ?? true;
+    themeMode = ThemeMode.values.asNameMap()[_prefs.getString('themeMode')] ?? ThemeMode.system;
   }
 
   void _save() {
@@ -68,6 +72,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setInt('reminderHour', reminderTime.hour);
     _prefs.setInt('reminderMinute', reminderTime.minute);
     _prefs.setBool('eventReminders', eventReminders);
+    _prefs.setString('themeMode', themeMode.name);
     notifyListeners();
   }
 
@@ -77,6 +82,11 @@ class AppStore extends ChangeNotifier {
     dailyReminder = daily ?? dailyReminder;
     reminderTime = time ?? reminderTime;
     eventReminders = events ?? eventReminders;
+    _save();
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    themeMode = mode;
     _save();
   }
 

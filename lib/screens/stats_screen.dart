@@ -77,7 +77,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   const SizedBox(height: 4),
                   _MoodCalendar(month: _month, store: store),
                   const SizedBox(height: 8),
-                  const Text('Koppints egy napra a bejegyzés megnyitásához vagy pótlásához.',
+                  Text('Koppints egy napra a bejegyzés megnyitásához vagy pótlásához.',
                       style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                 ],
               ),
@@ -170,9 +170,9 @@ class _StatTile extends StatelessWidget {
           child: Column(
             children: [
               icon ?? Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-              if (sub != null) Text(sub!, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+              if (sub != null) Text(sub!, style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
               const SizedBox(height: 4),
-              Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+              Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
             ],
           ),
         ),
@@ -204,7 +204,7 @@ class _MoodCalendar extends StatelessWidget {
               Expanded(
                 child: Text(w,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
               ),
           ],
         ),
@@ -241,7 +241,7 @@ class _MoodCalendar extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: isFuture ? Colors.black26 : AppColors.textMuted,
+                              color: isFuture ? AppColors.divider : AppColors.textMuted,
                             ))
                         : MoodFace(entry.mood, size: 20),
                   ),
@@ -263,7 +263,7 @@ class _MoodTrend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (days.every((d) => d == null)) {
-      return const Center(child: Text('Még nincs adat.', style: TextStyle(color: AppColors.textMuted)));
+      return Center(child: Text('Még nincs adat.', style: TextStyle(color: AppColors.textMuted)));
     }
     return Row(
       children: [
@@ -290,7 +290,7 @@ class _TrendPainter extends CustomPainter {
     double x(int i) => days.length == 1 ? size.width / 2 : i / (days.length - 1) * size.width;
 
     final grid = Paint()
-      ..color = const Color(0xFFE6E4F0)
+      ..color = AppColors.divider
       ..strokeWidth = 1;
     for (var m = 1; m <= 5; m++) {
       canvas.drawLine(Offset(0, y(m)), Offset(size.width, y(m)), grid);
@@ -325,7 +325,7 @@ class _TrendPainter extends CustomPainter {
     }
 
     for (var i = 0; i < points.length; i++) {
-      canvas.drawCircle(points[i], 6, Paint()..color = Colors.white);
+      canvas.drawCircle(points[i], 6, Paint()..color = AppColors.card);
       canvas.drawCircle(points[i], 4.5, Paint()..color = colors[i]);
     }
   }
