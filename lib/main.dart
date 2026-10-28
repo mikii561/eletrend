@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -8,6 +9,7 @@ import 'habits_widget.dart';
 import 'notifications.dart';
 import 'screens/events_screen.dart';
 import 'screens/habits_screen.dart';
+import 'screens/invite_screen.dart';
 import 'screens/journal_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/today_screen.dart';
@@ -20,9 +22,23 @@ Future<void> main() async {
   await initializeDateFormatting('hu');
   final store = await AppStore.load();
   runApp(EletrendApp(store: store));
+  _openInviteFromLink();
   // Az app megjelenése után, hogy az engedélykérő ablak az app fölött jelenjen meg.
   unawaited(Notifications.init(store));
   unawaited(HabitsWidget.init(store));
+}
+
+/// A gyökér navigátor, hogy indításkor a meghívást az app fölé nyithassuk.
+final navigatorKey = GlobalKey<NavigatorState>();
+
+/// Ha meghívólinkkel nyitották meg a weboldalt (…/eletrend/?e=azonosító), rögtön a meghívás jön.
+void _openInviteFromLink() {
+  if (!kIsWeb) return;
+  final id = Uri.base.queryParameters['e'];
+  if (id == null || !RegExp(r'^[A-Za-z0-9]{10,40}$').hasMatch(id)) return;
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: id)));
+  });
 }
 
 class EletrendApp extends StatelessWidget {
@@ -55,6 +71,7 @@ class EletrendApp extends StatelessWidget {
         listenable: store,
         builder: (context, _) => MaterialApp(
           title: 'Életrend',
+          navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           locale: const Locale('hu'),
           supportedLocales: const [Locale('hu')],

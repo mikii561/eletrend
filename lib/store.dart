@@ -18,6 +18,12 @@ class AppStore extends ChangeNotifier {
   List<JournalEntry> journal = [];
   List<String> friends = [];
 
+  /// A neved, ahogy a barátaid látják a meghívásoknál és az üzenőfalon.
+  String myName = '';
+
+  /// Programok, ahová meghívtak.
+  List<Invite> invites = [];
+
   /// Hangulatcímkék a felhasználó sorrendjében.
   List<MoodTag> moodTags = [];
 
@@ -52,6 +58,8 @@ class AppStore extends ChangeNotifier {
     habits = list('habits').map(Habit.fromJson).toList();
     journal = list('journal').map(JournalEntry.fromJson).toList();
     friends = _prefs.getStringList('friends') ?? [];
+    myName = _prefs.getString('myName') ?? '';
+    invites = list('invites').map(Invite.fromJson).toList();
     moodTags = _prefs.containsKey('moodTags')
         ? list('moodTags').map(MoodTag.fromJson).toList()
         : [for (final t in defaultMoodTags.entries) MoodTag(id: t.key, name: t.key, emoji: t.value)];
@@ -79,6 +87,8 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('habits', jsonEncode(habits.map((h) => h.toJson()).toList()));
     _prefs.setString('journal', jsonEncode(journal.map((j) => j.toJson()).toList()));
     _prefs.setStringList('friends', friends);
+    _prefs.setString('myName', myName);
+    _prefs.setString('invites', jsonEncode(invites.map((i) => i.toJson()).toList()));
     _prefs.setString('moodTags', jsonEncode(moodTags.map((t) => t.toJson()).toList()));
     _prefs.setString('moodFaces', jsonEncode(moodFaces.map((t) => t.toJson()).toList()));
     _prefs.setBool('dailyReminder', dailyReminder);
@@ -166,6 +176,7 @@ class AppStore extends ChangeNotifier {
   static const _backupKeys = [
     'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
     'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
+    'myName', 'invites',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -273,6 +284,24 @@ class AppStore extends ChangeNotifier {
     if (name.isEmpty || friends.contains(name)) return;
     friends.add(name);
     friends.sort();
+    _save();
+  }
+
+  void setMyName(String name) {
+    myName = name.trim();
+    _save();
+  }
+
+  /// Megjegyzi a meghívást (vagy frissíti a címét, időpontját).
+  void saveInvite(Invite invite) {
+    invites.removeWhere((i) => i.id == invite.id);
+    invites.add(invite);
+    invites.sort((a, b) => a.date.compareTo(b.date));
+    _save();
+  }
+
+  void removeInvite(String id) {
+    invites.removeWhere((i) => i.id == id);
     _save();
   }
 

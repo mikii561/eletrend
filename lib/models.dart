@@ -27,6 +27,7 @@ class Event {
     List<String>? invited,
     this.repeat = Repeat.none,
     List<Expense>? expenses,
+    this.shareId,
   })  : invited = invited ?? [],
         expenses = expenses ?? [];
 
@@ -47,6 +48,9 @@ class Event {
 
   /// Ki mennyit fizetett a programon.
   List<Expense> expenses;
+
+  /// A felhőbe kitett példány azonosítója, ha megosztottad a barátaiddal (a meghívólinkben is ez van).
+  String? shareId;
 
   /// Az [i]-edik alkalom időpontja (0 = az első). Naptári napokkal számol, így
   /// óraátállításkor sem csúszik el az időpont.
@@ -95,6 +99,7 @@ class Event {
         'invited': invited,
         'repeat': repeat.name,
         'expenses': expenses.map((x) => x.toJson()).toList(),
+        'shareId': shareId,
       };
 
   factory Event.fromJson(Map<String, dynamic> j) => Event(
@@ -107,6 +112,7 @@ class Event {
         invited: List<String>.from(j['invited'] as List? ?? []),
         repeat: Repeat.values.asNameMap()[j['repeat']] ?? Repeat.none,
         expenses: [for (final x in j['expenses'] as List? ?? []) Expense.fromJson(x as Map<String, dynamic>)],
+        shareId: j['shareId'] as String?,
       );
 }
 
@@ -309,3 +315,17 @@ MoodTag defaultMoodFace(int mood) => MoodTag(id: 'mood$mood', name: moodLabels[m
 
 const moodEmojis = ['😞', '🙁', '😐', '🙂', '😄'];
 const moodLabels = ['Nagyon rossz', 'Rossz', 'Átlagos', 'Jó', 'Nagyon jó'];
+
+/// Egy program, ahová valaki más hívott meg (a meghívólinkből), hogy később is megtaláld.
+class Invite {
+  const Invite({required this.id, required this.title, required this.date});
+
+  final String id;
+  final String title;
+  final DateTime date;
+
+  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'date': date.toIso8601String()};
+
+  factory Invite.fromJson(Map<String, dynamic> j) =>
+      Invite(id: j['id'] as String, title: j['title'] as String? ?? '', date: DateTime.parse(j['date'] as String));
+}

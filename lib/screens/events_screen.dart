@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
@@ -5,13 +7,16 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../geocoding.dart';
 import '../models.dart';
+import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/map_view.dart';
 import 'costs_section.dart';
 import 'idea_sheet.dart';
+import 'invite_screen.dart';
 import 'location_picker.dart';
+import 'social_widgets.dart';
 
 /// Közös programok listája.
 class EventsScreen extends StatelessWidget {
@@ -57,6 +62,22 @@ class EventsScreen extends StatelessWidget {
             )
           else
             for (final e in upcoming) EventCard(event: e),
+          if (store.invites.isNotEmpty) ...[
+            const SectionTitle('Meghívásaim'),
+            for (final i in store.invites)
+              Card(
+                child: ListTile(
+                  leading: DateBadge(i.date),
+                  title: Text(i.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text(DateFormat('EEEE HH:mm', 'hu').format(i.date)),
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (_) => store.removeInvite(i.id),
+                    itemBuilder: (_) => const [PopupMenuItem(value: 'remove', child: Text('Eltávolítás a listából'))],
+                  ),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: i.id))),
+                ),
+              ),
+          ],
         ],
       ),
     );
@@ -165,6 +186,8 @@ class EventDetail extends StatelessWidget {
                 ),
               );
               if (ok == true && context.mounted) {
+                // A meghívólink is megszűnik (ha nincs internet, a felhőben marad, de nem baj).
+                if (e.shareId != null) unawaited(Social.instance.unpublish(e.shareId!).catchError((_) {}));
                 store.removeEvent(e);
                 Navigator.pop(context);
               }
@@ -230,6 +253,7 @@ class EventDetail extends StatelessWidget {
                 ],
               ),
             ),
+          OwnerSocialSection(event: e),
           CostsSection(event: e),
         ],
       ),
@@ -303,7 +327,10 @@ class _EventEditorState extends State<EventEditor> {
       ..lng = _place?.point.longitude
       ..invited = _invited.toList()
       ..repeat = _repeat;
-    StoreScope.of(context).saveEvent(e);
+    final store = StoreScope.of(context);
+    store.saveEvent(e);
+    // A megosztott példányt is frissítjük, hogy a meghívottak a változást lássák.
+    if (e.shareId != null) unawaited(Social.instance.publish(e, ownerName: store.myName).then((_) {}, onError: (_) {}));
     Navigator.pop(context);
   }
 

@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Életrend: közös programok. Bárki, aki ismeri a program (kitalálhatatlan) azonosítóját,
+// azaz megkapta a meghívólinket, láthatja és visszajelezhet; módosítani csak a szervező tud.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /events/{eventId} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 100;
+      allow update, delete: if request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && (request.method == 'delete' || request.resource.data.ownerUid == request.auth.uid);
+
+      // Visszajelzés és szavazat: mindenki csak a sajátját írhatja.
+      match /rsvps/{uid} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['name', 'status', 'votes', 'updatedAt'])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0
+          && request.resource.data.name.size() <= 40
+          && request.resource.data.status in ['yes', 'maybe', 'no', 'none']
+          && request.resource.data.votes is list
+          && request.resource.data.votes.size() <= 10;
+      }
+
+      // Üzenőfal: saját néven lehet írni, törölni a sajátot vagy szervezőként bármelyiket.
+      match /messages/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'text', 'at'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 500
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 40;
+        allow delete: if request.auth != null
+          && (resource.data.uid == request.auth.uid
+            || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid);
+      }
+    }
+  }
+}
