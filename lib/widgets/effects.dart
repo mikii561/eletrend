@@ -46,7 +46,15 @@ void playEffect(BuildContext context, EffectShow show) {
 void playEffectOn(OverlayState overlay, EffectShow show) {
   if (!overlay.mounted) return;
   late OverlayEntry entry;
-  entry = OverlayEntry(builder: (_) => IgnorePointer(child: _EffectLayer(show: show, onDone: () => entry.remove())));
+  entry = OverlayEntry(
+    // Material nélkül a szövegek (emojik) sárga aláhúzással jelennének meg.
+    builder: (_) => IgnorePointer(
+      child: Material(
+        type: MaterialType.transparency,
+        child: _EffectLayer(show: show, onDone: () => entry.remove()),
+      ),
+    ),
+  );
   overlay.insert(entry);
 }
 

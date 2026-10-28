@@ -46,4 +46,31 @@ void main() {
       expect(find.text('Gabi bumpolt!'), findsNothing); // magától eltűnt
     });
   }
+  testWidgets('az effekt emojijai, feliratai nem kapnak sárga aláhúzást', (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () => playEffect(
+                context,
+                const EffectShow(effect: BumpEffect.emojiRain, rainEmoji: '👋', sticker: '👋', caption: 'Márta bumpolt!'),
+              ),
+              child: const Text('Bump'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Bump'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+    final texts = find.descendant(of: find.byType(IgnorePointer), matching: find.byType(RichText));
+    expect(texts, findsWidgets);
+    for (final e in texts.evaluate()) {
+      final style = DefaultTextStyle.of(e).style;
+      expect(style.decoration, isNot(TextDecoration.underline), reason: 'Material nélküli szöveg az effektben');
+    }
+    await tester.pump(const Duration(seconds: 5));
+  });
 }
