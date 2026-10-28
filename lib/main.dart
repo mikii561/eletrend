@@ -11,11 +11,13 @@ import 'admin.dart';
 import 'badges.dart';
 import 'account.dart';
 import 'firebase_options.dart';
+import 'friends.dart';
 import 'habits_widget.dart';
 import 'notifications.dart';
 import 'screens/auth_gate.dart';
 import 'screens/badges_screen.dart';
 import 'screens/events_screen.dart';
+import 'screens/friends_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/invite_screen.dart';
 import 'screens/journal_screen.dart';
@@ -195,7 +197,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [TodayScreen(onNavigate: _goTo), const EventsScreen(), const HabitsScreen(), const JournalScreen()];
+    final screens = [
+      TodayScreen(onNavigate: _goTo),
+      const EventsScreen(),
+      const HabitsScreen(),
+      const JournalScreen(),
+      const FriendsScreen(),
+    ];
     return Scaffold(
       body: screens[_index],
       bottomNavigationBar: NavigationBar(
@@ -210,8 +218,42 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             label: 'Szokások',
           ),
           NavigationDestination(icon: Icon(Icons.book_outlined), selectedIcon: Icon(Icons.book), label: 'Napló'),
+          NavigationDestination(
+            icon: _FriendsTabIcon(selected: false),
+            selectedIcon: _FriendsTabIcon(selected: true),
+            label: 'Barátok',
+          ),
         ],
       ),
+    );
+  }
+}
+
+/// A Barátok fül ikonja; ha barátjelölés vár rád, a számát is mutatja.
+class _FriendsTabIcon extends StatefulWidget {
+  const _FriendsTabIcon({required this.selected});
+
+  final bool selected;
+
+  @override
+  State<_FriendsTabIcon> createState() => _FriendsTabIconState();
+}
+
+class _FriendsTabIconState extends State<_FriendsTabIcon> {
+  Stream<List<FriendRequest>>? _requests;
+
+  @override
+  Widget build(BuildContext context) {
+    // A barátok szolgáltatás a bejelentkezés után indul el; addig csak az ikon látszik.
+    if (_requests == null && Friends.instance.ready) _requests = Friends.instance.watchRequests();
+    final icon = Icon(widget.selected ? Icons.people_alt : Icons.people_alt_outlined);
+    if (_requests == null) return icon;
+    return StreamBuilder<List<FriendRequest>>(
+      stream: _requests,
+      builder: (context, snap) {
+        final n = snap.data?.length ?? 0;
+        return n == 0 ? icon : Badge(label: Text('$n'), child: icon);
+      },
     );
   }
 }

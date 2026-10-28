@@ -15,7 +15,6 @@ import '../widgets/common.dart';
 import '../widgets/map_view.dart';
 import '../widgets/weather_tile.dart';
 import 'costs_section.dart';
-import 'friends_screen.dart';
 import 'idea_sheet.dart';
 import 'invite_screen.dart';
 import 'location_picker.dart';
@@ -38,12 +37,6 @@ class EventsScreen extends StatelessWidget {
             tooltip: 'Ötlet',
             icon: const Icon(Icons.casino_outlined),
             onPressed: () => showIdeaSheet(context),
-          ),
-          const SizedBox(width: 6),
-          IconButton.filledTonal(
-            tooltip: 'Barátok',
-            icon: const Icon(Icons.people_alt_outlined),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FriendsScreen())),
           ),
           const SizedBox(width: 8),
         ],

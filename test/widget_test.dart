@@ -120,4 +120,20 @@ void main() {
     Friends.instance.stop();
     Challenges.instance.stop();
   });
+
+  testWidgets('alsó sáv: a Barátok külön fül', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({'onboarded': true});
+    final store = await AppStore.load();
+    await tester.pumpWidget(EletrendApp(store: store));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Barátok'));
+    await tester.pumpAndSettle();
+    expect(find.text('Csak név szerint'), findsOneWidget);
+    Account.instance.sync?.stop();
+    Friends.instance.stop();
+    Challenges.instance.stop();
+  });
 }
