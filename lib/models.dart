@@ -1,4 +1,4 @@
-/// Az app adatmodelljei: programok, szokások, naplóbejegyzések.
+/// Az app adatmodelljei: programok, célok, naplóbejegyzések.
 library;
 
 import 'dart:convert';
@@ -163,7 +163,7 @@ class Expense {
       );
 }
 
-/// Napi szokás, a teljesített napok kulcsaival.
+/// Napi cél, a teljesített napok kulcsaival.
 ///
 /// Lehet heti cél („hetente 3×”) és mennyiségi („8 pohár víz”) is; a [doneDays] mindig azokat
 /// a napokat tartalmazza, amikor az aznapi adag megvolt, így a sorozat, a statisztika és a
@@ -194,7 +194,7 @@ class Habit {
   /// A mennyiség egysége (pl. „pohár”), csak kiíráshoz.
   String unit;
 
-  /// Mennyiségi szokásnál napi számláló (napkulcs → darab).
+  /// Mennyiségi célnál napi számláló (napkulcs → darab).
   Map<String, int> counts;
 
   /// Saját emlékeztető ideje percben (pl. 8:30 = 510); null = nincs.
@@ -228,7 +228,7 @@ class Habit {
     return [for (var i = 0; i < 7; i++) addDays(monday, i)].where(isDoneOn).length;
   }
 
-  /// Ma „rendben van”-e: napi szokásnál ha kész, hetinél ha kész vagy a heti cél már megvan.
+  /// Ma „rendben van”-e: napi célnál ha kész, hetinél ha kész vagy a heti cél már megvan.
   bool isSatisfiedOn(DateTime d) => isDoneOn(d) || (isWeekly && doneInWeek(d) >= perWeek!);
 
   /// Hány egymást követő napja teljesül (hetinél: hány egymást követő héten volt meg a cél).

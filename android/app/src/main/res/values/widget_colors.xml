@@ -4,5 +4,5 @@
     <color name="widget_text">#DD000000</color>
     <color name="widget_muted">#FF7A7A8C</color>
     <color name="widget_primary">#FF5B5BD6</color>
-    <string name="habits_widget_description">A mai szokásaid, egy koppintással kipipálhatók</string>
+    <string name="habits_widget_description">A mai céljaid, egy koppintással kipipálhatók</string>
 </resources>

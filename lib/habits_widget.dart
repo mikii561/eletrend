@@ -12,7 +12,7 @@ import 'store.dart';
 class HabitsWidget {
   static const _provider = 'hu.eletrend.eletrend.HabitsWidgetProvider';
 
-  /// Ennyi szokás fér ki a widgetre.
+  /// Ennyi cél fér ki a widgetre.
   static const maxRows = 5;
 
   static bool get supported => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;

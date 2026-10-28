@@ -140,7 +140,7 @@ class _PinScreenState extends State<PinScreen> with SingleTickerProviderStateMix
         content: Text(
           'A PIN-kódot sehol nem tároljuk visszafejthetően, ezért nem lehet visszaállítani. '
           'A zárat csak úgy tudod kikapcsolni, ha törlöd a naplóbejegyzéseidet (${store.journal.length} db). '
-          'A szokásaid és a programjaid megmaradnak.\n\nHa van biztonsági mentésed, utána abból visszatöltheted.',
+          'A céljaid és a programjaid megmaradnak.\n\nHa van biztonsági mentésed, utána abból visszatöltheted.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Mégse')),

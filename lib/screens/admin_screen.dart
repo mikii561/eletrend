@@ -114,7 +114,7 @@ class _Overview extends StatelessWidget {
           Card(
             child: Column(children: [
               ListTile(leading: const Text('📔', style: TextStyle(fontSize: 22)), title: const Text('Naplóbejegyzés'), trailing: _Num(s.totals['journal'])),
-              ListTile(leading: const Text('✅', style: TextStyle(fontSize: 22)), title: const Text('Szokás'), trailing: _Num(s.totals['habits'])),
+              ListTile(leading: const Text('✅', style: TextStyle(fontSize: 22)), title: const Text('Cél'), trailing: _Num(s.totals['habits'])),
               ListTile(leading: const Text('🎉', style: TextStyle(fontSize: 22)), title: const Text('Program'), trailing: _Num(s.totals['events'])),
               ListTile(leading: const Text('🔗', style: TextStyle(fontSize: 22)), title: const Text('Megosztott program'), trailing: _Num(s.sharedEvents)),
             ]),
@@ -278,7 +278,7 @@ class _UserDetailState extends State<_UserDetail> {
               ListTile(title: const Text('Eszköz, verzió'), subtitle: Text('${u.platform} • ${u.version}')),
               ListTile(
                 title: const Text('Adatai'),
-                subtitle: Text('${u.counts['journal'] ?? 0} napló • ${u.counts['habits'] ?? 0} szokás • ${u.counts['events'] ?? 0} program'),
+                subtitle: Text('${u.counts['journal'] ?? 0} napló • ${u.counts['habits'] ?? 0} cél • ${u.counts['events'] ?? 0} program'),
               ),
             ]),
           ),
@@ -308,7 +308,7 @@ class _UserDetailState extends State<_UserDetail> {
                 subtitle: const Text('A fiókot a Firebase konzolban (Authentication) lehet törölni.'),
                 enabled: !_busy,
                 onTap: () async {
-                  if (!await _confirm('Törlöd ${u.name} összes adatát?', 'Napló, szokások, programok. Nem vonható vissza.')) return;
+                  if (!await _confirm('Törlöd ${u.name} összes adatát?', 'Napló, célok, programok. Nem vonható vissza.')) return;
                   await _run(() => Admin.instance.deleteUserData(u.uid), 'Adatok törölve');
                 },
               ),

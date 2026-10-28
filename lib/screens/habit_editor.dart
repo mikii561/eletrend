@@ -6,7 +6,7 @@ import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
 
-/// Új szokás felvétele vagy egy meglévő módosítása: név, gyakoriság, mennyiség, emlékeztető.
+/// Új cél felvétele vagy egy meglévő módosítása: név, gyakoriság, mennyiség, emlékeztető.
 Future<void> showHabitEditor(BuildContext context, {Habit? habit}) => showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -54,7 +54,7 @@ class _HabitEditorState extends State<_HabitEditor> {
 
   void _save() {
     final name = _name.text.trim();
-    if (name.isEmpty) return setState(() => _error = 'Adj nevet a szokásnak');
+    if (name.isEmpty) return setState(() => _error = 'Adj nevet a célnak');
     final reminder = _reminder == null ? null : _reminder!.hour * 60 + _reminder!.minute;
     final h = widget.habit;
     if (h == null) {
@@ -123,7 +123,7 @@ class _HabitEditorState extends State<_HabitEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.habit == null ? 'Új szokás' : 'Szokás szerkesztése', style: theme.textTheme.titleLarge),
+            Text(widget.habit == null ? 'Új cél' : 'Cél szerkesztése', style: theme.textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _name,
@@ -207,7 +207,7 @@ class _HabitEditorState extends State<_HabitEditor> {
   }
 }
 
-/// Szokás-sablonok: egy csomag egy koppintással felvehető (a már meglévő nevűeket kihagyja).
+/// Cél-sablonok: egy csomag egy koppintással felvehető (a már meglévő nevűeket kihagyja).
 Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -222,9 +222,9 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
             controller: controller,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             children: [
-              Text('Szokás-sablonok', style: Theme.of(sheetContext).textTheme.titleLarge),
+              Text('Cél-sablonok', style: Theme.of(sheetContext).textTheme.titleLarge),
               const SizedBox(height: 4),
-              Text('Válassz egy csomagot; utána bármelyik szokást átírhatod vagy törölheted.',
+              Text('Válassz egy csomagot; utána bármelyik célt átírhatod vagy törölheted.',
                   style: TextStyle(color: AppColors.textMuted)),
               const SizedBox(height: 12),
               for (final pack in habitPacks)
@@ -259,7 +259,7 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                               ScaffoldMessenger.of(context)
                                 ..hideCurrentSnackBar()
                                 ..showSnackBar(SnackBar(
-                                content: Text(added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új szokás felvéve. Hajrá! 💪'),
+                                content: Text(added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új cél felvéve. Hajrá! 💪'),
                               ));
                             },
                             child: const Text('Felvétel'),

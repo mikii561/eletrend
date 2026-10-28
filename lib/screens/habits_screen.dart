@@ -10,7 +10,7 @@ import 'breathing_screen.dart';
 import 'habit_editor.dart';
 import 'today_screen.dart' show CheckCircle, StreakChip, habitProgress;
 
-/// Szokások listája az elmúlt 7 nap teljesítésével.
+/// Célok listája az elmúlt 7 nap teljesítésével.
 class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
@@ -24,7 +24,7 @@ class HabitsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Szokások'),
+        title: const Text('Célok'),
         actions: [
           IconButton(
             tooltip: 'Légzőgyakorlat',
@@ -47,7 +47,7 @@ class HabitsScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addHabit(context),
         icon: const Icon(Icons.add),
-        label: const Text('Új szokás', style: TextStyle(fontWeight: FontWeight.w700)),
+        label: const Text('Új cél', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
@@ -55,8 +55,8 @@ class HabitsScreen extends StatelessWidget {
           if (store.habits.isEmpty)
             EmptyState(
               emoji: '🌱',
-              text: 'Vegyél fel egy szokást, amit követni szeretnél: naponta, hetente párszor, vagy mennyiséggel (pl. 8 pohár víz).',
-              action: 'Szokás felvétele',
+              text: 'Vegyél fel egy célt, amit követni szeretnél: naponta, hetente párszor, vagy mennyiséggel (pl. 8 pohár víz).',
+              action: 'Cél felvétele',
               onAction: () => _addHabit(context),
             ),
           for (final h in store.habits)
@@ -98,7 +98,7 @@ class HabitsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Mennyiségi szokásnál: egy adaggal kevesebb / több.
+                    // Mennyiségi célnál: egy adaggal kevesebb / több.
                     if (h.isCounted)
                       Padding(
                         padding: const EdgeInsets.only(top: 10, right: 12),

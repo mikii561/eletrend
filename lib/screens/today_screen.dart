@@ -14,7 +14,7 @@ import 'journal_screen.dart';
 import 'pin_screen.dart';
 import 'settings_screen.dart';
 
-/// Főoldal: mai hangulat, mai szokások és a következő programok.
+/// Főoldal: mai hangulat, mai célok és a következő programok.
 class TodayScreen extends StatelessWidget {
   const TodayScreen({super.key, required this.onNavigate});
 
@@ -120,7 +120,7 @@ class TodayScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Szokások
+                // Célok
                 Transform.translate(
                   offset: const Offset(0, -28),
                   child: Column(
@@ -128,12 +128,12 @@ class TodayScreen extends StatelessWidget {
                     children: [
                       const CheckInCard(),
                       const MemoryCard(),
-                      SectionTitle('Mai szokások', trailing: total == 0 ? null : '$done/$total', onMore: () => onNavigate(2)),
+                      SectionTitle('Mai célok', trailing: total == 0 ? null : '$done/$total', onMore: () => onNavigate(2)),
                       if (store.habits.isEmpty)
                         EmptyState(
                           emoji: '🌱',
-                          text: 'Még nincs szokásod. Kezdd egy aprósággal!',
-                          action: 'Szokás felvétele',
+                          text: 'Még nincs célod. Kezdd egy aprósággal!',
+                          action: 'Cél felvétele',
                           onAction: () => onNavigate(2),
                         )
                       else
@@ -249,7 +249,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Nagy, kerek pipa gomb a szokásokhoz.
+/// Nagy, kerek pipa gomb a célokhoz.
 class CheckCircle extends StatelessWidget {
   const CheckCircle({super.key, required this.done, required this.onTap, this.size = 36});
 
@@ -368,7 +368,7 @@ class MoodButton extends StatelessWidget {
   }
 }
 
-/// A szokás mai állása kiíráshoz: „3/8 pohár”, „2/3 ezen a héten”; egyszerű napi szokásnál null.
+/// A cél mai állása kiíráshoz: „3/8 pohár”, „2/3 ezen a héten”; egyszerű napi célnál null.
 String? habitProgress(Habit h, DateTime day) {
   final parts = [
     if (h.isCounted) '${h.countOn(day)}/${h.target}${h.unit.isEmpty ? '' : ' ${h.unit}'}',

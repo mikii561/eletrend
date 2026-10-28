@@ -12,7 +12,7 @@ Future<AppStore> device(String name) async {
 }
 
 void main() {
-  test('kihívás: indítás barátokkal, teljesítés, ranglista, buzdítás, szokáshoz kötés, kilépés', () async {
+  test('kihívás: indítás barátokkal, teljesítés, ranglista, buzdítás, célhoz kötés, kilépés', () async {
     final db = FakeFirebaseFirestore();
     final gabiStore = await device('Gabi');
     final annaStore = await device('Anna');
@@ -37,7 +37,7 @@ void main() {
     progress = await gabi.watchProgress(c.id).first;
     expect(progress.firstWhere((p) => p.uid == 'anna').cheers, 1);
 
-    // Gabi a kihívást az „Edzés” szokásához köti: a szokás napjai a kihívásba kerülnek
+    // Gabi a kihívást az „Edzés” céljához köti: a cél napjai a kihívásba kerülnek
     gabiStore.addHabit('Edzés');
     final h = gabiStore.habits.single;
     h.doneDays.addAll([dayKey(today), dayKey(addDays(today, -1)), dayKey(addDays(today, -2)), dayKey(addDays(today, -40))]);

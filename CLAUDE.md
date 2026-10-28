@@ -1,6 +1,6 @@
 # Életrend
 
-Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés barátokkal, szokáskövető, hangulat- és hálanapló. A felhasználó kezdő, vele magyarul beszélünk.
+Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés barátokkal, célkövető, hangulat- és hálanapló. A felhasználó kezdő, vele magyarul beszélünk.
 
 ## Munkamenet
 
@@ -37,11 +37,11 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 ## Barátok fiókkal
 
 - `lib/friends.dart`: barátkód (`codes/{KÓD}`), névjegy (`people/{uid}`, sorozatok csak ha `shareStreaks`), jelölés (`requests/{címzett}/items/{küldő}`), barátság (`friendships/{uid}/list/{barát}`, csak meglévő jelölés elfogadásával), meghívás egy gombnyomással (`inbox/{uid}/items/{programId}` → a „Meghívásaim” közé kerül).
-- Szokások: heti cél (`perWeek`), mennyiség (`target`, `unit`, `counts`), saját emlékeztető (`reminderMinutes`, csak Androidon). A `doneDays` mindig a „kész” napokat tartalmazza.
+- Célok: heti cél (`perWeek`), mennyiség (`target`, `unit`, `counts`), saját emlékeztető (`reminderMinutes`, csak Androidon). A `doneDays` mindig a „kész” napokat tartalmazza.
 
 ## Közösségi és egyéb
 
-- Kihívások: `lib/challenges.dart` (`challenges/{id}`, tagok `members`, haladás `progress/{uid}`, buzdítás csak +1). Szokáshoz köthető (`store.challengeHabits`).
+- Kihívások: `lib/challenges.dart` (`challenges/{id}`, tagok `members`, haladás `progress/{uid}`, buzdítás csak +1). Célhoz köthető (`store.challengeHabits`).
 - „Ki mit hoz?”: `events/{id}/items`. Időjárás: Open-Meteo (`lib/weather.dart`), a megosztott programban `lat`/`lng` is van.
 - Jelvények: `lib/badges.dart` (számolt, `store.seenBadges`). Napközbeni hangulat: `store.checkIns`. Év visszatekintés: `YearReview`.
 
@@ -87,7 +87,7 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 
 ## Kezdőképernyő-widget
 
-- `lib/habits_widget.dart` (adatok + koppintás a háttérben) és `android/.../HabitsWidgetProvider.kt` + `res/layout/habits_widget.xml`. Max 5 szokás; a `day` kulcs alapján éjfél után üresnek mutatja. Az app visszatéréskor `store.reload()`-dal beolvassa a widgeten tett változást.
+- `lib/habits_widget.dart` (adatok + koppintás a háttérben) és `android/.../HabitsWidgetProvider.kt` + `res/layout/habits_widget.xml`. Max 5 cél; a `day` kulcs alapján éjfél után üresnek mutatja. Az app visszatéréskor `store.reload()`-dal beolvassa a widgeten tett változást.
 
 ## Értesítések
 

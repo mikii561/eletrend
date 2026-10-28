@@ -76,7 +76,7 @@ void main() {
     final sync = CloudSync(store: phone, uid: 'u1', db: db);
     await sync.start();
 
-    // Az app újraindul (új CloudSync példány), közben offline kipipált egy szokást
+    // Az app újraindul (új CloudSync példány), közben offline kipipált egy célt
     phone.toggleHabit(phone.habits.single, DateTime(2026, 10, 28));
     final again = CloudSync(store: phone, uid: 'u1', db: db);
     expect(again.knownDevice, isTrue);

@@ -33,7 +33,7 @@ class UserProfile {
   final String platform;
   final String version;
 
-  /// Hány naplóbejegyzése, szokása, programja van.
+  /// Hány naplóbejegyzése, célja, programja van.
   final Map<String, int> counts;
   final bool banned;
 

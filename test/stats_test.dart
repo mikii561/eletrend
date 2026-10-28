@@ -22,7 +22,7 @@ void main() {
 
   JournalEntry entry(DateTime d, int mood) => JournalEntry(id: dayKey(d), date: d, mood: mood);
 
-  test('szokás-összefüggés: jobb hangulat a teljesített napokon', () async {
+  test('cél-összefüggés: jobb hangulat a teljesített napokon', () async {
     final store = await emptyStore();
     store.addHabit('Edzés');
     final habit = store.habits.first;
@@ -162,7 +162,7 @@ void main() {
     });
   });
 
-  test('havi összefoglaló: napok, sorozat, legjobb nap, szokás, magyar ragok', () async {
+  test('havi összefoglaló: napok, sorozat, legjobb nap, cél, magyar ragok', () async {
     final store = await emptyStore();
     store.addHabit('Séta');
     for (var d = 1; d <= 5; d++) {
@@ -228,7 +228,7 @@ void main() {
     expect(partOfDay(DateTime(2026, 1, 1, 23)), 'éjjel');
   });
 
-  test('év visszatekintés: legjobb hónap, sorozat, szokások, fotók', () async {
+  test('év visszatekintés: legjobb hónap, sorozat, célok, fotók', () async {
     final store = await emptyStore();
     for (var d = 1; d <= 6; d++) {
       store.saveEntry(entry(DateTime(2026, 3, d, 12), 5)..gratitude = 'tavasz $d');

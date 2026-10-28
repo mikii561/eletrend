@@ -25,7 +25,7 @@ class TagStat {
   final double average;
 }
 
-/// Hangulat-statisztikák számolása a naplóból és a szokásokból.
+/// Hangulat-statisztikák számolása a naplóból és a célokból.
 class MoodStats {
   MoodStats(this.store);
 
@@ -79,7 +79,7 @@ class MoodStats {
     final result = <Insight>[];
     final entries = store.journal;
 
-    // Szokások: jobb-e a hangulat azokon a napokon, amikor teljesítetted?
+    // Célok: jobb-e a hangulat azokon a napokon, amikor teljesítetted?
     for (final h in store.habits) {
       final done = entries.where((e) => h.isDoneOn(e.date)).toList();
       final notDone = entries.where((e) => !h.isDoneOn(e.date)).toList();
@@ -208,7 +208,7 @@ class MonthSummary {
     }
     topTags = (tagCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value))).take(3).toList();
 
-    // Melyik szokást teljesítetted a legtöbb napon.
+    // Melyik célt teljesítetted a legtöbb napon.
     final days = [for (var d = 1; d <= daysInMonth; d++) DateTime(month.year, month.month, d, 12)];
     for (final h in store.habits) {
       final n = days.where(h.isDoneOn).length;
@@ -297,7 +297,7 @@ bool entryMatches(JournalEntry e, String query, AppStore store) {
   return null;
 }
 
-/// Év végi visszatekintés: számok, a legjobb hónap és napok, a szokások, a fotók.
+/// Év végi visszatekintés: számok, a legjobb hónap és napok, a célok, a fotók.
 class YearReview {
   YearReview(this.store, this.year) {
     entries = store.journal.where((e) => e.date.year == year).toList()..sort((a, b) => a.date.compareTo(b.date));

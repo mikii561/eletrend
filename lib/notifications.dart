@@ -26,7 +26,7 @@ class Notifications {
     android: AndroidNotificationDetails(
       'daily',
       'Napi emlékeztető',
-      channelDescription: 'Esti emlékeztető a szokásokhoz és a naplóhoz',
+      channelDescription: 'Esti emlékeztető a célokhoz és a naplóhoz',
     ),
   );
 
@@ -53,7 +53,7 @@ class Notifications {
   // Értesítés-azonosítók: napi 1000–1006, programok 2000-től.
   static const _dailyBase = 1000;
   static const _eventBase = 2000;
-  static const _habitBase = 3000; // szokásonként 7 nap: 3000 + szokás * 7 + nap
+  static const _habitBase = 3000; // célonként 7 nap: 3000 + cél * 7 + nap
   static const _checkInBase = 4000; // naponta 2: 4000 + nap * 2 + (0: 11:00, 1: 15:00)
   static const _testId = 9999;
   static const _bumpBase = 5000; // bumpok: 5000 + (azonosító hash % 1000)
@@ -147,7 +147,7 @@ class Notifications {
       }
     }
 
-    // Szokásonkénti saját emlékeztető: csak ha aznap (hetinél: azon a héten) még nincs meg.
+    // Célonkénti saját emlékeztető: csak ha aznap (hetinél: azon a héten) még nincs meg.
     for (var i = 0; i < store.habits.length && i < 30; i++) {
       final h = store.habits[i];
       final m = h.reminderMinutes;
@@ -182,7 +182,7 @@ class Notifications {
     }
   }
 
-  /// Mit írjunk egy szokás emlékeztetőjébe.
+  /// Mit írjunk egy cél emlékeztetőjébe.
   @visibleForTesting
   static String habitReminderBody(Habit h, DateTime day) {
     if (h.isCounted) {
@@ -193,15 +193,15 @@ class Notifications {
     return 'Ne felejtsd el ma! 💪';
   }
 
-  static const _genericBody = 'Pipáld ki a mai szokásaidat, és írd le, miért vagy hálás! 🙏';
+  static const _genericBody = 'Pipáld ki a mai céljaidat, és írd le, miért vagy hálás! 🙏';
 
   /// A mai esti üzenet a tényleges állapot alapján; null, ha nincs mit emlékeztetni.
   static String? _todayBody(AppStore store) {
     final left = store.habitsLeftToday;
     final journal = store.journalDoneToday;
     if (left == 0 && journal) return null;
-    if (left > 0 && !journal) return 'Még $left szokás vár rád, és a naplódat sem írtad meg ma.';
-    if (left > 0) return 'Még $left szokás vár rád ma. Hajrá! 💪';
+    if (left > 0 && !journal) return 'Még $left cél vár rád, és a naplódat sem írtad meg ma.';
+    if (left > 0) return 'Még $left cél vár rád ma. Hajrá! 💪';
     return 'Írd le, milyen napod volt, és miért vagy hálás! 🙏';
   }
 

@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('widget adatai: legfeljebb 5 szokás, a mai állapottal', () async {
+  test('widget adatai: legfeljebb 5 cél, a mai állapottal', () async {
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
     for (var i = 1; i <= 7; i++) {
-      store.addHabit('Szokás $i');
+      store.addHabit('Cél $i');
     }
     final now = DateTime(2026, 10, 28, 9);
     store.toggleHabit(store.habits[1], now);
@@ -16,13 +16,13 @@ void main() {
     final data = HabitsWidget.widgetData(store, now);
     expect(data['day'], '2026-10-28');
     expect(data['count'], 5);
-    expect(data['habit0_name'], 'Szokás 1');
+    expect(data['habit0_name'], 'Cél 1');
     expect(data['habit0_done'], isFalse);
     expect(data['habit1_done'], isTrue);
     expect(data.containsKey('habit5_name'), isFalse);
   });
 
-  test('koppintás a widgeten kipipálja a szokást (és visszavonja)', () async {
+  test('koppintás a widgeten kipipálja a célt (és visszavonja)', () async {
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
     store.addHabit('Séta');

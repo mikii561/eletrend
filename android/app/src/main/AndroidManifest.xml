@@ -42,9 +42,9 @@
             </intent-filter>
         </activity>
 
-        <!-- Kezdőképernyő-widget: mai szokások -->
+        <!-- Kezdőképernyő-widget: mai célok -->
         <receiver android:name=".HabitsWidgetProvider"
-            android:label="Mai szokások"
+            android:label="Mai célok"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

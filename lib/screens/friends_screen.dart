@@ -226,7 +226,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
               child: SwitchListTile(
                 secondary: const Text('🔥', style: TextStyle(fontSize: 22)),
                 title: const Text('Sorozataim megosztása', style: TextStyle(fontWeight: FontWeight.w700)),
-                subtitle: const Text('A barátaid látják, hány napja tartod a szokásaidat. A naplód nem látszik.'),
+                subtitle: const Text('A barátaid látják, hány napja tartod a céljaidat. A naplód nem látszik.'),
                 value: store.shareStreaks,
                 onChanged: store.setShareStreaks,
               ),

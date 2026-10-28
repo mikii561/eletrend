@@ -66,10 +66,10 @@ class BadgeFacts {
 
 final achievements = <Achievement>[
   Achievement('first_entry', '📔', 'Első oldal', 'Írd meg az első naplóbejegyzésed.', (f) => f.entries >= 1),
-  Achievement('first_habit', '🌱', 'Elültetve', 'Vegyél fel egy szokást.', (f) => f.habits >= 1),
-  Achievement('habit_7', '🔥', 'Egy hét', 'Tarts meg egy szokást 7 napig egyfolytában.', (f) => f.bestHabitStreak >= 7),
-  Achievement('habit_30', '💪', 'Egy hónap', 'Tarts meg egy szokást 30 napig egyfolytában.', (f) => f.bestHabitStreak >= 30),
-  Achievement('habit_100', '🏆', 'Százas', 'Tarts meg egy szokást 100 napig egyfolytában.', (f) => f.bestHabitStreak >= 100),
+  Achievement('first_habit', '🌱', 'Elültetve', 'Vegyél fel egy célt.', (f) => f.habits >= 1),
+  Achievement('habit_7', '🔥', 'Egy hét', 'Teljesíts egy célt 7 napig egyfolytában.', (f) => f.bestHabitStreak >= 7),
+  Achievement('habit_30', '💪', 'Egy hónap', 'Teljesíts egy célt 30 napig egyfolytában.', (f) => f.bestHabitStreak >= 30),
+  Achievement('habit_100', '🏆', 'Százas', 'Teljesíts egy célt 100 napig egyfolytában.', (f) => f.bestHabitStreak >= 100),
   Achievement('journal_7', '✍️', 'Hét nap, hét oldal', 'Írj naplót 7 napig egymás után.', (f) => f.bestJournalStreak >= 7),
   Achievement('journal_30', '📚', 'Naplóíró', 'Írj naplót 30 napig egymás után.', (f) => f.bestJournalStreak >= 30),
   Achievement('entries_100', '💯', 'Száz nap', 'Gyűjts össze 100 naplóbejegyzést.', (f) => f.entries >= 100),

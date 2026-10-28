@@ -113,7 +113,7 @@ class Challenges {
 
   CollectionReference<Map<String, dynamic>> get _col => _db.collection('challenges');
 
-  /// Bejelentkezéskor: a szokáshoz kötött kihívások maguktól követik a szokást.
+  /// Bejelentkezéskor: a célhoz kötött kihívások maguktól követik a célt.
   void start(String uid, AppStore store) {
     _uid = uid;
     _store = store;
@@ -208,7 +208,7 @@ class Challenges {
     _store?.linkChallengeHabit(c.id, null);
   }
 
-  /// A szokáshoz kötött kihívásoknál a szokás teljesített napjai (a kihívás idejére) kerülnek be.
+  /// A célhoz kötött kihívásoknál a cél teljesített napjai (a kihívás idejére) kerülnek be.
   Future<void> syncLinkedHabits() async {
     final store = _store;
     if (store == null || _uid == null) return;

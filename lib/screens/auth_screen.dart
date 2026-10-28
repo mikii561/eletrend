@@ -133,7 +133,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 Text('Életrend', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
                 const SizedBox(height: 6),
                 const Text(
-                  'Szokások, napló és programok a barátaiddal. Minden eszközödön ugyanaz.',
+                  'Célok, napló és programok a barátaiddal. Minden eszközödön ugyanaz.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
@@ -249,7 +249,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         padding: const EdgeInsets.all(12),
                         child: Text(
                           _register
-                              ? '💾 Az ezen az eszközön lévő naplód, szokásaid és programjaid az új fiókodba kerülnek.'
+                              ? '💾 Az ezen az eszközön lévő naplód, céljaid és programjaid az új fiókodba kerülnek.'
                               : '⚠️ Bejelentkezéskor a fiókod adatai kerülnek az ezen az eszközön lévők helyére. '
                                     'Ha ezeket is meg akarod tartani, inkább regisztrálj velük új fiókot.',
                           style: const TextStyle(fontWeight: FontWeight.w600),

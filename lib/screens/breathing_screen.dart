@@ -24,7 +24,7 @@ const breathPatterns = [
   BreathPattern('Doboz', '4–4–4–4, fókuszhoz', [('Belégzés', 4, 1), ('Tartsd', 4, 1), ('Kilégzés', 4, 0), ('Tartsd', 4, 0)]),
 ];
 
-/// Légzőgyakorlat / meditáció időzítő. A végén kipipálhatja a hozzá választott szokást.
+/// Légzőgyakorlat / meditáció időzítő. A végén kipipálhatja a hozzá választott célt.
 class BreathingScreen extends StatefulWidget {
   const BreathingScreen({super.key});
 
@@ -44,7 +44,7 @@ class _BreathingScreenState extends State<BreathingScreen> with SingleTickerProv
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Ha van meditáció/légzés jellegű szokás, azt ajánljuk fel kipipálásra.
+    // Ha van meditáció/légzés jellegű cél, azt ajánljuk fel kipipálásra.
     _habitId ??= StoreScope.of(context)
         .habits
         .where((h) => RegExp('medit|légz|legz|nyug|jóga|joga', caseSensitive: false).hasMatch(h.name))
@@ -192,7 +192,7 @@ class _BreathingScreenState extends State<BreathingScreen> with SingleTickerProv
               DropdownButtonFormField<String?>(
                 initialValue: _habitId,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'A végén kipipálja ezt a szokást'),
+                decoration: const InputDecoration(labelText: 'A végén kipipálja ezt a célt'),
                 items: [
                   const DropdownMenuItem(value: null, child: Text('Egyiket sem')),
                   for (final Habit h in store.habits) DropdownMenuItem(value: h.id, child: Text(h.name, overflow: TextOverflow.ellipsis)),

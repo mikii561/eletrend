@@ -42,13 +42,13 @@ class AppStore extends ChangeNotifier {
   /// Végigment-e már a bemutatón.
   bool onboarded = false;
 
-  /// Láthatják-e a barátaim a szokás-sorozataimat (alapból nem).
+  /// Láthatják-e a barátaim a cél-sorozataimat (alapból nem).
   bool shareStreaks = false;
 
   /// A jelvények, amelyekről már szóltunk (null: még sosem néztük meg).
   Set<String>? seenBadges;
 
-  /// Kihívás → hozzá kötött szokás (a szokás kipipálása a kihívásban is teljesít).
+  /// Kihívás → hozzá kötött cél (a cél kipipálása a kihívásban is teljesít).
   Map<String, String> challengeHabits = {};
 
   /// Lejátssza-e az app a bumpok animációit (konfetti, felugró képek…).
@@ -362,7 +362,7 @@ class AppStore extends ChangeNotifier {
   /// A bemutató csak egy teljesen új, üres appnál jelenik meg.
   bool get needsOnboarding => !onboarded && habits.isEmpty && journal.isEmpty && events.isEmpty;
 
-  /// A bemutató vége: a kiválasztott ajánlott szokások felvétele.
+  /// A bemutató vége: a kiválasztott ajánlott célok felvétele.
   void finishOnboarding({List<String> habits = const []}) {
     for (final name in habits) {
       this.habits.add(Habit(id: '${newId()}-${this.habits.length}', name: name));
@@ -418,7 +418,7 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  /// Ma még hány szokás nincs kipipálva.
+  /// Ma még hány cél nincs kipipálva.
   int get habitsLeftToday => habits.where((h) => !h.isSatisfiedOn(DateTime.now())).length;
 
   bool get journalDoneToday => entryFor(DateTime.now()) != null;
@@ -479,7 +479,7 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  // Szokások
+  // Célok
 
   void addHabit(String name, {int? perWeek, int target = 1, String unit = '', int? reminderMinutes}) {
     habits.add(Habit(
@@ -493,10 +493,10 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  /// Egy szokás beállításainak módosítása után.
+  /// Egy cél beállításainak módosítása után.
   void updateHabit(Habit h) => _save();
 
-  /// Mennyiségi szokásnál egy adaggal kevesebb.
+  /// Mennyiségi célnál egy adaggal kevesebb.
   void decrementHabit(Habit h, [DateTime? day]) {
     h.removeOne(day ?? DateTime.now());
     _save();
@@ -507,7 +507,7 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  /// Kipipálás / visszavonás. Mennyiségi szokásnál egy adaggal több; ha már megvolt, nullázza a napot.
+  /// Kipipálás / visszavonás. Mennyiségi célnál egy adaggal több; ha már megvolt, nullázza a napot.
   void toggleHabit(Habit h, [DateTime? day]) {
     final d = day ?? DateTime.now();
     final key = dayKey(d);

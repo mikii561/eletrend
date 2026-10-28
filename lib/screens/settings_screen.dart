@@ -65,7 +65,7 @@ class SettingsScreen extends StatelessWidget {
                   secondary: const Text('🌙', style: TextStyle(fontSize: 24)),
                   title: const Text('Esti emlékeztető', style: TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: const Text(
-                    'Ha még van kipipálatlan szokásod, vagy nem írtál naplót. Ha mindennel kész vagy, nem zavar.',
+                    'Ha még van kipipálatlan célod, vagy nem írtál naplót. Ha mindennel kész vagy, nem zavar.',
                   ),
                   value: store.dailyReminder,
                   onChanged: (on) =>
@@ -170,8 +170,8 @@ class SettingsScreen extends StatelessWidget {
                       Card(
                         child: ListTile(
                           leading: const Text('📱', style: TextStyle(fontSize: 24)),
-                          title: const Text('Szokások a kezdőképernyőn', style: TextStyle(fontWeight: FontWeight.w700)),
-                          subtitle: const Text('Widget, amin a mai szokásaid az app megnyitása nélkül kipipálhatók.'),
+                          title: const Text('Célok a kezdőképernyőn', style: TextStyle(fontWeight: FontWeight.w700)),
+                          subtitle: const Text('Widget, amin a mai céljaid az app megnyitása nélkül kipipálhatók.'),
                           trailing: const Icon(Icons.add_to_home_screen),
                           onTap: HabitsWidget.pin,
                         ),

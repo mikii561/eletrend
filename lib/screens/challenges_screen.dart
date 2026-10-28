@@ -204,7 +204,7 @@ class _NewChallengeState extends State<_NewChallenge> {
   }
 }
 
-/// Egy kihívás: ranglista, mai teljesítés, buzdítás, szokáshoz kötés.
+/// Egy kihívás: ranglista, mai teljesítés, buzdítás, célhoz kötés.
 class ChallengeDetail extends StatefulWidget {
   const ChallengeDetail({super.key, required this.challenge});
 
@@ -282,7 +282,7 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                                   }),
                           icon: Icon(doneToday ? Icons.check_circle : Icons.radio_button_unchecked),
                           label: Text(linked != null
-                              ? (doneToday ? 'Ma kész ✅ (a szokásból)' : 'A szokásod kipipálásával teljesül')
+                              ? (doneToday ? 'Ma kész ✅ (a célból)' : 'A célod kipipálásával teljesül')
                               : doneToday
                                   ? 'Ma kész ✅'
                                   : 'Ma teljesítettem'),
@@ -337,14 +337,14 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                 ),
               ),
               if (store.habits.isNotEmpty) ...[
-                const SectionTitle('Szokáshoz kötés'),
+                const SectionTitle('Célhoz kötés'),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: DropdownButtonFormField<String?>(
                       initialValue: store.habits.any((h) => h.id == linked) ? linked : null,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Ha kipipálom ezt a szokást, a kihívásban is teljesül'),
+                      decoration: const InputDecoration(labelText: 'Ha kipipálom ezt a célt, a kihívásban is teljesül'),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('Nincs (kézzel jelölöm)')),
                         for (final Habit h in store.habits)

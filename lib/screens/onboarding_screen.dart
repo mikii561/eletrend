@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../store.dart';
 import '../theme.dart';
 
-/// Pár szokás, amivel könnyű elkezdeni.
+/// Pár cél, amivel könnyű elkezdeni.
 const suggestedHabits = [
   '💧 2 liter víz',
   '🚶 10 perc séta',
@@ -15,7 +15,7 @@ const suggestedHabits = [
   '🏋️ Edzés',
 ];
 
-/// Bemutató az első indításkor: mit tud az app, és pár ajánlott szokás.
+/// Bemutató az első indításkor: mit tud az app, és pár ajánlott cél.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -29,7 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final Set<String> _picked = {suggestedHabits[0], suggestedHabits[1]};
 
   static const _intro = [
-    ('🌿', 'Üdv az Életrendben!', 'Egy helyen a szokásaid, a hangulatod és a programjaid a barátaiddal.'),
+    ('🌿', 'Üdv az Életrendben!', 'Egy helyen a céljaid, a hangulatod és a programjaid a barátaiddal.'),
     (
       '📔',
       'Napló és hangulat',
@@ -106,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary),
                   onPressed: last ? _finish : _next,
                   child: Text(
-                    last ? (_picked.isEmpty ? 'Kezdjük!' : 'Kezdjük ${_picked.length} szokással!') : 'Tovább',
+                    last ? (_picked.isEmpty ? 'Kezdjük!' : 'Kezdjük ${_picked.length} céllal!') : 'Tovább',
                   ),
                 ),
               ),
@@ -178,7 +178,7 @@ class _HabitPicker extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Koppints azokra a szokásokra, amiket követni szeretnél. Később bármikor módosíthatod.',
+            'Koppints azokra a célokra, amiket követni szeretnél. Később bármikor módosíthatod.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
           ),
@@ -198,7 +198,7 @@ class _HabitPicker extends StatelessWidget {
   }
 }
 
-/// Ajánlott szokás a színátmenetes háttéren: kiválasztva fehér, egyébként áttetsző.
+/// Ajánlott cél a színátmenetes háttéren: kiválasztva fehér, egyébként áttetsző.
 class _HabitChip extends StatelessWidget {
   const _HabitChip({required this.label, required this.selected, required this.onTap});
 

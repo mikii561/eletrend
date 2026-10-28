@@ -5,7 +5,7 @@
     "display": "standalone",
     "background_color": "#6D5BD6",
     "theme_color": "#5B5BD6",
-    "description": "Programok barátokkal, szokáskövető, hangulat- és hálanapló.",
+    "description": "Programok barátokkal, célkövető, hangulat- és hálanapló.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

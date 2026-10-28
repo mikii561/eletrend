@@ -46,7 +46,7 @@ class Backup {
     try {
       await store.importBackup(utf8.decode(await files.first.readAsBytes()));
       messenger.showSnackBar(SnackBar(
-        content: Text('Visszatöltve: ${store.journal.length} naplóbejegyzés, ${store.habits.length} szokás, '
+        content: Text('Visszatöltve: ${store.journal.length} naplóbejegyzés, ${store.habits.length} cél, '
             '${store.events.length} program.'),
       ));
     } on FormatException catch (e) {

@@ -56,7 +56,7 @@ class HabitsWidgetProvider : HomeWidgetProvider() {
           setOnClickPendingIntent(row, HomeWidgetBackgroundIntent.getBroadcast(context, Uri.parse("eletrend://toggle?id=$id")))
         }
         setViewVisibility(R.id.widget_empty, if (count == 0) View.VISIBLE else View.GONE)
-        setTextViewText(R.id.widget_title, if (count == 0) "Mai szokások" else "Mai szokások  $done/$count")
+        setTextViewText(R.id.widget_title, if (count == 0) "Mai célok" else "Mai célok  $done/$count")
         setOnClickPendingIntent(R.id.widget_title, HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java))
       }
       appWidgetManager.updateAppWidget(widgetId, views)

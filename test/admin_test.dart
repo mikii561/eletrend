@@ -109,7 +109,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Teszt Elek'));
     await tester.pumpAndSettle();
-    expect(find.text('3 napló • 2 szokás • 1 program'), findsOneWidget);
+    expect(find.text('3 napló • 2 cél • 1 program'), findsOneWidget);
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
     expect(await Admin.instance.isBanned('u1'), isTrue);

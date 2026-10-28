@@ -116,9 +116,9 @@ class YearReviewScreen extends StatelessWidget {
                     ),
                   ),
 
-                // Szokások
+                // Célok
                 if (r.habitDays.isNotEmpty) ...[
-                  const SectionTitle('A legerősebb szokásaid'),
+                  const SectionTitle('A legkitartóbb céljaid'),
                   Card(
                     child: Column(children: [
                       for (final (h, days) in r.habitDays.take(5))

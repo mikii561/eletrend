@@ -14,7 +14,7 @@ class Friend {
   final String uid;
   final String name;
 
-  /// A legjobb sorozatai (szokás neve, nap), ha megosztja; különben üres.
+  /// A legjobb sorozatai (cél neve, nap), ha megosztja; különben üres.
   final List<(String, int)> streaks;
 }
 

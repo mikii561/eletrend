@@ -39,14 +39,14 @@ void main() {
     expect(reloaded.eventReminders, isFalse);
   });
 
-  testWidgets('a főoldal betölt és a szokás kipipálható', (tester) async {
+  testWidgets('a főoldal betölt és a cél kipipálható', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
     store.addHabit('Olvasás');
 
     await tester.pumpWidget(EletrendApp(store: store));
     await tester.pumpAndSettle(); // a fiók adatainak betöltése
-    expect(find.text('Mai szokások'), findsOneWidget);
+    expect(find.text('Mai célok'), findsOneWidget);
     expect(find.text('Olvasás'), findsOneWidget);
 
     await tester.ensureVisible(find.byType(CheckCircle));
@@ -71,7 +71,7 @@ void main() {
     Challenges.instance.stop();
   });
 
-  testWidgets('első indításkor bemutató, a kiválasztott szokások felkerülnek', (tester) async {
+  testWidgets('első indításkor bemutató, a kiválasztott célok felkerülnek', (tester) async {
     tester.view.physicalSize = const Size(400, 860);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -89,10 +89,10 @@ void main() {
     await tester.pump();
     expect(find.text('✓ 📖 10 perc olvasás'), findsOneWidget);
     await tester.pump();
-    await tester.tap(find.text('Kezdjük 3 szokással!'));
+    await tester.tap(find.text('Kezdjük 3 céllal!'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Mai szokások'), findsOneWidget);
+    expect(find.text('Mai célok'), findsOneWidget);
     expect(store.habits.map((h) => h.name), ['💧 2 liter víz', '🚶 10 perc séta', '📖 10 perc olvasás']);
     expect((await AppStore.load()).onboarded, isTrue);
     Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben

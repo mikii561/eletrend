@@ -136,7 +136,7 @@ class Account {
 }
 
 /// A felhasználó adatainak szinkronizálása a felhővel: `users/{uid}/{fajta}/{azonosító}`.
-/// Minden naplóbejegyzés, szokás, program és címke külön dokumentum, így egyik sem
+/// Minden naplóbejegyzés, cél, program és címke külön dokumentum, így egyik sem
 /// ütközik a Firestore 1 MB-os dokumentumkorlátjába (a képek miatt fontos).
 class CloudSync {
   CloudSync({required this.store, required this.uid, FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;

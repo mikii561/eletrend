@@ -22,7 +22,7 @@ const dailyQuestions = [
   'Kinek okoztál ma örömet?',
   'Ha a mai napnak címe lenne, mi lenne az?',
   'Mi az, amit ma először csináltál?',
-  'Milyen szokásodra vagy mostanában büszke?',
+  'Melyik célodra vagy mostanában büszke?',
   'Mi az, amit szeretnél elengedni?',
   'Mit mondanál a tegnapi önmagadnak?',
   'Mi nevettetett meg ma?',

@@ -1,4 +1,4 @@
-/// Egy sablonban lévő szokás beállításai.
+/// Egy sablonban lévő cél beállításai.
 class HabitSpec {
   const HabitSpec(this.name, {this.perWeek, this.target = 1, this.unit = ''});
 
@@ -8,7 +8,7 @@ class HabitSpec {
   final String unit;
 }
 
-/// Szokás-csomag, ami egy koppintással felvehető.
+/// Cél-csomag, ami egy koppintással felvehető.
 class HabitPack {
   const HabitPack(this.emoji, this.title, this.text, this.habits);
 

@@ -60,7 +60,7 @@ class AccountSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'A fiókod és minden adatod (napló, szokások, programok) végleg törlődik. '
+                'A fiókod és minden adatod (napló, célok, programok) végleg törlődik. '
                 'Ezt nem lehet visszavonni. ${google ? 'A megerősítéshez jelentkezz be újra a Google-fiókoddal.' : 'A megerősítéshez add meg a jelszavad.'}',
               ),
               if (!google) const SizedBox(height: 12),

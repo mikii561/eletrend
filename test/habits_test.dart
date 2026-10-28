@@ -14,7 +14,7 @@ void main() {
     return AppStore.load();
   }
 
-  test('mennyiségi szokás: 8 pohár víz, a nyolcadiknál kész; visszavonható', () async {
+  test('mennyiségi cél: 8 pohár víz, a nyolcadiknál kész; visszavonható', () async {
     final store = await emptyStore();
     store.addHabit('Víz', target: 8, unit: 'pohár');
     final h = store.habits.single;
@@ -66,7 +66,7 @@ void main() {
     expect(reloaded.habits.single.reminderMinutes, 18 * 60);
   });
 
-  test('régi (egyszerű) szokás változatlanul működik', () async {
+  test('régi (egyszerű) cél változatlanul működik', () async {
     final store = await emptyStore();
     store.addHabit('Olvasás');
     final h = store.habits.single;
@@ -76,7 +76,7 @@ void main() {
     expect(Habit.fromJson({'id': 'x', 'name': 'Régi', 'doneDays': ['2026-10-01']}).target, 1);
   });
 
-  testWidgets('szokás-szerkesztő: heti, mennyiségi; a + gomb számol', (tester) async {
+  testWidgets('cél-szerkesztő: heti, mennyiségi; a + gomb számol', (tester) async {
     tester.view.physicalSize = const Size(400, 860);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -84,7 +84,7 @@ void main() {
     final store = (await tester.runAsync(emptyStore))!;
     await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
 
-    await tester.tap(find.text('Új szokás'));
+    await tester.tap(find.text('Új cél'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextField, 'Név'), 'Víz');
     await tester.tap(find.text('Mennyiség naponta'));
