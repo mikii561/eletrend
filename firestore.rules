@@ -4,6 +4,14 @@ rules_version = '2';
 // azaz megkapta a meghívólinket, láthatja és visszajelezhet; módosítani csak a szervező tud.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // A felhasználó saját adatai (napló, szokások, programok…): csak ő láthatja és írhatja,
+    // és csak valódi (e-mailes) fiókkal, névtelen vendégként nem.
+    match /users/{uid}/{document=**} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
     match /events/{eventId} {
       allow get: if request.auth != null;
       allow list: if false;

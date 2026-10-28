@@ -1,12 +1,17 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'account.dart';
+import 'firebase_options.dart';
 import 'habits_widget.dart';
 import 'notifications.dart';
+import 'screens/auth_gate.dart';
 import 'screens/events_screen.dart';
 import 'screens/habits_screen.dart';
 import 'screens/invite_screen.dart';
@@ -21,6 +26,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('hu');
   final store = await AppStore.load();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Böngészőben a bejelentkezés kis késéssel töltődik vissza; megvárjuk, hogy ne villanjon fel a regisztráció.
+  await FirebaseAuth.instance.authStateChanges().first;
   runApp(EletrendApp(store: store));
   _openInviteFromLink();
   // Az app megjelenése után, hogy az engedélykérő ablak az app fölött jelenjen meg.
@@ -83,7 +91,7 @@ class EletrendApp extends StatelessWidget {
             _applyBrightness(context);
             return PhoneFrame(child: child!);
           },
-          home: store.needsOnboarding ? const OnboardingScreen() : const HomeShell(),
+          home: AuthGate(child: store.needsOnboarding ? const OnboardingScreen() : const HomeShell()),
         ),
       ),
     );
@@ -120,8 +128,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
       store.lockJournal();
     } else if (state == AppLifecycleState.resumed) {
-      // Közben a widgeten is kipipálhattál valamit.
-      store.reload();
+      // Közben a widgeten is kipipálhattál valamit, vagy egy másik eszközön módosítottál.
+      store.reload().then((_) => Account.instance.sync?.refresh()).catchError((Object e) {
+        debugPrint('Frissítés a felhőből később: $e');
+      });
     }
   }
 

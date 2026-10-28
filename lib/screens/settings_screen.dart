@@ -6,6 +6,7 @@ import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'account_section.dart';
 import 'pin_screen.dart';
 import 'tags_screen.dart';
 
@@ -54,6 +55,7 @@ class SettingsScreen extends StatelessWidget {
                 title: Text('Az értesítések csak a telefonon működnek, böngészőben nem.'),
               ),
             ),
+          const AccountSection(),
           const SectionTitle('Napi emlékeztető'),
           Card(
             child: Column(

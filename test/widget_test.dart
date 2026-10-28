@@ -1,3 +1,4 @@
+import 'package:eletrend/account.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
 import 'package:eletrend/screens/today_screen.dart';
@@ -8,7 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers.dart';
+
 void main() {
+  setUp(signInFakeAccount);
+
   setUpAll(() => initializeDateFormatting('hu'));
 
   test('sorozat számolása tegnaptól, ha ma még nincs kész', () {
@@ -38,6 +43,7 @@ void main() {
     store.addHabit('Olvasás');
 
     await tester.pumpWidget(EletrendApp(store: store));
+    await tester.pumpAndSettle(); // a fiók adatainak betöltése
     expect(find.text('Mai szokások'), findsOneWidget);
     expect(find.text('Olvasás'), findsOneWidget);
 
@@ -57,6 +63,7 @@ void main() {
     await tester.tap(find.text('Napló'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Bejegyzések'), findsOneWidget);
+    Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
   });
 
   testWidgets('első indításkor bemutató, a kiválasztott szokások felkerülnek', (tester) async {
@@ -66,6 +73,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
     await tester.pumpWidget(EletrendApp(store: store));
+    await tester.pumpAndSettle(); // a fiók adatainak betöltése
     expect(find.text('Üdv az Életrendben!'), findsOneWidget);
 
     await tester.tap(find.text('Tovább'));
@@ -82,12 +90,14 @@ void main() {
     expect(find.text('Mai szokások'), findsOneWidget);
     expect(store.habits.map((h) => h.name), ['💧 2 liter víz', '🚶 10 perc séta', '📖 10 perc olvasás']);
     expect((await AppStore.load()).onboarded, isTrue);
+    Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
   });
 
   testWidgets('sötét mód bekapcsolása azonnal átszínezi az appot', (tester) async {
     SharedPreferences.setMockInitialValues({'onboarded': true});
     final store = await AppStore.load();
     await tester.pumpWidget(EletrendApp(store: store));
+    await tester.pumpAndSettle(); // a fiók adatainak betöltése
     expect(AppColors.dark, isFalse);
 
     store.setThemeMode(ThemeMode.dark);
@@ -99,5 +109,6 @@ void main() {
     store.setThemeMode(ThemeMode.light);
     await tester.pumpAndSettle();
     expect(AppColors.dark, isFalse);
+    Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
   });
 }

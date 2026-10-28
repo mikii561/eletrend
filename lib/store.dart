@@ -109,6 +109,78 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
+  // Felhő (fiók)
+
+  /// A fiókhoz mentett beállítások és kisebb listák egy dokumentumban.
+  Map<String, dynamic> cloudSettings() => {
+        'friends': friends,
+        'myName': myName,
+        'invites': invites.map((i) => i.toJson()).toList(),
+        'dailyReminder': dailyReminder,
+        'reminderHour': reminderTime.hour,
+        'reminderMinute': reminderTime.minute,
+        'eventReminders': eventReminders,
+        'themeMode': themeMode.name,
+        'onboarded': onboarded,
+      };
+
+  /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
+  void applyCloud({
+    required List<Event> events,
+    required List<Habit> habits,
+    required List<JournalEntry> journal,
+    required List<MoodTag> moodTags,
+    required List<MoodTag> moodFaces,
+    Map<String, dynamic>? settings,
+  }) {
+    this.events = events;
+    this.habits = habits;
+    this.journal = journal..sort((a, b) => b.date.compareTo(a.date));
+    if (moodTags.isNotEmpty) this.moodTags = moodTags;
+    if (moodFaces.length == 5) {
+      this.moodFaces = moodFaces..sort((a, b) => a.id.compareTo(b.id));
+    }
+    if (settings != null) {
+      friends = List<String>.from(settings['friends'] as List? ?? []);
+      myName = settings['myName'] as String? ?? myName;
+      invites = [for (final i in settings['invites'] as List? ?? []) Invite.fromJson(i as Map<String, dynamic>)];
+      dailyReminder = settings['dailyReminder'] as bool? ?? dailyReminder;
+      reminderTime = TimeOfDay(
+        hour: settings['reminderHour'] as int? ?? reminderTime.hour,
+        minute: settings['reminderMinute'] as int? ?? reminderTime.minute,
+      );
+      eventReminders = settings['eventReminders'] as bool? ?? eventReminders;
+      themeMode = ThemeMode.values.asNameMap()[settings['themeMode']] ?? themeMode;
+      onboarded = settings['onboarded'] as bool? ?? true;
+    }
+    _save();
+  }
+
+  /// Melyik fiókhoz szinkronizált utoljára ez az eszköz.
+  String? get syncUid => _prefs.getString('syncUid');
+
+  /// A legutóbb szinkronizált elemek ujjlenyomatai (csak ha ugyanahhoz a fiókhoz tartoznak).
+  Map<String, String> syncHashesFor(String uid) {
+    if (syncUid != uid) return {};
+    final raw = _prefs.getString('syncHashes');
+    return raw == null ? {} : Map<String, String>.from(jsonDecode(raw) as Map);
+  }
+
+  void saveSyncHashes(String uid, Map<String, String> hashes) {
+    _prefs.setString('syncUid', uid);
+    _prefs.setString('syncHashes', jsonEncode(hashes));
+  }
+
+  /// Kijelentkezéskor minden adat lekerül erről az eszközről (a fiókban megmaradnak).
+  Future<void> clearAll() async {
+    for (final k in [..._backupKeys, 'pinHash', 'pinSalt', 'useBiometrics', 'syncUid', 'syncHashes']) {
+      await _prefs.remove(k);
+    }
+    journalUnlocked = false;
+    _read();
+    notifyListeners();
+  }
+
   // Napló zárolása
 
   /// Be van-e kapcsolva a napló PIN-kódos zárolása.
@@ -268,7 +340,9 @@ class AppStore extends ChangeNotifier {
 
   /// Új programot felvesz, meglévőt (ugyanaz az objektum) csak elment.
   void saveEvent(Event e) {
-    if (!events.contains(e)) events.add(e);
+    // Azonosító szerint, mert a felhőből frissítés után ugyanaz a program új példány lehet.
+    final i = events.indexWhere((x) => x.id == e.id);
+    i < 0 ? events.add(e) : events[i] = e;
     _save();
   }
 

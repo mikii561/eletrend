@@ -27,6 +27,13 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - GitHub Pages: `.github/workflows/pages.yml` minden `main`-re feltöltés után tesztel, megépíti és kiteszi a webes verziót.
 - Helyi release build Git Bashből nem megy (átírja a `/eletrend/` útvonalat), PowerShellből kell: `flutter build web --release --base-href /eletrend/`.
 
+## Fiók és felhő
+
+- Az app csak bejelentkezve használható (`lib/screens/auth_gate.dart`, `auth_screen.dart`); e-mail + jelszó (Firebase Auth). Névtelen munkamenetből regisztrálva a fiók megtartja az azonosítót (`linkWithCredential`).
+- `lib/account.dart` `CloudSync`: `users/{uid}/{events|habits|journal|moodTags|moodFaces|meta}/{id}`, elemenként egy dokumentum (képek miatt). Csak a változás megy fel (sha1-ujjlenyomat, az eszközön tárolva: `syncUid`, `syncHashes`). Új eszközön: ha a fiókban van adat → letöltés, különben feltöltés. Visszatéréskor: push, aztán pull.
+- A PIN és az ujjlenyomat beállítás eszközönként marad, nem megy a felhőbe.
+- Widget-tesztekben `signInFakeAccount()` (test/helpers.dart), és a végén `Account.instance.sync?.stop()`.
+
 ## Közös programok (Firebase)
 
 - Projekt: `lifest-c95f3` (a felhasználó Google-fiókja). Beállítások: `lib/firebase_options.dart`; névtelen bejelentkezés + Firestore.
