@@ -1,6 +1,9 @@
 /// Az app adatmodelljei: programok, szokások, naplóbejegyzések.
 library;
 
+import 'dart:convert';
+import 'dart:typed_data';
+
 /// Egy napot azonosító kulcs, pl. "2026-10-27".
 String dayKey(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -119,7 +122,7 @@ class JournalEntry {
   /// A nap fotója a telefon tárhelyén (null, ha nincs).
   String? photoPath;
 
-  /// Hangulatcímkék a [moodTags] nevei közül.
+  /// A kiválasztott hangulatcímkék azonosítói ([MoodTag.id]).
   List<String> tags;
 
   Map<String, dynamic> toJson() => {
@@ -147,8 +150,47 @@ class JournalEntry {
       );
 }
 
-/// Választható hangulatcímkék: név → emoji.
-const moodTags = {
+/// Hangulatcímke: beépített vagy saját, emojival vagy saját képpel.
+class MoodTag {
+  MoodTag({required this.id, required this.name, this.emoji = '🏷️', this.image, this.visible = true});
+
+  /// Állandó azonosító; a bejegyzések ezt tárolják, így átnevezéskor sem vesznek el.
+  final String id;
+  String name;
+  String emoji;
+
+  /// Megjelenik-e a napló szerkesztőjében.
+  bool visible;
+
+  /// Saját kép base64-ben (null, ha emoji van helyette).
+  String? image;
+
+  String? _decodedFrom;
+  Uint8List? _bytes;
+
+  /// A kép bájtjai; csak akkor dekódoljuk újra, ha a kép megváltozott.
+  Uint8List? get imageBytes {
+    if (image == null) return null;
+    if (!identical(_decodedFrom, image)) {
+      _bytes = base64Decode(image!);
+      _decodedFrom = image;
+    }
+    return _bytes;
+  }
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'emoji': emoji, 'image': image, 'visible': visible};
+
+  factory MoodTag.fromJson(Map<String, dynamic> j) => MoodTag(
+        id: j['id'] as String,
+        name: j['name'] as String,
+        emoji: j['emoji'] as String? ?? '🏷️',
+        image: j['image'] as String?,
+        visible: j['visible'] as bool? ?? true,
+      );
+}
+
+/// Az alap hangulatcímkék (név → emoji). A nevük egyben az azonosítójuk is.
+const defaultMoodTags = {
   'boldog': '🥳',
   'nyugodt': '😌',
   'hálás': '🙏',
@@ -166,8 +208,6 @@ const moodTags = {
   'unatkozó': '🥱',
   'beteg': '🤒',
 };
-
-String tagLabel(String tag) => '${moodTags[tag] ?? '🏷️'} $tag';
 
 const moodEmojis = ['😞', '🙁', '😐', '🙂', '😄'];
 const moodLabels = ['Nagyon rossz', 'Rossz', 'Átlagos', 'Jó', 'Nagyon jó'];

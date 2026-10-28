@@ -17,7 +17,8 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 ## Felépítés
 
 - `lib/store.dart`: teljes állapot, `shared_preferences`-ben tárolva; elérés: `StoreScope.of(context)`
-- `lib/models.dart`: Event, Habit, JournalEntry
+- `lib/models.dart`: Event, Habit, JournalEntry, MoodTag (a bejegyzések a címke `id`-ját tárolják; saját kép base64-ben, böngészőben is megy)
+- `lib/screens/tags_screen.dart`: címkék kezelése (láthatóság, sorrend, átnevezés, emoji/saját kép)
 - `lib/theme.dart`: színek és téma; `lib/widgets/`: közös elemek, telefonkeret, térkép
 - Térkép: OpenStreetMap (`flutter_map`), címkeresés: Nominatim (`lib/geocoding.dart`)
 

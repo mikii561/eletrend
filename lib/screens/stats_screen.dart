@@ -6,6 +6,7 @@ import '../stats.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/tag_icon.dart';
 import 'journal_screen.dart';
 
 /// Hangulat-statisztika: havi naptár, 30 napos trend, összefüggések.
@@ -102,8 +103,8 @@ class _StatsScreenState extends State<StatsScreen> {
                     for (final t in tags.take(6))
                       ListTile(
                         dense: true,
-                        leading: Text(moodTags[t.tag] ?? '🏷️', style: const TextStyle(fontSize: 24)),
-                        title: Text(t.tag, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        leading: TagIcon(store.tagFor(t.tag), size: 28),
+                        title: Text(store.tagFor(t.tag).name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                         subtitle: ClipRRect(
                           borderRadius: BorderRadius.circular(4),
                           child: LinearProgressIndicator(
@@ -133,7 +134,7 @@ class _StatsScreenState extends State<StatsScreen> {
             for (final i in insights)
               Card(
                 child: ListTile(
-                  leading: Text(i.emoji, style: const TextStyle(fontSize: 26)),
+                  leading: i.tag != null ? TagIcon(i.tag!, size: 30) : Text(i.emoji, style: const TextStyle(fontSize: 26)),
                   title: Text(i.text, style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),

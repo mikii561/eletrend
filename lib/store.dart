@@ -16,6 +16,9 @@ class AppStore extends ChangeNotifier {
   List<JournalEntry> journal = [];
   List<String> friends = [];
 
+  /// Hangulatcímkék a felhasználó sorrendjében.
+  List<MoodTag> moodTags = [];
+
   // Emlékeztetők beállításai
   bool dailyReminder = true;
   TimeOfDay reminderTime = const TimeOfDay(hour: 20, minute: 0);
@@ -38,6 +41,9 @@ class AppStore extends ChangeNotifier {
     habits = list('habits').map(Habit.fromJson).toList();
     journal = list('journal').map(JournalEntry.fromJson).toList();
     friends = _prefs.getStringList('friends') ?? [];
+    moodTags = _prefs.containsKey('moodTags')
+        ? list('moodTags').map(MoodTag.fromJson).toList()
+        : [for (final t in defaultMoodTags.entries) MoodTag(id: t.key, name: t.key, emoji: t.value)];
     dailyReminder = _prefs.getBool('dailyReminder') ?? true;
     reminderTime = TimeOfDay(
       hour: _prefs.getInt('reminderHour') ?? 20,
@@ -51,6 +57,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('habits', jsonEncode(habits.map((h) => h.toJson()).toList()));
     _prefs.setString('journal', jsonEncode(journal.map((j) => j.toJson()).toList()));
     _prefs.setStringList('friends', friends);
+    _prefs.setString('moodTags', jsonEncode(moodTags.map((t) => t.toJson()).toList()));
     _prefs.setBool('dailyReminder', dailyReminder);
     _prefs.setInt('reminderHour', reminderTime.hour);
     _prefs.setInt('reminderMinute', reminderTime.minute);
@@ -145,6 +152,49 @@ class AppStore extends ChangeNotifier {
 
   void removeEntry(JournalEntry entry) {
     journal.remove(entry);
+    _save();
+  }
+
+  // Hangulatcímkék
+
+  /// A címke az azonosítója alapján; ismeretlennél egy helyettesítő.
+  MoodTag tagFor(String id) {
+    for (final t in moodTags) {
+      if (t.id == id) return t;
+    }
+    return MoodTag(id: id, name: id);
+  }
+
+  List<MoodTag> get visibleTags => moodTags.where((t) => t.visible).toList();
+
+  /// Van-e már ilyen nevű címke (kis- és nagybetűtől függetlenül).
+  bool tagNameTaken(String name, {MoodTag? except}) =>
+      moodTags.any((t) => t != except && t.name.toLowerCase() == name.trim().toLowerCase());
+
+  MoodTag addTag({required String name, required String emoji, String? image}) {
+    final tag = MoodTag(id: 'sajat-${newId()}', name: name.trim(), emoji: emoji, image: image);
+    moodTags.add(tag);
+    _save();
+    return tag;
+  }
+
+  /// Egy címke módosítása után (név, emoji, kép, láthatóság) menti a változást.
+  void updateTag(MoodTag tag) => _save();
+
+  void moveTag(int from, int to) {
+    moodTags.insert(to, moodTags.removeAt(from));
+    _save();
+  }
+
+  /// Hány bejegyzésben szerepel a címke.
+  int tagUsage(MoodTag tag) => journal.where((j) => j.tags.contains(tag.id)).length;
+
+  /// Törli a címkét, és kiveszi a bejegyzésekből is.
+  void removeTag(MoodTag tag) {
+    moodTags.remove(tag);
+    for (final j in journal) {
+      j.tags.remove(tag.id);
+    }
     _save();
   }
 }

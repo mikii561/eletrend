@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -27,5 +28,17 @@ class Photos {
     if (path == null || !supported) return;
     final f = File(path);
     if (await f.exists()) await f.delete();
+  }
+}
+
+/// Saját címkekép: kicsire méretezve, base64-ben a címke mellé mentjük,
+/// így böngészőben is működik.
+class TagImages {
+  static final _picker = ImagePicker();
+
+  static Future<String?> pick(ImageSource source) async {
+    final picked = await _picker.pickImage(source: source, maxWidth: 160, maxHeight: 160, imageQuality: 90);
+    if (picked == null) return null;
+    return base64Encode(await picked.readAsBytes());
   }
 }

@@ -5,13 +5,16 @@ import 'store.dart';
 
 /// Egy felfedezett összefüggés a statisztika képernyőn.
 class Insight {
-  const Insight(this.emoji, this.text, [this.strength = 0]);
+  const Insight(this.emoji, this.text, this.strength, {this.tag});
 
   final String emoji;
   final String text;
 
   /// Mennyire erős az összefüggés (pontkülönbség); ez alapján rendezünk.
   final double strength;
+
+  /// Ha címkéhez tartozik, az ő ikonja jelenik meg (lehet saját kép is).
+  final MoodTag? tag;
 }
 
 class TagStat {
@@ -105,12 +108,14 @@ class MoodStats {
       if (t.count < minSamples || overall == null) continue;
       final diff = t.average - overall;
       if (diff.abs() < 0.5) continue;
+      final tag = store.tagFor(t.tag);
       result.add(Insight(
-        moodTags[t.tag] ?? '🏷️',
+        tag.emoji,
         diff > 0
-            ? 'Amikor „${t.tag}” vagy, átlagosan ${_fmt(diff)} ponttal jobb a napod.'
-            : 'Amikor „${t.tag}” vagy, átlagosan ${_fmt(-diff)} ponttal rosszabb a napod. Érdemes figyelni rá.',
+            ? 'Amikor „${tag.name}” vagy, átlagosan ${_fmt(diff)} ponttal jobb a napod.'
+            : 'Amikor „${tag.name}” vagy, átlagosan ${_fmt(-diff)} ponttal rosszabb a napod. Érdemes figyelni rá.',
         diff.abs(),
+        tag: tag,
       ));
     }
 

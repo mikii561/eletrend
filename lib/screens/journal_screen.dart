@@ -11,7 +11,9 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../stats.dart';
+import '../widgets/tag_icon.dart';
 import 'stats_screen.dart';
+import 'tags_screen.dart';
 import 'today_screen.dart' show MoodButton;
 
 /// Hangulat- és hálanapló: a hét hangulata és a korábbi bejegyzések.
@@ -77,7 +79,7 @@ class _JournalScreenState extends State<JournalScreen> {
                     // A leggyakoribbak (a tagStats gyakoriság szerint rendez)
                     for (final t in usedTags.take(8))
                       ChoiceChip(
-                        label: Text(tagLabel(t)),
+                        label: TagLabel(store.tagFor(t)),
                         showCheckmark: false,
                         selected: filter == t,
                         selectedColor: AppColors.primary.withValues(alpha: 0.18),
@@ -102,6 +104,7 @@ class _EntryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
     final j = entry;
     final color = AppColors.moods[j.mood - 1];
     return Card(
@@ -123,8 +126,10 @@ class _EntryCard extends StatelessWidget {
                         children: [
                           Text(moodEmojis[j.mood - 1], style: const TextStyle(fontSize: 22)),
                           const SizedBox(width: 8),
-                          Text(DateFormat('MMMM d., EEEE', 'hu').format(j.date),
-                              style: Theme.of(context).textTheme.titleMedium),
+                          Flexible(
+                            child: Text(DateFormat('MMMM d., EEEE', 'hu').format(j.date),
+                                maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.titleMedium),
+                          ),
                         ],
                       ),
                       if (j.tags.isNotEmpty) ...[
@@ -132,7 +137,7 @@ class _EntryCard extends StatelessWidget {
                         Wrap(
                           spacing: 4,
                           runSpacing: 4,
-                          children: [for (final t in j.tags) _TagPill(t)],
+                          children: [for (final t in j.tags) _TagPill(store.tagFor(t))],
                         ),
                       ],
                       if (j.gratitude.isNotEmpty) ...[
@@ -178,14 +183,14 @@ class _EntryCard extends StatelessWidget {
 class _TagPill extends StatelessWidget {
   const _TagPill(this.tag);
 
-  final String tag;
+  final MoodTag tag;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(10)),
-      child: Text(tagLabel(tag), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      child: TagLabel(tag, size: 14, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
     );
   }
 }
@@ -316,7 +321,7 @@ class _JournalEditorState extends State<JournalEditor> {
         ..question = answer.isEmpty ? '' : _question
         ..answer = answer
         ..photoPath = _photo
-        ..tags = [for (final t in moodTags.keys) if (_tags.contains(t)) t],
+        ..tags = [for (final t in StoreScope.of(context).moodTags) if (_tags.contains(t.id)) t.id],
     );
     _saved = true;
     Navigator.pop(context);
@@ -335,6 +340,7 @@ class _JournalEditorState extends State<JournalEditor> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final store = StoreScope.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat('MMMM d., EEEE', 'hu').format(widget.date)),
@@ -388,14 +394,21 @@ class _JournalEditorState extends State<JournalEditor> {
             spacing: 6,
             runSpacing: 6,
             children: [
-              for (final t in moodTags.keys)
-                FilterChip(
-                  label: Text(tagLabel(t)),
-                  showCheckmark: false,
-                  selected: _tags.contains(t),
-                  selectedColor: AppColors.primary.withValues(alpha: 0.18),
-                  onSelected: (on) => setState(() => on ? _tags.add(t) : _tags.remove(t)),
-                ),
+              // A rejtett címkék közül csak azok, amik ennél a napnál már ki vannak jelölve.
+              for (final t in store.moodTags)
+                if (t.visible || _tags.contains(t.id))
+                  FilterChip(
+                    label: TagLabel(t),
+                    showCheckmark: false,
+                    selected: _tags.contains(t.id),
+                    selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                    onSelected: (on) => setState(() => on ? _tags.add(t.id) : _tags.remove(t.id)),
+                  ),
+              ActionChip(
+                avatar: const Icon(Icons.tune, size: 18, color: AppColors.primary),
+                label: const Text('Szerkesztés', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
+              ),
             ],
           ),
           const SectionTitle('Miért vagy ma hálás? 🙏'),

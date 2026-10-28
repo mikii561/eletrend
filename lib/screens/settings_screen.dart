@@ -4,6 +4,7 @@ import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'tags_screen.dart';
 
 /// Beállítások: emlékeztető értesítések.
 class SettingsScreen extends StatelessWidget {
@@ -100,6 +101,16 @@ class SettingsScreen extends StatelessWidget {
               label: const Text('Próba értesítés küldése'),
             ),
           ],
+          const SectionTitle('Napló'),
+          Card(
+            child: ListTile(
+              leading: const Text('🏷️', style: TextStyle(fontSize: 24)),
+              title: const Text('Hangulatcímkék', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text('${store.visibleTags.length} látható • saját címkék, emojik, képek'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
+            ),
+          ),
         ],
       ),
     );

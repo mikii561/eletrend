@@ -98,4 +98,31 @@ void main() {
     expect(stats.monthCount(DateTime(2026, 10)), 2);
     expect(stats.journalStreak(now), 2);
   });
+
+  test('saját címke: átnevezés, elrejtés, sorrend és törlés megmarad', () async {
+    final store = await emptyStore();
+    expect(store.moodTags.length, defaultMoodTags.length);
+    final own = store.addTag(name: 'kalandvágyó', emoji: '🧗', image: 'AAEC');
+    expect(store.tagNameTaken('Kalandvágyó'), isTrue);
+    expect(store.tagNameTaken('kalandvágyó', except: own), isFalse);
+
+    store.saveEntry(entry(DateTime(2026, 10, 27), 5)..tags = ['nyugodt', own.id]);
+    store.updateTag(store.tagFor('nyugodt')
+      ..name = 'zen'
+      ..visible = false);
+    store.moveTag(store.moodTags.indexOf(own), 0);
+
+    final reloaded = await AppStore.load();
+    expect(reloaded.moodTags.first.name, 'kalandvágyó');
+    expect(reloaded.moodTags.first.imageBytes, [0, 1, 2]);
+    expect(reloaded.tagFor('nyugodt').name, 'zen');
+    expect(reloaded.visibleTags.any((t) => t.id == 'nyugodt'), isFalse);
+    // Átnevezés után is a régi bejegyzéshez tartozik.
+    expect(reloaded.entryFor(DateTime(2026, 10, 27))!.tags, contains('nyugodt'));
+
+    final mine = reloaded.tagFor(own.id);
+    expect(reloaded.tagUsage(mine), 1);
+    reloaded.removeTag(mine);
+    expect(reloaded.entryFor(DateTime(2026, 10, 27))!.tags, ['nyugodt']);
+  });
 }
