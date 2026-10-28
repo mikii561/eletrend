@@ -32,7 +32,7 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 1. ~~Emlékeztető értesítések~~ (kész)
 2. Kipróbálás a felhasználó telefonján
 3. Firebase: bejelentkezés, valódi barátok és meghívók
-4. Ikon, sötét mód, Google Play
+4. ~~Ikon, sötét mód~~ (kész), Google Play
 
 ## Napló zárolása
 
