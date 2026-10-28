@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/tag_icon.dart';
 import 'events_screen.dart';
 import 'journal_screen.dart';
 import 'settings_screen.dart';
@@ -63,7 +64,7 @@ class TodayScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(entry == null ? 'Milyen napod van?' : 'Mai hangulat: ${moodLabels[entry.mood - 1]}',
+                          Text(entry == null ? 'Milyen napod van?' : 'Mai hangulat: ${StoreScope.of(context).moodFace(entry.mood).name}',
                               style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 12),
                           Row(
@@ -310,7 +311,8 @@ class MoodButton extends StatelessWidget {
         child: AnimatedScale(
           scale: selected ? 1.15 : 1,
           duration: const Duration(milliseconds: 180),
-          child: Text(moodEmojis[mood - 1], style: TextStyle(fontSize: size * 0.5)),
+          // A saját kép kitölti a kört, az emoji kisebb.
+          child: MoodFace(mood, size: StoreScope.of(context).moodFace(mood).image != null ? size - 6 : size * 0.62),
         ),
       ),
     );

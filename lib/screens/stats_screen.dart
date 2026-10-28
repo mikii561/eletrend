@@ -42,7 +42,8 @@ class _StatsScreenState extends State<StatsScreen> {
               const SizedBox(width: 8),
               _StatTile(
                 label: 'Átlagos\nhangulat',
-                value: avg == null ? '–' : moodEmojis[avg.round() - 1],
+                value: '–',
+                icon: avg == null ? null : MoodFace(avg.round(), size: 30),
                 sub: avg?.toStringAsFixed(1).replaceAll('.', ','),
               ),
               const SizedBox(width: 8),
@@ -114,8 +115,13 @@ class _StatsScreenState extends State<StatsScreen> {
                             color: AppColors.moods[t.average.round() - 1],
                           ),
                         ),
-                        trailing: Text('${t.count}×  ${moodEmojis[t.average.round() - 1]}',
-                            style: const TextStyle(fontWeight: FontWeight.w700)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('${t.count}×  ', style: const TextStyle(fontWeight: FontWeight.w700)),
+                            MoodFace(t.average.round(), size: 20),
+                          ],
+                        ),
                       ),
                   ],
                 ),
@@ -145,11 +151,14 @@ class _StatsScreenState extends State<StatsScreen> {
 }
 
 class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value, this.sub});
+  const _StatTile({required this.label, required this.value, this.sub, this.icon});
 
   final String label;
   final String value;
   final String? sub;
+
+  /// Ha meg van adva, a [value] szöveg helyett ez látszik.
+  final Widget? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +169,7 @@ class _StatTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
           child: Column(
             children: [
-              Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+              icon ?? Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
               if (sub != null) Text(sub!, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textMuted)),
               const SizedBox(height: 4),
               Text(label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
@@ -234,7 +243,7 @@ class _MoodCalendar extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                               color: isFuture ? Colors.black26 : AppColors.textMuted,
                             ))
-                        : Text(moodEmojis[entry.mood - 1], style: const TextStyle(fontSize: 18)),
+                        : MoodFace(entry.mood, size: 20),
                   ),
                 );
               }),
@@ -261,7 +270,7 @@ class _MoodTrend extends StatelessWidget {
         // Bal oldali tengely emojikkal
         Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [for (var m = 5; m >= 1; m--) Text(moodEmojis[m - 1], style: const TextStyle(fontSize: 14))],
+          children: [for (var m = 5; m >= 1; m--) MoodFace(m, size: 16)],
         ),
         const SizedBox(width: 8),
         Expanded(child: CustomPaint(painter: _TrendPainter(days), size: Size.infinite)),

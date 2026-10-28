@@ -209,5 +209,8 @@ const defaultMoodTags = {
   'beteg': '🤒',
 };
 
+/// Az [mood] (1–5) hangulat alapértelmezett arca és felirata.
+MoodTag defaultMoodFace(int mood) => MoodTag(id: 'mood$mood', name: moodLabels[mood - 1], emoji: moodEmojis[mood - 1]);
+
 const moodEmojis = ['😞', '🙁', '😐', '🙂', '😄'];
 const moodLabels = ['Nagyon rossz', 'Rossz', 'Átlagos', 'Jó', 'Nagyon jó'];

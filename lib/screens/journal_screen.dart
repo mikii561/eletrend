@@ -124,7 +124,7 @@ class _EntryCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(moodEmojis[j.mood - 1], style: const TextStyle(fontSize: 22)),
+                          MoodFace(j.mood, size: 26),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(DateFormat('MMMM d., EEEE', 'hu').format(j.date),
@@ -225,7 +225,7 @@ class _MoodWeek extends StatelessWidget {
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(e == null ? '' : moodEmojis[e.mood - 1], style: const TextStyle(fontSize: 16)),
+                        e == null ? const SizedBox(height: 18) : MoodFace(e.mood, size: 18),
                         const SizedBox(height: 4),
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 300),
@@ -373,7 +373,17 @@ class _JournalEditorState extends State<JournalEditor> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Text('Milyen napod van?', style: theme.textTheme.titleMedium),
+                  Row(
+                    children: [
+                      const SizedBox(width: 40),
+                      Expanded(child: Text('Milyen napod van?', textAlign: TextAlign.center, style: theme.textTheme.titleMedium)),
+                      IconButton(
+                        tooltip: 'Arcok cseréje',
+                        icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.textMuted),
+                        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -383,7 +393,7 @@ class _JournalEditorState extends State<JournalEditor> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(moodLabels[_mood - 1],
+                  Text(store.moodFace(_mood).name,
                       style: TextStyle(color: AppColors.moods[_mood - 1], fontWeight: FontWeight.w800)),
                 ],
               ),

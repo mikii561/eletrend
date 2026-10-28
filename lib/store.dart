@@ -19,6 +19,9 @@ class AppStore extends ChangeNotifier {
   /// Hangulatcímkék a felhasználó sorrendjében.
   List<MoodTag> moodTags = [];
 
+  /// Az 1–5 hangulat arca és felirata (emoji vagy saját kép).
+  List<MoodTag> moodFaces = [];
+
   // Emlékeztetők beállításai
   bool dailyReminder = true;
   TimeOfDay reminderTime = const TimeOfDay(hour: 20, minute: 0);
@@ -44,6 +47,8 @@ class AppStore extends ChangeNotifier {
     moodTags = _prefs.containsKey('moodTags')
         ? list('moodTags').map(MoodTag.fromJson).toList()
         : [for (final t in defaultMoodTags.entries) MoodTag(id: t.key, name: t.key, emoji: t.value)];
+    final faces = list('moodFaces').map(MoodTag.fromJson).toList();
+    moodFaces = faces.length == 5 ? faces : [for (var i = 1; i <= 5; i++) defaultMoodFace(i)];
     dailyReminder = _prefs.getBool('dailyReminder') ?? true;
     reminderTime = TimeOfDay(
       hour: _prefs.getInt('reminderHour') ?? 20,
@@ -58,6 +63,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('journal', jsonEncode(journal.map((j) => j.toJson()).toList()));
     _prefs.setStringList('friends', friends);
     _prefs.setString('moodTags', jsonEncode(moodTags.map((t) => t.toJson()).toList()));
+    _prefs.setString('moodFaces', jsonEncode(moodFaces.map((t) => t.toJson()).toList()));
     _prefs.setBool('dailyReminder', dailyReminder);
     _prefs.setInt('reminderHour', reminderTime.hour);
     _prefs.setInt('reminderMinute', reminderTime.minute);
@@ -188,6 +194,16 @@ class AppStore extends ChangeNotifier {
 
   /// Hány bejegyzésben szerepel a címke.
   int tagUsage(MoodTag tag) => journal.where((j) => j.tags.contains(tag.id)).length;
+
+  // Hangulatok (1–5)
+
+  MoodTag moodFace(int mood) => moodFaces[mood - 1];
+
+  /// Egy hangulat arcának visszaállítása az alapra.
+  void resetMoodFace(int mood) {
+    moodFaces[mood - 1] = defaultMoodFace(mood);
+    _save();
+  }
 
   /// Törli a címkét, és kiveszi a bejegyzésekből is.
   void removeTag(MoodTag tag) {

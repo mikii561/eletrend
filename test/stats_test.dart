@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:eletrend/models.dart';
+import 'package:eletrend/photos.dart';
 import 'package:eletrend/questions.dart';
 import 'package:eletrend/stats.dart';
 import 'package:eletrend/store.dart';
@@ -124,5 +128,35 @@ void main() {
     expect(reloaded.tagUsage(mine), 1);
     reloaded.removeTag(mine);
     expect(reloaded.entryFor(DateTime(2026, 10, 27))!.tags, ['nyugodt']);
+  });
+
+  test('saját hangulatarc: megmarad, és visszaállítható', () async {
+    final store = await emptyStore();
+    expect(store.moodFace(4).emoji, moodEmojis[3]);
+    store.updateTag(store.moodFace(5)
+      ..name = 'Szuper nap'
+      ..image = 'AAEC');
+    final reloaded = await AppStore.load();
+    expect(reloaded.moodFace(5).name, 'Szuper nap');
+    expect(reloaded.moodFace(5).imageBytes, [0, 1, 2]);
+    reloaded.resetMoodFace(5);
+    expect(reloaded.moodFace(5).name, moodLabels[4]);
+    expect(reloaded.moodFace(5).image, isNull);
+  });
+
+  testWidgets('kép kicsinyítése négyzetre; olvashatatlan képnél érthető hiba', (tester) async {
+    await tester.runAsync(() async {
+      // 300×200-as kép készítése
+      final recorder = ui.PictureRecorder();
+      ui.Canvas(recorder).drawRect(const ui.Rect.fromLTWH(0, 0, 300, 200), ui.Paint()..color = const ui.Color(0xFF5B5BD6));
+      final big = await recorder.endRecording().toImage(300, 200);
+      final png = (await big.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+
+      final thumb = await TagImages.squareThumbnail(png);
+      final decoded = (await (await ui.instantiateImageCodec(thumb)).getNextFrame()).image;
+      expect([decoded.width, decoded.height], [TagImages.size, TagImages.size]);
+
+      await expectLater(TagImages.squareThumbnail(Uint8List.fromList([1, 2, 3, 4])), throwsA(isA<UnsupportedImage>()));
+    });
   });
 }

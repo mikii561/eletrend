@@ -105,8 +105,8 @@ class SettingsScreen extends StatelessWidget {
           Card(
             child: ListTile(
               leading: const Text('🏷️', style: TextStyle(fontSize: 24)),
-              title: const Text('Hangulatcímkék', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text('${store.visibleTags.length} látható • saját címkék, emojik, képek'),
+              title: const Text('Hangulatok és címkék', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: Text('Saját arcok a napokhoz, ${store.visibleTags.length} látható címke'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
             ),

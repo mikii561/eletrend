@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/painting.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -31,14 +34,55 @@ class Photos {
   }
 }
 
-/// Saját címkekép: kicsire méretezve, base64-ben a címke mellé mentjük,
-/// így böngészőben is működik.
+/// Saját kép címkéhez vagy hangulathoz: négyzetre vágva, kicsire méretezve,
+/// base64-ben mentjük az adatok mellé, így böngészőben is működik.
 class TagImages {
   static final _picker = ImagePicker();
 
+  /// A képválasztó; tesztben lecserélhető.
+  @visibleForTesting
+  static Future<XFile?> Function(ImageSource source) pickFile =
+      (source) => _picker.pickImage(source: source, maxWidth: 1024, maxHeight: 1024);
+
+  /// Ekkora (px) négyzetes PNG lesz a képből.
+  static const size = 128;
+
+  /// Kép választása vagy fotózása. Null, ha a felhasználó meggondolta magát;
+  /// [UnsupportedImage], ha a képet nem tudjuk megnyitni (pl. HEIC).
   static Future<String?> pick(ImageSource source) async {
-    final picked = await _picker.pickImage(source: source, maxWidth: 160, maxHeight: 160, imageQuality: 90);
+    final picked = await pickFile(source);
     if (picked == null) return null;
-    return base64Encode(await picked.readAsBytes());
+    return base64Encode(await squareThumbnail(await picked.readAsBytes()));
   }
+
+  /// A kép közepéből kivágott, [size] méretű négyzet PNG-ként.
+  /// Nem a böngészőre bízzuk a kicsinyítést, mert az néha az eredeti, több MB-os
+  /// képet adja vissza, ami nem fér el a tárhelyen.
+  static Future<Uint8List> squareThumbnail(Uint8List bytes) async {
+    final ui.Image src;
+    try {
+      final codec = await ui.instantiateImageCodec(bytes);
+      src = (await codec.getNextFrame()).image;
+    } catch (_) {
+      throw const UnsupportedImage();
+    }
+    final side = min(src.width, src.height).toDouble();
+    final recorder = ui.PictureRecorder();
+    Canvas(recorder).drawImageRect(
+      src,
+      Rect.fromLTWH((src.width - side) / 2, (src.height - side) / 2, side, side),
+      Rect.fromLTWH(0, 0, size.toDouble(), size.toDouble()),
+      Paint()..filterQuality = FilterQuality.medium,
+    );
+    final thumb = await recorder.endRecording().toImage(size, size);
+    final data = await thumb.toByteData(format: ui.ImageByteFormat.png);
+    return data!.buffer.asUint8List();
+  }
+}
+
+class UnsupportedImage implements Exception {
+  const UnsupportedImage();
+
+  @override
+  String toString() => 'Ezt a képet nem tudom megnyitni. Válassz JPG vagy PNG képet (a HEIC formátum nem megy).';
 }
