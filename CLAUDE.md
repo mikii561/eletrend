@@ -27,6 +27,14 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - GitHub Pages: `.github/workflows/pages.yml` minden `main`-re feltöltés után tesztel, megépíti és kiteszi a webes verziót.
 - Helyi release build Git Bashből nem megy (átírja a `/eletrend/` útvonalat), PowerShellből kell: `flutter build web --release --base-href /eletrend/`.
 
+## Közös programok (Firebase)
+
+- Projekt: `lifest-c95f3` (a felhasználó Google-fiókja). Beállítások: `lib/firebase_options.dart`; névtelen bejelentkezés + Firestore.
+- `lib/social.dart`: meghívás (`events/{id}`), visszajelzés + szavazat (`rsvps/{uid}`), üzenőfal (`messages`). Csak első használatkor kapcsolódik.
+- Meghívólink: `https://mikii561.github.io/eletrend/?e=<id>` → `InviteScreen`.
+- **A szabályok (`firestore.rules`) módosítás után a Firebase konzolban kézzel kell beilleszteni** (Firestore → Rules → Publish); nincs Firebase CLI.
+- Tesztek: `fake_cloud_firestore` + `firebase_auth_mocks`, a valódi szerverhez nem nyúlnak.
+
 ## Ütemterv
 
 1. ~~Emlékeztető értesítések~~ (kész)
