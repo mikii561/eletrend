@@ -22,6 +22,11 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - `lib/theme.dart`: színek és téma; `lib/widgets/`: közös elemek, telefonkeret, térkép
 - Térkép: OpenStreetMap (`flutter_map`), címkeresés: Nominatim (`lib/geocoding.dart`)
 
+## Weboldal
+
+- GitHub Pages: `.github/workflows/pages.yml` minden `main`-re feltöltés után tesztel, megépíti és kiteszi a webes verziót.
+- Helyi release build Git Bashből nem megy (átírja a `/eletrend/` útvonalat), PowerShellből kell: `flutter build web --release --base-href /eletrend/`.
+
 ## Ütemterv
 
 1. ~~Emlékeztető értesítések~~ (kész)
