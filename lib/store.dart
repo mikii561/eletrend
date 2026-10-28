@@ -51,6 +51,9 @@ class AppStore extends ChangeNotifier {
   /// Kihívás → hozzá kötött szokás (a szokás kipipálása a kihívásban is teljesít).
   Map<String, String> challengeHabits = {};
 
+  /// Lejátssza-e az app a bumpok animációit (konfetti, felugró képek…).
+  bool effectsOn = true;
+
   /// A lakóhelyem a „közelben” szűréshez (null, ha még nem adtam meg).
   IdeaPlace? homePlace;
 
@@ -97,6 +100,7 @@ class AppStore extends ChangeNotifier {
     challengeHabits = Map<String, String>.from(jsonDecode(_prefs.getString('challengeHabits') ?? '{}') as Map);
     checkIns = list('checkIns').map(CheckIn.fromJson).toList();
     checkInReminders = _prefs.getBool('checkInReminders') ?? false;
+    effectsOn = _prefs.getBool('effectsOn') ?? true;
     final home = _prefs.getString('homePlace');
     homePlace = home == null ? null : IdeaPlace.fromJson(jsonDecode(home) as Map<String, dynamic>);
   }
@@ -128,6 +132,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('challengeHabits', jsonEncode(challengeHabits));
     _prefs.setString('checkIns', jsonEncode(checkIns.map((c) => c.toJson()).toList()));
     _prefs.setBool('checkInReminders', checkInReminders);
+    _prefs.setBool('effectsOn', effectsOn);
     homePlace == null ? _prefs.remove('homePlace') : _prefs.setString('homePlace', jsonEncode(homePlace!.toJson()));
     notifyListeners();
   }
@@ -159,6 +164,7 @@ class AppStore extends ChangeNotifier {
         'challengeHabits': challengeHabits,
         'checkIns': checkIns.map((c) => c.toJson()).toList(),
         'checkInReminders': checkInReminders,
+        'effectsOn': effectsOn,
         if (homePlace != null) 'homePlace': homePlace!.toJson(),
       };
 
@@ -195,6 +201,7 @@ class AppStore extends ChangeNotifier {
       challengeHabits = Map<String, String>.from(settings['challengeHabits'] as Map? ?? {});
       checkIns = [for (final c in settings['checkIns'] as List? ?? []) CheckIn.fromJson(c as Map<String, dynamic>)];
       checkInReminders = settings['checkInReminders'] as bool? ?? false;
+      effectsOn = settings['effectsOn'] as bool? ?? true;
       final home = settings['homePlace'] as Map<String, dynamic>?;
       if (home != null) homePlace = IdeaPlace.fromJson(home);
     }
@@ -294,7 +301,7 @@ class AppStore extends ChangeNotifier {
     'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
     'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
     'myName', 'invites', 'shareStreaks', 'seenBadges', 'challengeHabits', 'checkIns',
-    'checkInReminders', 'homePlace',
+    'checkInReminders', 'homePlace', 'effectsOn',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -378,6 +385,11 @@ class AppStore extends ChangeNotifier {
 
   void setHomePlace(IdeaPlace? place) {
     homePlace = place;
+    _save();
+  }
+
+  void setEffectsOn(bool on) {
+    effectsOn = on;
     _save();
   }
 

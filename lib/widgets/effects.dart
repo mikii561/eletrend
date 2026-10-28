@@ -39,7 +39,12 @@ class EffectShow {
 /// Effekt lejátszása az app fölött (nem akadályozza a használatot), ~3,5 mp után eltűnik.
 void playEffect(BuildContext context, EffectShow show) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
-  if (overlay == null) return;
+  if (overlay != null) playEffectOn(overlay, show);
+}
+
+/// Ugyanez egy már elkért [OverlayState]-re (aszinkron lépések után, amikor a context már nem használható).
+void playEffectOn(OverlayState overlay, EffectShow show) {
+  if (!overlay.mounted) return;
   late OverlayEntry entry;
   entry = OverlayEntry(builder: (_) => IgnorePointer(child: _EffectLayer(show: show, onDone: () => entry.remove())));
   overlay.insert(entry);

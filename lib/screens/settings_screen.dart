@@ -7,6 +7,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'account_section.dart';
+import 'bump_screens.dart';
 import 'pin_screen.dart';
 import 'tags_screen.dart';
 
@@ -178,6 +179,8 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
           ),
+          const SectionTitle('Bumpok'),
+          const BumpSettingsCard(),
           const SectionTitle('Napló zárolása'),
           Card(
             child: Column(

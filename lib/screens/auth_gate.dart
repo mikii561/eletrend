@@ -5,8 +5,13 @@ import 'package:flutter/material.dart';
 
 import '../account.dart';
 import '../admin.dart';
+import '../app_navigator.dart';
+import '../bumps.dart';
 import '../challenges.dart';
 import '../friends.dart';
+import '../notifications.dart';
+import '../widgets/effects.dart';
+import 'bump_screens.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -84,6 +89,8 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _startFriends(User user, AppStore store) async {
     try {
       Challenges.instance.start(user.uid, store);
+      Bumps.instance.start(user.uid, (b) => _onBump(b, store));
+      Notifications.onTap = _onNotificationTap;
       await Friends.instance.start(user.uid, store);
       await _inbox?.cancel();
       _inbox = Friends.instance.listenInbox();
@@ -97,6 +104,37 @@ class _AuthGateState extends State<AuthGate> {
     _inbox = null;
     Friends.instance.stop();
     Challenges.instance.stop();
+    Bumps.instance.stop();
+  }
+
+  /// Új bump: ha az app előtérben van, rögtön felugrik; ha háttérben, telefonos értesítés jön.
+  void _onBump(Bump b, AppStore store) {
+    final nav = appNavigatorKey.currentState;
+    final foreground = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    if (nav == null || !foreground) {
+      if (Notifications.supported) {
+        Notifications.showBump(b.id, b.headline, b.eventTitle == null ? 'Koppints a megnyitáshoz' : '📅 ${b.eventTitle}');
+      }
+      Bumps.instance.notShown(b.id);
+      return;
+    }
+    final ctx = nav.context;
+    if (store.effectsOn) playEffect(ctx, b.show);
+    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+      duration: const Duration(seconds: 6),
+      content: Text(b.headline),
+      action: SnackBarAction(label: 'Megnyitom', onPressed: () => openBump(nav.context, b)),
+    ));
+    Bumps.instance.markSeen(b.id).catchError((_) {});
+  }
+
+  /// Értesítésre koppintva: a bump (és a programja) megnyílik, az effekt lejátszódik.
+  Future<void> _onNotificationTap(String payload) async {
+    if (!payload.startsWith('bump:')) return;
+    final bump = await Bumps.instance.fetch(payload.substring(5));
+    final nav = appNavigatorKey.currentState;
+    if (bump == null || nav == null || !nav.mounted) return;
+    await openBump(nav.context, bump);
   }
 
   /// Felfüggesztett-e a fiók, és az adminnak látható adatlap frissítése.

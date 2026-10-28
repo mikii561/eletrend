@@ -9,7 +9,9 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'admin.dart';
 import 'badges.dart';
+import 'bumps.dart';
 import 'account.dart';
+import 'app_navigator.dart';
 import 'firebase_options.dart';
 import 'friends.dart';
 import 'habits_widget.dart';
@@ -52,16 +54,13 @@ Future<void> main() async {
   unawaited(HabitsWidget.init(store));
 }
 
-/// A gyökér navigátor, hogy indításkor a meghívást az app fölé nyithassuk.
-final navigatorKey = GlobalKey<NavigatorState>();
-
 /// Ha meghívólinkkel nyitották meg a weboldalt (…/eletrend/?e=azonosító), rögtön a meghívás jön.
 void _openInviteFromLink() {
   if (!kIsWeb) return;
   final id = Uri.base.queryParameters['e'];
   if (id == null || !RegExp(r'^[A-Za-z0-9]{10,40}$').hasMatch(id)) return;
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    navigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: id)));
+    appNavigatorKey.currentState?.push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: id)));
   });
 }
 
@@ -95,7 +94,7 @@ class EletrendApp extends StatelessWidget {
         listenable: store,
         builder: (context, _) => MaterialApp(
           title: 'Életrend',
-          navigatorKey: navigatorKey,
+          navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           locale: const Locale('hu'),
           supportedLocales: const [Locale('hu')],
@@ -184,6 +183,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       store.reload().then((_) => Account.instance.sync?.refresh()).catchError((Object e) {
         debugPrint('Frissítés a felhőből később: $e');
       });
+      Bumps.instance.checkNow().catchError((Object e) => debugPrint('Bumpok később: $e'));
       final user = Account.instance.user;
       if (user != null) {
         Admin.instance

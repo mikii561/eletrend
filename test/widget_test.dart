@@ -131,6 +131,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Barátok'));
     await tester.pumpAndSettle();
+    expect(find.text('Kapott bumpok'), findsOneWidget);
+    await tester.dragUntilVisible(find.text('Csak név szerint'), find.byType(ListView).first, const Offset(0, -300));
     expect(find.text('Csak név szerint'), findsOneWidget);
     Account.instance.sync?.stop();
     Friends.instance.stop();

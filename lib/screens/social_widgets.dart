@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../friends.dart';
+import 'bump_screens.dart';
 import '../models.dart';
 import '../social.dart';
 import '../store.dart';
@@ -521,6 +522,32 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                           title: const Text('Barátok meghívása',
                               style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
                           onTap: _busy ? null : _inviteFriends,
+                        ),
+                      if (Friends.instance.ready)
+                        ListTile(
+                          leading: const Text('👋', style: TextStyle(fontSize: 22)),
+                          title: const Text('Bump a barátoknak',
+                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                          subtitle: const Text('Emlékeztető képpel, hanggal, konfettivel'),
+                          onTap: () async {
+                            final all = await Friends.instance.watchFriends().first;
+                            if (!context.mounted) return;
+                            if (all.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Még nincs barátod az appban.')));
+                              return;
+                            }
+                            final picked = await showModalBottomSheet<List<String>>(
+                              context: context,
+                              showDragHandle: true,
+                              builder: (_) => _FriendPicker(friends: all),
+                            );
+                            if (picked == null || picked.isEmpty || !context.mounted) return;
+                            await showBumpComposer(
+                              context,
+                              to: {for (final f in all) if (picked.contains(f.uid)) f.uid: f.name},
+                              event: widget.event,
+                            );
+                          },
                         ),
                       ListTile(
                         leading: const Icon(Icons.share_outlined, color: AppColors.primary),

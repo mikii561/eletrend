@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../bumps.dart';
 import '../friends.dart';
+import 'bump_screens.dart';
 import 'challenges_screen.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -20,6 +22,19 @@ class _FriendsScreenState extends State<FriendsScreen> {
   // Egyszer iratkozunk fel, nem minden újrarajzolásnál.
   late final Stream<List<FriendRequest>>? _requests = Friends.instance.ready ? Friends.instance.watchRequests() : null;
   late final Stream<List<Friend>>? _friends = Friends.instance.ready ? Friends.instance.watchFriends() : null;
+
+  /// Akiktől némítottam a bumpokat.
+  final Set<String> _muted = {};
+
+  @override
+  void initState() {
+    super.initState();
+    if (Bumps.instance.ready) {
+      Bumps.instance.settings().then((s) {
+        if (mounted) setState(() => _muted.addAll(s.muted));
+      }).catchError((_) {});
+    }
+  }
 
   Future<void> _addByCode(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -60,6 +75,15 @@ class _FriendsScreenState extends State<FriendsScreen> {
           if (!friends.ready)
             const EmptyState(emoji: '📡', text: 'A barátokhoz internet kell.\nPróbáld újra kicsit később.')
           else ...[
+            Card(
+              child: ListTile(
+                leading: const Text('👋', style: TextStyle(fontSize: 26)),
+                title: const Text('Kapott bumpok', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('A barátaid üzenetei, képei, hangüzenetei.'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BumpsInboxScreen())),
+              ),
+            ),
             Card(
               color: AppColors.accent.withValues(alpha: 0.12),
               child: ListTile(
@@ -167,9 +191,30 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           subtitle: f.streaks.isEmpty
                               ? null
                               : Text(f.streaks.take(3).map((s) => '🔥 ${s.$1} ${s.$2} nap').join(' · ')),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (_) => friends.remove(f.uid),
-                            itemBuilder: (_) => const [PopupMenuItem(value: 'remove', child: Text('Barát eltávolítása'))],
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton.filledTonal(
+                                tooltip: 'Bump',
+                                onPressed: () => showBumpComposer(context, to: {f.uid: f.name}),
+                                icon: const Text('👋', style: TextStyle(fontSize: 18)),
+                              ),
+                              PopupMenuButton<String>(
+                                onSelected: (v) async {
+                                  if (v == 'remove') return friends.remove(f.uid);
+                                  final mute = !_muted.contains(f.uid);
+                                  await Bumps.instance.setMuted(f.uid, mute);
+                                  setState(() => mute ? _muted.add(f.uid) : _muted.remove(f.uid));
+                                },
+                                itemBuilder: (_) => [
+                                  PopupMenuItem(
+                                    value: 'mute',
+                                    child: Text(_muted.contains(f.uid) ? 'Bumpok újra engedélyezése' : 'Bumpok némítása tőle'),
+                                  ),
+                                  const PopupMenuItem(value: 'remove', child: Text('Barát eltávolítása')),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                     ],

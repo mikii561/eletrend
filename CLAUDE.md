@@ -50,6 +50,14 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - `lib/community.dart`: `ideas/{id}` (cím, leírás, emoji, címkék, hely: város/ország/koordináta), szavazat `ideas/{id}/votes/{uid}` (`liked`, `rating` 0–5), jelentés `ideas/{id}/reports/{uid}`. Az összesítés egyetlen `collectionGroup('votes')` lekérdezés; szűrés/rendezés a telefonon (`sortAndFilter`, legfeljebb 300 ötlet).
 - „Közelben”: a `store.homePlace`-től 30 km. Ötletadó: beépített vagy közösségi forrás.
 
+## Bumpok és effektek
+
+- `lib/bumps.dart`: `bumps/{címzett}/items/{id}` (szöveg, matrica, kép/GIF base64 ≤450 KB, hang base64 ≤20 mp, effekt, program), `bumpSettings/{uid}` (`off`, `muted`). Csak barát küldhet (szabály).
+- Fogadás: az `AuthGate` figyeli; előtérben effekt + SnackBar, háttérben helyi értesítés (`Notifications.showBump`, payload `bump:id`), koppintásra `openBump` (program + felugró effekt).
+- **Bezárt appra push nincs** — ahhoz Blaze csomag + Cloud Function + FCM token kell (még nincs megírva).
+- `lib/widgets/effects.dart`: `playEffect`/`playEffectOn` (konfetti, tűzijáték, szívek, emojieső, felugró-leeső kép). `store.effectsOn` kapcsolja.
+- Program háttér: `lib/event_background.dart` (témák vagy JPEG ≤1000 px), a megosztott programban is.
+
 ## Admin
 
 - `lib/admin.dart` + `lib/screens/admin_screen.dart`: áttekintés, felhasználók (felfüggesztés `bans/{uid}`, adattörlés), hibák (`errors`, csak release buildben jelent az app), visszajelzések (`feedback`), megosztott programok moderálása.

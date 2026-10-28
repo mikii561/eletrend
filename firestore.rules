@@ -120,6 +120,30 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() <= 100;
     }
 
+    // Bump: csak barát küldhet, és csak ha a címzett nem kapcsolta ki / nem némította.
+    match /bumps/{to}/items/{id} {
+      allow read, delete: if realUser() && request.auth.uid == to;
+      allow update: if realUser() && request.auth.uid == to
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen']);
+      allow create: if realUser() && !banned()
+        && request.resource.data.fromUid == request.auth.uid
+        && exists(/databases/$(database)/documents/friendships/$(to)/list/$(request.auth.uid))
+        && (!exists(/databases/$(database)/documents/bumpSettings/$(to))
+          || (get(/databases/$(database)/documents/bumpSettings/$(to)).data.get('off', false) != true
+            && !(request.auth.uid in get(/databases/$(database)/documents/bumpSettings/$(to)).data.get('muted', []))))
+        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'text', 'effect', 'sticker', 'image',
+          'audio', 'audioMime', 'eventId', 'eventTitle', 'seen', 'at'])
+        && request.resource.data.seen == false
+        && request.resource.data.text is string && request.resource.data.text.size() <= 200
+        && (request.resource.data.image == null || request.resource.data.image.size() <= 650000)
+        && (request.resource.data.audio == null || request.resource.data.audio.size() <= 250000);
+    }
+
+    // Bump-beállítások (kikapcsolás, némítás): csak a saját.
+    match /bumpSettings/{uid} {
+      allow read, write: if realUser() && request.auth.uid == uid;
+    }
+
     // Közösségi ötletek: minden bejelentkezett felhasználó látja; megosztani valódi fiókkal lehet,
     // módosítani a szerző, törölni a szerző vagy az admin.
     match /ideas/{id} {

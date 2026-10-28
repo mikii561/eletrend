@@ -40,12 +40,26 @@ class Notifications {
     ),
   );
 
+  static const _bumpDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'bumps',
+      'Bumpok a barátoktól',
+      channelDescription: 'Amikor egy barátod megbumpol (a telefon beállításaiban külön kikapcsolható)',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+  );
+
   // Értesítés-azonosítók: napi 1000–1006, programok 2000-től.
   static const _dailyBase = 1000;
   static const _eventBase = 2000;
   static const _habitBase = 3000; // szokásonként 7 nap: 3000 + szokás * 7 + nap
   static const _checkInBase = 4000; // naponta 2: 4000 + nap * 2 + (0: 11:00, 1: 15:00)
   static const _testId = 9999;
+  static const _bumpBase = 5000; // bumpok: 5000 + (azonosító hash % 1000)
+
+  /// Értesítésre koppintáskor (pl. `bump:azonosító`).
+  static void Function(String payload)? onTap;
 
   /// Indításkor egyszer: időzóna, plugin, engedélykérés, és figyeli a store-t.
   static Future<void> init(AppStore store) async {
@@ -59,7 +73,14 @@ class Notifications {
     }
     await _plugin.initialize(
       settings: const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+      onDidReceiveNotificationResponse: (r) {
+        if (r.payload != null) onTap?.call(r.payload!);
+      },
     );
+    // Ha egy értesítésre koppintva indult el az app, azt is kezeljük.
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    final payload = launch?.notificationResponse?.payload;
+    if (launch?.didNotificationLaunchApp == true && payload != null) onTap?.call(payload);
     _ready = true;
     await requestPermission();
     await reschedule(store);
@@ -74,6 +95,18 @@ class Notifications {
     if (!_ready) return false;
     final android = _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     return await android?.requestNotificationsPermission() ?? false;
+  }
+
+  /// Bump értesítés (ha az app a háttérben fut). Koppintásra az [onTap] kapja: `bump:azonosító`.
+  static Future<void> showBump(String id, String title, String body) async {
+    if (!_ready) return;
+    await _plugin.show(
+      id: _bumpBase + id.hashCode.abs() % 1000,
+      title: title,
+      body: body,
+      notificationDetails: _bumpDetails,
+      payload: 'bump:$id',
+    );
   }
 
   static Future<void> showTest() async {
