@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../account.dart';
 import '../admin.dart';
+import '../challenges.dart';
 import '../friends.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -82,6 +83,7 @@ class _AuthGateState extends State<AuthGate> {
   /// Barátkód, névjegy, és a barátoktól jövő meghívások figyelése.
   Future<void> _startFriends(User user, AppStore store) async {
     try {
+      Challenges.instance.start(user.uid, store);
       await Friends.instance.start(user.uid, store);
       await _inbox?.cancel();
       _inbox = Friends.instance.listenInbox();
@@ -94,6 +96,7 @@ class _AuthGateState extends State<AuthGate> {
     _inbox?.cancel();
     _inbox = null;
     Friends.instance.stop();
+    Challenges.instance.stop();
   }
 
   /// Felfüggesztett-e a fiók, és az adminnak látható adatlap frissítése.

@@ -1,4 +1,5 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/challenges.dart';
 import 'package:eletrend/admin.dart';
 import 'package:eletrend/friends.dart';
 import 'package:eletrend/main.dart';
@@ -96,6 +97,7 @@ void main() {
     Account.instance = Account(auth: MockFirebaseAuth(mockUser: MockUser(uid: 'u9', email: 'anna@pelda.hu')), db: db);
     Admin.instance = Admin(db: db);
     Friends.instance = Friends(db: db);
+    Challenges.instance = Challenges(db: db);
     final store = (await tester.runAsync(() => freshDevice()))!;
 
     await tester.pumpWidget(EletrendApp(store: store));
@@ -119,6 +121,7 @@ void main() {
     expect((await tester.runAsync(() => count(db, uid, 'meta')))!, 1);
     Account.instance.sync?.stop();
     Friends.instance.stop();
+    Challenges.instance.stop();
   });
 
   test('Google-belépés: új fiók, és névtelen vendégből is fiók lesz', () async {

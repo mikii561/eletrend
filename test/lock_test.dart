@@ -1,4 +1,5 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/challenges.dart';
 import 'package:eletrend/friends.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/store.dart';
@@ -71,5 +72,6 @@ void main() {
     expect(find.text('A naplód zárolva van'), findsOneWidget);
     Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
     Friends.instance.stop();
+    Challenges.instance.stop();
   });
 }

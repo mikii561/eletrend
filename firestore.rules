@@ -120,6 +120,47 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() <= 100;
     }
 
+    // Közös kihívás: csak a tagjai látják; a szervező kezeli, a többiek kiléphetnek.
+    match /challenges/{cid} {
+      allow read: if realUser() && request.auth.uid in resource.data.members;
+      allow create: if realUser() && !banned()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.members.size() <= 20
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 60
+        && request.resource.data.days is int && request.resource.data.days <= 366;
+      allow update: if realUser() && (
+        (resource.data.ownerUid == request.auth.uid && request.resource.data.ownerUid == request.auth.uid)
+        || (request.auth.uid in resource.data.members
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'names'])
+          && !(request.auth.uid in request.resource.data.members)
+          && request.resource.data.members.size() == resource.data.members.size() - 1));
+      allow delete: if realUser() && resource.data.ownerUid == request.auth.uid;
+
+      // Haladás: mindenki a sajátját írja; a többiek csak buzdíthatnak (+1 taps).
+      match /progress/{uid} {
+        allow read: if realUser()
+          && request.auth.uid in get(/databases/$(database)/documents/challenges/$(cid)).data.members;
+        allow create: if realUser() && request.auth.uid == uid && !banned()
+          && request.auth.uid in get(/databases/$(database)/documents/challenges/$(cid)).data.members
+          && request.resource.data.keys().hasOnly(['name', 'done', 'cheers'])
+          && request.resource.data.cheers == 0
+          && request.resource.data.done is list && request.resource.data.done.size() <= 400;
+        allow update: if realUser() && !banned()
+          && request.auth.uid in get(/databases/$(database)/documents/challenges/$(cid)).data.members
+          && ((request.auth.uid == uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'done'])
+              && request.resource.data.done.size() <= 400)
+            || (request.auth.uid != uid
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['cheers'])
+              && request.resource.data.cheers == resource.data.cheers + 1));
+        allow delete: if realUser() && (request.auth.uid == uid
+          || get(/databases/$(database)/documents/challenges/$(cid)).data.ownerUid == request.auth.uid);
+      }
+    }
+
     match /events/{eventId} {
       allow get: if signedIn();
       allow list: if isAdmin();

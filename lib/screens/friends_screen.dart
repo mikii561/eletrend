@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../friends.dart';
+import 'challenges_screen.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -59,6 +60,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
           if (!friends.ready)
             const EmptyState(emoji: '📡', text: 'A barátokhoz internet kell.\nPróbáld újra kicsit később.')
           else ...[
+            Card(
+              color: AppColors.accent.withValues(alpha: 0.12),
+              child: ListTile(
+                leading: const Text('🏁', style: TextStyle(fontSize: 26)),
+                title: const Text('Közös kihívások', style: TextStyle(fontWeight: FontWeight.w800)),
+                subtitle: const Text('Pl. 30 nap edzés a barátaiddal, ranglistával.'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChallengesScreen())),
+              ),
+            ),
             // Saját kód
             Card(
               color: AppColors.primary.withValues(alpha: 0.10),

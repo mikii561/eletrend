@@ -1,5 +1,6 @@
 import 'package:eletrend/account.dart';
 import 'package:eletrend/admin.dart';
+import 'package:eletrend/challenges.dart';
 import 'package:eletrend/friends.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -13,5 +14,6 @@ FakeFirebaseFirestore signInFakeAccount({String uid = 'teszt', String email = 't
   );
   Admin.instance = Admin(db: db);
   Friends.instance = Friends(db: db);
+  Challenges.instance = Challenges(db: db);
   return db;
 }

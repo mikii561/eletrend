@@ -47,6 +47,9 @@ class AppStore extends ChangeNotifier {
   /// A jelvények, amelyekről már szóltunk (null: még sosem néztük meg).
   Set<String>? seenBadges;
 
+  /// Kihívás → hozzá kötött szokás (a szokás kipipálása a kihívásban is teljesít).
+  Map<String, String> challengeHabits = {};
+
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
     store._read();
@@ -81,6 +84,7 @@ class AppStore extends ChangeNotifier {
     onboarded = _prefs.getBool('onboarded') ?? false;
     shareStreaks = _prefs.getBool('shareStreaks') ?? false;
     seenBadges = _prefs.getStringList('seenBadges')?.toSet();
+    challengeHabits = Map<String, String>.from(jsonDecode(_prefs.getString('challengeHabits') ?? '{}') as Map);
   }
 
   /// Újraolvas mindent a tárhelyről (pl. ha a widget közben módosított).
@@ -107,6 +111,7 @@ class AppStore extends ChangeNotifier {
     _prefs.setBool('onboarded', onboarded);
     _prefs.setBool('shareStreaks', shareStreaks);
     if (seenBadges != null) _prefs.setStringList('seenBadges', seenBadges!.toList());
+    _prefs.setString('challengeHabits', jsonEncode(challengeHabits));
     notifyListeners();
   }
 
@@ -134,6 +139,7 @@ class AppStore extends ChangeNotifier {
         'onboarded': onboarded,
         'shareStreaks': shareStreaks,
         if (seenBadges != null) 'seenBadges': seenBadges!.toList(),
+        'challengeHabits': challengeHabits,
       };
 
   /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
@@ -166,6 +172,7 @@ class AppStore extends ChangeNotifier {
       onboarded = settings['onboarded'] as bool? ?? true;
       shareStreaks = settings['shareStreaks'] as bool? ?? false;
       if (settings['seenBadges'] != null) seenBadges = Set<String>.from(settings['seenBadges'] as List);
+      challengeHabits = Map<String, String>.from(settings['challengeHabits'] as Map? ?? {});
     }
     _save();
   }
@@ -262,7 +269,7 @@ class AppStore extends ChangeNotifier {
   static const _backupKeys = [
     'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
     'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
-    'myName', 'invites', 'shareStreaks', 'seenBadges',
+    'myName', 'invites', 'shareStreaks', 'seenBadges', 'challengeHabits',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -329,6 +336,11 @@ class AppStore extends ChangeNotifier {
       this.habits.add(Habit(id: '${newId()}-${this.habits.length}', name: name));
     }
     onboarded = true;
+    _save();
+  }
+
+  void linkChallengeHabit(String challengeId, String? habitId) {
+    habitId == null ? challengeHabits.remove(challengeId) : challengeHabits[challengeId] = habitId;
     _save();
   }
 
