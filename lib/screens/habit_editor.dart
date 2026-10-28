@@ -256,7 +256,9 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                                 added++;
                               }
                               Navigator.pop(sheetContext);
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(SnackBar(
                                 content: Text(added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új szokás felvéve. Hajrá! 💪'),
                               ));
                             },
