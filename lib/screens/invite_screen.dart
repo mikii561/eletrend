@@ -8,6 +8,7 @@ import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/weather_tile.dart';
 import 'events_screen.dart' show repeatLabel;
 import 'social_widgets.dart';
 
@@ -129,6 +130,8 @@ class _InviteScreenState extends State<InviteScreen> {
                       ),
                     ),
                   ),
+                  if (!event.pollOpen && event.lat != null && event.lng != null)
+                    Card(child: WeatherTile(lat: event.lat!, lng: event.lng!, at: event.date)),
                   if (!event.pollOpen)
                     OutlinedButton.icon(
                       onPressed: () => launchUrl(

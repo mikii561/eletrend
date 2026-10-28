@@ -13,6 +13,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/map_view.dart';
+import '../widgets/weather_tile.dart';
 import 'costs_section.dart';
 import 'friends_screen.dart';
 import 'idea_sheet.dart';
@@ -227,6 +228,7 @@ class EventDetail extends StatelessWidget {
                     leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
                     title: Text(e.place),
                   ),
+                if (e.hasLocation) WeatherTile(lat: e.lat!, lng: e.lng!, at: next),
               ],
             ),
           ),
