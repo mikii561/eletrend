@@ -411,3 +411,29 @@ class Invite {
   factory Invite.fromJson(Map<String, dynamic> j) =>
       Invite(id: j['id'] as String, title: j['title'] as String? ?? '', date: DateTime.parse(j['date'] as String));
 }
+
+/// Gyors hangulat napközben („Hogy vagy most?”), időponttal.
+class CheckIn {
+  const CheckIn({required this.at, required this.mood});
+
+  final DateTime at;
+
+  /// 1–5, mint a napi hangulat.
+  final int mood;
+
+  Map<String, dynamic> toJson() => {'at': at.toIso8601String(), 'mood': mood};
+
+  factory CheckIn.fromJson(Map<String, dynamic> j) =>
+      CheckIn(at: DateTime.parse(j['at'] as String), mood: (j['mood'] as num).toInt());
+}
+
+/// Napszak egy időpontból (a hangulat napszakos statisztikájához).
+String partOfDay(DateTime t) => switch (t.hour) {
+      >= 5 && < 10 => 'reggel',
+      >= 10 && < 12 => 'délelőtt',
+      >= 12 && < 17 => 'délután',
+      >= 17 && < 22 => 'este',
+      _ => 'éjjel',
+    };
+
+const partsOfDay = ['reggel', 'délelőtt', 'délután', 'este', 'éjjel'];

@@ -56,9 +56,10 @@ void main() {
     expect(store.habits.first.isDoneOn(DateTime.now()), isTrue);
 
     // Gyors hangulat a főoldalon
-    await tester.ensureVisible(find.text(moodEmojis[3]));
+    // (a „Hogy vagy most?” kártyán is vannak arcok, ezért a napi hangulat gombjait keressük)
+    await tester.ensureVisible(find.byType(MoodButton).at(3));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(moodEmojis[3]));
+    await tester.tap(find.byType(MoodButton).at(3));
     await tester.pump();
     expect(store.entryFor(DateTime.now())?.mood, 4);
 

@@ -6,6 +6,7 @@ import '../photos.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/check_in_card.dart';
 import '../widgets/memory_card.dart';
 import '../widgets/tag_icon.dart';
 import 'events_screen.dart';
@@ -125,6 +126,7 @@ class TodayScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const CheckInCard(),
                       const MemoryCard(),
                       SectionTitle('Mai szokások', trailing: total == 0 ? null : '$done/$total', onMore: () => onNavigate(2)),
                       if (store.habits.isEmpty)

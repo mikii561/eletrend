@@ -50,6 +50,12 @@ class AppStore extends ChangeNotifier {
   /// Kihívás → hozzá kötött szokás (a szokás kipipálása a kihívásban is teljesít).
   Map<String, String> challengeHabits = {};
 
+  /// Napközbeni gyors hangulatok (az utolsó egy év).
+  List<CheckIn> checkIns = [];
+
+  /// Kérdezzen-e rá az app napközben (11:00 és 15:00, telefonon értesítéssel).
+  bool checkInReminders = false;
+
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
     store._read();
@@ -85,6 +91,8 @@ class AppStore extends ChangeNotifier {
     shareStreaks = _prefs.getBool('shareStreaks') ?? false;
     seenBadges = _prefs.getStringList('seenBadges')?.toSet();
     challengeHabits = Map<String, String>.from(jsonDecode(_prefs.getString('challengeHabits') ?? '{}') as Map);
+    checkIns = list('checkIns').map(CheckIn.fromJson).toList();
+    checkInReminders = _prefs.getBool('checkInReminders') ?? false;
   }
 
   /// Újraolvas mindent a tárhelyről (pl. ha a widget közben módosított).
@@ -112,6 +120,8 @@ class AppStore extends ChangeNotifier {
     _prefs.setBool('shareStreaks', shareStreaks);
     if (seenBadges != null) _prefs.setStringList('seenBadges', seenBadges!.toList());
     _prefs.setString('challengeHabits', jsonEncode(challengeHabits));
+    _prefs.setString('checkIns', jsonEncode(checkIns.map((c) => c.toJson()).toList()));
+    _prefs.setBool('checkInReminders', checkInReminders);
     notifyListeners();
   }
 
@@ -140,6 +150,8 @@ class AppStore extends ChangeNotifier {
         'shareStreaks': shareStreaks,
         if (seenBadges != null) 'seenBadges': seenBadges!.toList(),
         'challengeHabits': challengeHabits,
+        'checkIns': checkIns.map((c) => c.toJson()).toList(),
+        'checkInReminders': checkInReminders,
       };
 
   /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
@@ -173,6 +185,8 @@ class AppStore extends ChangeNotifier {
       shareStreaks = settings['shareStreaks'] as bool? ?? false;
       if (settings['seenBadges'] != null) seenBadges = Set<String>.from(settings['seenBadges'] as List);
       challengeHabits = Map<String, String>.from(settings['challengeHabits'] as Map? ?? {});
+      checkIns = [for (final c in settings['checkIns'] as List? ?? []) CheckIn.fromJson(c as Map<String, dynamic>)];
+      checkInReminders = settings['checkInReminders'] as bool? ?? false;
     }
     _save();
   }
@@ -269,7 +283,8 @@ class AppStore extends ChangeNotifier {
   static const _backupKeys = [
     'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
     'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
-    'myName', 'invites', 'shareStreaks', 'seenBadges', 'challengeHabits',
+    'myName', 'invites', 'shareStreaks', 'seenBadges', 'challengeHabits', 'checkIns',
+    'checkInReminders',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -336,6 +351,23 @@ class AppStore extends ChangeNotifier {
       this.habits.add(Habit(id: '${newId()}-${this.habits.length}', name: name));
     }
     onboarded = true;
+    _save();
+  }
+
+  /// „Hogy vagy most?” válasz. Egy évnél régebbieket nem tartunk meg.
+  void addCheckIn(int mood, [DateTime? at]) {
+    final now = at ?? DateTime.now();
+    checkIns
+      ..add(CheckIn(at: now, mood: mood))
+      ..removeWhere((c) => now.difference(c.at).inDays > 366);
+    _save();
+  }
+
+  /// Az utolsó gyors hangulat óta eltelt idő (null, ha még nem volt).
+  CheckIn? get lastCheckIn => checkIns.isEmpty ? null : checkIns.last;
+
+  void setCheckInReminders(bool on) {
+    checkInReminders = on;
     _save();
   }
 

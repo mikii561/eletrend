@@ -134,6 +134,35 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
           ],
 
+          // Napszakok (a napközbeni gyors hangulatokból)
+          if (stats.moodByPartOfDay().isNotEmpty) ...[
+            const SectionTitle('Napszakok'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    for (final p in stats.moodByPartOfDay().entries)
+                      ListTile(
+                        dense: true,
+                        title: Text(p.key[0].toUpperCase() + p.key.substring(1), style: const TextStyle(fontWeight: FontWeight.w700)),
+                        subtitle: ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: p.value / 5,
+                            minHeight: 6,
+                            backgroundColor: AppColors.background,
+                            color: AppColors.moods[p.value.round() - 1],
+                          ),
+                        ),
+                        trailing: MoodFace(p.value.round(), size: 22),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+
           // Összefüggések
           const SectionTitle('Amit észrevettem'),
           if (insights.isEmpty)

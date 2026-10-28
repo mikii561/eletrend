@@ -44,6 +44,7 @@ class Notifications {
   static const _dailyBase = 1000;
   static const _eventBase = 2000;
   static const _habitBase = 3000; // szokásonként 7 nap: 3000 + szokás * 7 + nap
+  static const _checkInBase = 4000; // naponta 2: 4000 + nap * 2 + (0: 11:00, 1: 15:00)
   static const _testId = 9999;
 
   /// Indításkor egyszer: időzóna, plugin, engedélykérés, és figyeli a store-t.
@@ -99,6 +100,17 @@ class Notifications {
         final body = i == 0 ? _todayBody(store) : _genericBody;
         if (body == null) continue; // ma már minden kész
         await _schedule(_dailyBase + i, when, 'Hogy telt a napod? 🌙', body, _dailyDetails);
+      }
+    }
+
+    // Napközbeni „Hogy vagy most?” kérdés (11:00 és 15:00).
+    if (store.checkInReminders) {
+      for (var d = 0; d < 7; d++) {
+        for (final (k, hour) in [(0, 11), (1, 15)]) {
+          final when = tz.TZDateTime(tz.local, now.year, now.month, now.day + d, hour);
+          if (when.isBefore(now)) continue;
+          await _schedule(_checkInBase + d * 2 + k, when, 'Hogy vagy most? 🙂', 'Egy koppintás az Életrendben, és a statisztika a napszakokat is látja.', _dailyDetails);
+        }
       }
     }
 

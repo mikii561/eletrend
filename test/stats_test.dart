@@ -210,4 +210,19 @@ void main() {
     expect(m.label, 'Egy éve ezen a napon');
     expect(m.entry.note, contains('munkahely'));
   });
+
+  test('napközbeni hangulat: napszakok átlaga, összefüggés, megmarad', () async {
+    final store = await emptyStore();
+    for (var d = 1; d <= 4; d++) {
+      store.addCheckIn(5, DateTime(2026, 10, d, 8, 30)); // reggel jó
+      store.addCheckIn(2, DateTime(2026, 10, d, 15)); // délután rossz
+    }
+    store.addCheckIn(4, DateTime(2026, 10, 5, 20)); // este: kevés adat
+    final parts = MoodStats(store).moodByPartOfDay();
+    expect(parts, {'reggel': 5.0, 'délután': 2.0});
+    final texts = MoodStats(store).insights().map((i) => i.text).join('\n');
+    expect(texts, contains('Reggel a legjobb a kedved (5,0), délután a legrosszabb (2,0).'));
+    expect((await AppStore.load()).checkIns.length, 9);
+    expect(partOfDay(DateTime(2026, 1, 1, 23)), 'éjjel');
+  });
 }

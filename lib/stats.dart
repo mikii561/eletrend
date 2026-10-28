@@ -132,9 +132,34 @@ class MoodStats {
       result.add(Insight('📅', 'A hét legjobb napja nálad: $name (átlag ${_fmt(average(best.value)!)}).', 0.6));
     }
 
+    // Napszakok (a napközbeni gyors hangulatokból)
+    final parts = moodByPartOfDay();
+    if (parts.length >= 2) {
+      final sortedParts = parts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      final best = sortedParts.first;
+      final worst = sortedParts.last;
+      if (best.value - worst.value >= 0.5) {
+        result.add(Insight('🕐',
+            '${best.key[0].toUpperCase()}${best.key.substring(1)} a legjobb a kedved (${_fmt(best.value)}), '
+            '${worst.key} a legrosszabb (${_fmt(worst.value)}).', best.value - worst.value));
+      }
+    }
+
     // A legerősebb összefüggések elöl, legfeljebb [maxInsights] darab.
     result.sort((a, b) => b.strength.compareTo(a.strength));
     return result.take(maxInsights).toList();
+  }
+
+  /// Átlagos hangulat napszakonként a gyors hangulatokból (csak ahol legalább [minSamples] van).
+  Map<String, double> moodByPartOfDay() {
+    final byPart = <String, List<int>>{};
+    for (final c in store.checkIns) {
+      byPart.putIfAbsent(partOfDay(c.at), () => []).add(c.mood);
+    }
+    return {
+      for (final p in partsOfDay)
+        if ((byPart[p]?.length ?? 0) >= minSamples) p: byPart[p]!.reduce((a, b) => a + b) / byPart[p]!.length,
+    };
   }
 
   /// Címkénként: hányszor használtad és milyen volt átlagosan a hangulat. Gyakoriság szerint.

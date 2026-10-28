@@ -147,6 +147,17 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
             ),
           ),
+          Card(
+            child: SwitchListTile(
+              secondary: const Text('🕐', style: TextStyle(fontSize: 24)),
+              title: const Text('„Hogy vagy most?” napközben', style: TextStyle(fontWeight: FontWeight.w700)),
+              subtitle: const Text('11:00-kor és 15:00-kor rákérdez a telefon (a Ma képernyőn mindig ott van).'),
+              value: store.checkInReminders,
+              onChanged: (on) => on
+                  ? _enable(context, () => store.setCheckInReminders(true))
+                  : store.setCheckInReminders(false),
+            ),
+          ),
           FutureBuilder(
             future: HabitsWidget.canPin(),
             builder: (context, snap) => snap.data != true
