@@ -114,4 +114,27 @@ void main() {
     expect(store.habits.single.perWeek, 3);
     expect(find.textContaining('ezen a héten'), findsOneWidget);
   });
+
+  testWidgets('sablon: egy koppintással felvehető, kétszer nem duplikál', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await initializeDateFormatting('hu');
+    final store = (await tester.runAsync(emptyStore))!;
+    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
+
+    Future<void> addFirstPack() async {
+      await tester.tap(find.text('Sablonok'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Felvétel').first);
+      await tester.pumpAndSettle();
+    }
+
+    await addFirstPack();
+    expect(store.habits.length, 4);
+    expect(store.habits.first.name, contains('víz'));
+    await addFirstPack();
+    expect(store.habits.length, 4);
+    expect(find.text('Ezek már mind megvannak. 🙂'), findsOneWidget);
+  });
 }

@@ -21,7 +21,17 @@ class HabitsScreen extends StatelessWidget {
     final days = List.generate(7, (i) => addDays(today, i - 6));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Szokások')),
+      appBar: AppBar(
+        title: const Text('Szokások'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => showHabitTemplates(context),
+            icon: const Icon(Icons.auto_awesome_outlined),
+            label: const Text('Sablonok'),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addHabit(context),
         icon: const Icon(Icons.add),

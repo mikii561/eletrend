@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../habit_templates.dart';
 import '../models.dart';
 import '../notifications.dart';
 import '../store.dart';
@@ -205,3 +206,69 @@ class _HabitEditorState extends State<_HabitEditor> {
     );
   }
 }
+
+/// Szokás-sablonok: egy csomag egy koppintással felvehető (a már meglévő nevűeket kihagyja).
+Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final store = StoreScope.of(context);
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.8,
+          maxChildSize: 0.95,
+          builder: (_, controller) => ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            children: [
+              Text('Szokás-sablonok', style: Theme.of(sheetContext).textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text('Válassz egy csomagot; utána bármelyik szokást átírhatod vagy törölheted.',
+                  style: TextStyle(color: AppColors.textMuted)),
+              const SizedBox(height: 12),
+              for (final pack in habitPacks)
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${pack.emoji} ${pack.title}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                        Text(pack.text, style: TextStyle(color: AppColors.textMuted)),
+                        const SizedBox(height: 8),
+                        for (final h in pack.habits)
+                          Text([
+                            '• ${h.name}',
+                            if (h.target > 1) '(${h.target} ${h.unit})',
+                            if (h.perWeek != null) '(hetente ${h.perWeek}×)',
+                          ].join(' ')),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: FilledButton.tonal(
+                            onPressed: () {
+                              final existing = {for (final h in store.habits) h.name.toLowerCase()};
+                              var added = 0;
+                              for (final h in pack.habits) {
+                                if (existing.contains(h.name.toLowerCase())) continue;
+                                store.addHabit(h.name, perWeek: h.perWeek, target: h.target, unit: h.unit);
+                                added++;
+                              }
+                              Navigator.pop(sheetContext);
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új szokás felvéve. Hajrá! 💪'),
+                              ));
+                            },
+                            child: const Text('Felvétel'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
