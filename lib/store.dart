@@ -585,6 +585,12 @@ class AppStore extends ChangeNotifier {
 
   MoodTag moodFace(int mood) => moodFaces[mood - 1];
 
+  /// Saját kép véglegesen egy hangulat arcának.
+  void setMoodFaceImage(int mood, String image) {
+    moodFaces[mood - 1].image = image;
+    _save();
+  }
+
   /// Egy hangulat arcának visszaállítása az alapra.
   void resetMoodFace(int mood) {
     moodFaces[mood - 1] = defaultMoodFace(mood);

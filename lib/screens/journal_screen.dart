@@ -555,6 +555,7 @@ class _JournalEditorState extends State<JournalEditor> {
                           photo: _moodImage,
                           editing: _editFaces,
                           onTap: () => _editFaces ? showMoodEditor(context, i) : setState(() => _mood = i),
+                          onLongPress: () => showMoodEditor(context, i),
                         ),
                     ],
                   ),
@@ -572,15 +573,36 @@ class _JournalEditorState extends State<JournalEditor> {
                     ),
                     const SizedBox(height: 4),
                     if (_moodImage == null)
-                      TextButton.icon(
-                        onPressed: _pickMoodImage,
-                        icon: const Icon(Icons.add_a_photo_outlined, size: 18),
-                        label: const Text('Mai arcom fotóval'),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        children: [
+                          TextButton.icon(
+                            onPressed: _pickMoodImage,
+                            icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+                            label: const Text('Csak mára fotó'),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => showMoodEditor(context, _mood),
+                            icon: const Icon(Icons.push_pin_outlined, size: 18),
+                            label: const Text('Saját kép erre az arcra'),
+                          ),
+                        ],
                       )
                     else
                       Wrap(
                         alignment: WrapAlignment.center,
                         children: [
+                          TextButton.icon(
+                            onPressed: () {
+                              store.setMoodFaceImage(_mood, _moodImage!);
+                              setState(() => _moodImage = null);
+                              ScaffoldMessenger.of(context)
+                                ..hideCurrentSnackBar()
+                                ..showSnackBar(SnackBar(content: Text('Mostantól ez a kép a(z) „${store.moodFace(_mood).name}” arc.')));
+                            },
+                            icon: const Icon(Icons.push_pin_outlined, size: 18),
+                            label: const Text('Legyen mindig ez'),
+                          ),
                           TextButton.icon(
                             onPressed: _pickMoodImage,
                             icon: const Icon(Icons.cached, size: 18),

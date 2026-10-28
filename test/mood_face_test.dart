@@ -87,7 +87,7 @@ void main() {
     final day = DateTime(2026, 10, 28);
 
     await tester.pumpWidget(StoreScope(store: store, child: MaterialApp(home: JournalEditor(date: day))));
-    await tester.tap(find.text('Mai arcom fotóval'));
+    await tester.tap(find.text('Csak mára fotó'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Választás a galériából'));
     for (var i = 0; i < 20 && find.text('Fotó cseréje').evaluate().isEmpty; i++) {
@@ -115,6 +115,38 @@ void main() {
     expect(entry.moodImage, isNotNull);
     expect(entry.moodImage!.length, lessThan(40000));
     expect((await AppStore.load()).entryFor(day)!.moodImage, entry.moodImage);
+  });
+
+  testWidgets('napló: a mai fotó egy gombbal végleges arc lesz, hosszan nyomva is szerkeszthető', (tester) async {
+    tester.view.physicalSize = const Size(400, 860);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await initializeDateFormatting('hu');
+    SharedPreferences.setMockInitialValues({'onboarded': true});
+    final store = await AppStore.load();
+    final photo = (await tester.runAsync(bigPhoto))!;
+    TagImages.pickFile = (_) async => photo;
+
+    await tester.pumpWidget(StoreScope(store: store, child: MaterialApp(home: JournalEditor(date: DateTime(2026, 10, 28)))));
+    await tester.tap(find.text('Csak mára fotó'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Választás a galériából'));
+    for (var i = 0; i < 20 && find.text('Legyen mindig ez').evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+      await tester.pump();
+    }
+    expect(store.moodFace(3).image, isNull);
+    await tester.tap(find.text('Legyen mindig ez'));
+    await tester.pumpAndSettle();
+    expect(store.moodFace(3).image, isNotNull);
+    expect((await AppStore.load()).moodFace(3).image, store.moodFace(3).image);
+    // A mai fotó helyett már az arc képe látszik.
+    expect(find.text('Csak mára fotó'), findsOneWidget);
+
+    // Hosszú nyomás: az arc szerkesztője nyílik.
+    await tester.longPress(find.byType(MoodButton).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Hangulat: 1/5'), findsOneWidget);
   });
 
   testWidgets('teljes emojiválasztó: bármelyik emoji kiválasztható a címkéhez', (tester) async {

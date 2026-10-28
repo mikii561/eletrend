@@ -13,6 +13,7 @@ import 'events_screen.dart';
 import 'journal_screen.dart';
 import 'pin_screen.dart';
 import 'settings_screen.dart';
+import 'tags_screen.dart';
 
 /// Főoldal: mai hangulat, mai célok és a következő programok.
 class TodayScreen extends StatelessWidget {
@@ -73,7 +74,8 @@ class TodayScreen extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               for (var i = 1; i <= 5; i++)
-                                MoodButton(mood: i, selected: entry?.mood == i, photo: entry?.moodImage, onTap: () => _quickMood(context, i)),
+                                MoodButton(mood: i, selected: entry?.mood == i, photo: entry?.moodImage, onTap: () => _quickMood(context, i),
+                                    onLongPress: () => showMoodEditor(context, i)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -310,11 +312,15 @@ class MoodButton extends StatelessWidget {
     this.size = 52,
     this.photo,
     this.editing = false,
+    this.onLongPress,
   });
 
   final int mood;
   final bool selected;
   final VoidCallback onTap;
+
+  /// Hosszú nyomás: az arc végleges cseréje (emoji vagy saját kép).
+  final VoidCallback? onLongPress;
   final double size;
 
   /// A nap saját hangulatfotója (base64); kiválasztva ez látszik az arc helyett.
@@ -328,6 +334,7 @@ class MoodButton extends StatelessWidget {
     final color = AppColors.moods[mood - 1];
     final button = GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         width: size,
