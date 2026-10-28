@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'models.dart';
 import 'store.dart';
 
 /// Helyi emlékeztető értesítések (csak Androidon).
@@ -42,6 +43,7 @@ class Notifications {
   // Értesítés-azonosítók: napi 1000–1006, programok 2000-től.
   static const _dailyBase = 1000;
   static const _eventBase = 2000;
+  static const _habitBase = 3000; // szokásonként 7 nap: 3000 + szokás * 7 + nap
   static const _testId = 9999;
 
   /// Indításkor egyszer: időzóna, plugin, engedélykérés, és figyeli a store-t.
@@ -100,6 +102,20 @@ class Notifications {
       }
     }
 
+    // Szokásonkénti saját emlékeztető: csak ha aznap (hetinél: azon a héten) még nincs meg.
+    for (var i = 0; i < store.habits.length && i < 30; i++) {
+      final h = store.habits[i];
+      final m = h.reminderMinutes;
+      if (m == null) continue;
+      for (var d = 0; d < 7; d++) {
+        final when = tz.TZDateTime(tz.local, now.year, now.month, now.day + d, m ~/ 60, m % 60);
+        if (when.isBefore(now)) continue;
+        final day = DateTime(when.year, when.month, when.day, 12);
+        if (h.isSatisfiedOn(day)) continue;
+        await _schedule(_habitBase + i * 7 + d, when, '${h.name} ⏰', habitReminderBody(h, day), _dailyDetails);
+      }
+    }
+
     if (store.eventReminders) {
       final events = store.upcomingEvents.take(40).toList();
       for (var i = 0; i < events.length; i++) {
@@ -119,6 +135,17 @@ class Notifications {
         }
       }
     }
+  }
+
+  /// Mit írjunk egy szokás emlékeztetőjébe.
+  @visibleForTesting
+  static String habitReminderBody(Habit h, DateTime day) {
+    if (h.isCounted) {
+      final left = h.target - h.countOn(day);
+      return 'Még $left${h.unit.isEmpty ? '' : ' ${h.unit}'} van hátra mára. 💪';
+    }
+    if (h.isWeekly) return 'Ezen a héten még ${h.perWeek! - h.doneInWeek(day)}× van hátra. 💪';
+    return 'Ne felejtsd el ma! 💪';
   }
 
   static const _genericBody = 'Pipáld ki a mai szokásaidat, és írd le, miért vagy hálás! 🙏';

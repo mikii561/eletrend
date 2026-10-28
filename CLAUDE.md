@@ -34,6 +34,11 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - A PIN és az ujjlenyomat beállítás eszközönként marad, nem megy a felhőbe.
 - Widget-tesztekben `signInFakeAccount()` (test/helpers.dart), és a végén `Account.instance.sync?.stop()`.
 
+## Barátok fiókkal
+
+- `lib/friends.dart`: barátkód (`codes/{KÓD}`), névjegy (`people/{uid}`, sorozatok csak ha `shareStreaks`), jelölés (`requests/{címzett}/items/{küldő}`), barátság (`friendships/{uid}/list/{barát}`, csak meglévő jelölés elfogadásával), meghívás egy gombnyomással (`inbox/{uid}/items/{programId}` → a „Meghívásaim” közé kerül).
+- Szokások: heti cél (`perWeek`), mennyiség (`target`, `unit`, `counts`), saját emlékeztető (`reminderMinutes`, csak Androidon). A `doneDays` mindig a „kész” napokat tartalmazza.
+
 ## Admin
 
 - `lib/admin.dart` + `lib/screens/admin_screen.dart`: áttekintés, felhasználók (felfüggesztés `bans/{uid}`, adattörlés), hibák (`errors`, csak release buildben jelent az app), visszajelzések (`feedback`), megosztott programok moderálása.

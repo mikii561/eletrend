@@ -5,17 +5,14 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import 'today_screen.dart' show CheckCircle, StreakChip;
+import 'habit_editor.dart';
+import 'today_screen.dart' show CheckCircle, StreakChip, habitProgress;
 
 /// Szokások listája az elmúlt 7 nap teljesítésével.
 class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
-  Future<void> _addHabit(BuildContext context) async {
-    final store = StoreScope.of(context);
-    final name = await showTextInputSheet(context, title: 'Új szokás', hint: 'pl. 2 liter víz, 10 perc olvasás', action: 'Hozzáadás');
-    if (name != null && name.trim().isNotEmpty) store.addHabit(name);
-  }
+  Future<void> _addHabit(BuildContext context) => showHabitEditor(context);
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +33,7 @@ class HabitsScreen extends StatelessWidget {
           if (store.habits.isEmpty)
             EmptyState(
               emoji: '🌱',
-              text: 'Vegyél fel egy szokást, amit naponta követni szeretnél.',
+              text: 'Vegyél fel egy szokást, amit követni szeretnél: naponta, hetente párszor, vagy mennyiséggel (pl. 8 pohár víz).',
               action: 'Szokás felvétele',
               onAction: () => _addHabit(context),
             ),
@@ -51,15 +48,64 @@ class HabitsScreen extends StatelessWidget {
                       children: [
                         CheckCircle(done: h.isDoneOn(today), onTap: () => store.toggleHabit(h), size: 40),
                         const SizedBox(width: 12),
-                        Expanded(child: Text(h.name, style: Theme.of(context).textTheme.titleMedium)),
-                        StreakChip(h.streak(today)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(h.name, style: Theme.of(context).textTheme.titleMedium),
+                              if (habitProgress(h, today) != null || h.reminderMinutes != null)
+                                Text(
+                                  [
+                                    ?habitProgress(h, today),
+                                    if (h.reminderMinutes != null)
+                                      '⏰ ${(h.reminderMinutes! ~/ 60).toString().padLeft(2, '0')}:${(h.reminderMinutes! % 60).toString().padLeft(2, '0')}',
+                                  ].join(' · '),
+                                  style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                ),
+                            ],
+                          ),
+                        ),
+                        StreakChip(h.streak(today), unit: h.streakUnit),
                         PopupMenuButton<String>(
                           icon: Icon(Icons.more_vert, color: AppColors.textMuted),
-                          onSelected: (_) => store.removeHabit(h),
-                          itemBuilder: (_) => const [PopupMenuItem(value: 'delete', child: Text('Törlés'))],
+                          onSelected: (v) => v == 'edit' ? showHabitEditor(context, habit: h) : store.removeHabit(h),
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'edit', child: Text('Szerkesztés')),
+                            PopupMenuItem(value: 'delete', child: Text('Törlés')),
+                          ],
                         ),
                       ],
                     ),
+                    // Mennyiségi szokásnál: egy adaggal kevesebb / több.
+                    if (h.isCounted)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10, right: 12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: LinearProgressIndicator(
+                                  value: h.countOn(today) / h.target,
+                                  minHeight: 10,
+                                  backgroundColor: AppColors.background,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton.outlined(
+                              tooltip: 'Egy kevesebb',
+                              onPressed: h.countOn(today) > 0 ? () => store.decrementHabit(h) : null,
+                              icon: const Icon(Icons.remove),
+                            ),
+                            IconButton.filled(
+                              tooltip: 'Még egy',
+                              onPressed: h.countOn(today) < h.target ? () => store.toggleHabit(h) : null,
+                              icon: const Icon(Icons.add),
+                            ),
+                          ],
+                        ),
+                      ),
                     const SizedBox(height: 12),
                     Padding(
                       padding: const EdgeInsets.only(right: 12),

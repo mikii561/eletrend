@@ -38,7 +38,7 @@ class TodayScreen extends StatelessWidget {
     final entry = store.entryFor(now);
     final upcoming = store.upcomingEvents.take(3).toList();
     final total = store.habits.length;
-    final done = store.habits.where((h) => h.isDoneOn(now)).length;
+    final done = store.habits.where((h) => h.isSatisfiedOn(now)).length;
 
     return Scaffold(
       body: ListView(
@@ -146,7 +146,8 @@ class TodayScreen extends StatelessWidget {
                                   color: h.isDoneOn(now) ? AppColors.textMuted : null,
                                 ),
                               ),
-                              trailing: StreakChip(h.streak(now)),
+                              subtitle: habitProgress(h, now) == null ? null : Text(habitProgress(h, now)!),
+                              trailing: StreakChip(h.streak(now), unit: h.streakUnit),
                               onTap: () => store.toggleHabit(h),
                             ),
                           ),
@@ -272,9 +273,12 @@ class CheckCircle extends StatelessWidget {
 }
 
 class StreakChip extends StatelessWidget {
-  const StreakChip(this.days, {super.key});
+  const StreakChip(this.days, {super.key, this.unit = 'nap'});
 
   final int days;
+
+  /// „nap” vagy (heti célnál) „hét”.
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +288,7 @@ class StreakChip extends StatelessWidget {
         color: days > 0 ? AppColors.accent.withValues(alpha: 0.15) : AppColors.background,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text('🔥 $days', style: const TextStyle(fontWeight: FontWeight.w800)),
+      child: Text(unit == 'nap' ? '🔥 $days' : '🔥 $days $unit', style: const TextStyle(fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -358,4 +362,13 @@ class MoodButton extends StatelessWidget {
       ],
     );
   }
+}
+
+/// A szokás mai állása kiíráshoz: „3/8 pohár”, „2/3 ezen a héten”; egyszerű napi szokásnál null.
+String? habitProgress(Habit h, DateTime day) {
+  final parts = [
+    if (h.isCounted) '${h.countOn(day)}/${h.target}${h.unit.isEmpty ? '' : ' ${h.unit}'}',
+    if (h.isWeekly) '${h.doneInWeek(day)}/${h.perWeek} ezen a héten',
+  ];
+  return parts.isEmpty ? null : parts.join(' · ');
 }

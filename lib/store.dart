@@ -336,7 +336,7 @@ class AppStore extends ChangeNotifier {
   }
 
   /// Ma még hány szokás nincs kipipálva.
-  int get habitsLeftToday => habits.where((h) => !h.isDoneOn(DateTime.now())).length;
+  int get habitsLeftToday => habits.where((h) => !h.isSatisfiedOn(DateTime.now())).length;
 
   bool get journalDoneToday => entryFor(DateTime.now()) != null;
 
@@ -398,8 +398,24 @@ class AppStore extends ChangeNotifier {
 
   // Szokások
 
-  void addHabit(String name) {
-    habits.add(Habit(id: newId(), name: name.trim()));
+  void addHabit(String name, {int? perWeek, int target = 1, String unit = '', int? reminderMinutes}) {
+    habits.add(Habit(
+      id: newId(),
+      name: name.trim(),
+      perWeek: perWeek,
+      target: target,
+      unit: unit.trim(),
+      reminderMinutes: reminderMinutes,
+    ));
+    _save();
+  }
+
+  /// Egy szokás beállításainak módosítása után.
+  void updateHabit(Habit h) => _save();
+
+  /// Mennyiségi szokásnál egy adaggal kevesebb.
+  void decrementHabit(Habit h, [DateTime? day]) {
+    h.removeOne(day ?? DateTime.now());
     _save();
   }
 
@@ -408,9 +424,20 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
+  /// Kipipálás / visszavonás. Mennyiségi szokásnál egy adaggal több; ha már megvolt, nullázza a napot.
   void toggleHabit(Habit h, [DateTime? day]) {
-    final key = dayKey(day ?? DateTime.now());
-    if (!h.doneDays.remove(key)) h.doneDays.add(key);
+    final d = day ?? DateTime.now();
+    final key = dayKey(d);
+    if (h.isCounted) {
+      if (h.isDoneOn(d)) {
+        h.counts.remove(key);
+        h.doneDays.remove(key);
+      } else {
+        h.addOne(d);
+      }
+    } else if (!h.doneDays.remove(key)) {
+      h.doneDays.add(key);
+    }
     _save();
   }
 

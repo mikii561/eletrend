@@ -154,20 +154,86 @@ class Expense {
 }
 
 /// Napi szokás, a teljesített napok kulcsaival.
+///
+/// Lehet heti cél („hetente 3×”) és mennyiségi („8 pohár víz”) is; a [doneDays] mindig azokat
+/// a napokat tartalmazza, amikor az aznapi adag megvolt, így a sorozat, a statisztika és a
+/// widget ugyanúgy működik minden fajtánál.
 class Habit {
-  Habit({required this.id, required this.name, Set<String>? doneDays})
-      : doneDays = doneDays ?? {};
+  Habit({
+    required this.id,
+    required this.name,
+    Set<String>? doneDays,
+    this.perWeek,
+    this.target = 1,
+    this.unit = '',
+    Map<String, int>? counts,
+    this.reminderMinutes,
+  })  : doneDays = doneDays ?? {},
+        counts = counts ?? {};
 
   final String id;
   String name;
   Set<String> doneDays;
 
+  /// Heti cél (pl. 3 = hetente háromszor); null = minden nap.
+  int? perWeek;
+
+  /// Napi mennyiség (pl. 8 pohár); 1 = egyszerű kipipálás.
+  int target;
+
+  /// A mennyiség egysége (pl. „pohár”), csak kiíráshoz.
+  String unit;
+
+  /// Mennyiségi szokásnál napi számláló (napkulcs → darab).
+  Map<String, int> counts;
+
+  /// Saját emlékeztető ideje percben (pl. 8:30 = 510); null = nincs.
+  int? reminderMinutes;
+
+  bool get isWeekly => perWeek != null;
+  bool get isCounted => target > 1;
+
   bool isDoneOn(DateTime d) => doneDays.contains(dayKey(d));
 
-  /// Hány egymást követő napja teljesül. Ha ma még nincs kész, a tegnapi
-  /// naptól számol, így a sorozat nem nullázódik le reggel.
+  int countOn(DateTime d) => isCounted ? counts[dayKey(d)] ?? 0 : (isDoneOn(d) ? 1 : 0);
+
+  /// Egy nap hozzáadása a mennyiséghez (a célnál megáll); eléréskor a nap késznek számít.
+  void addOne(DateTime d) {
+    final key = dayKey(d);
+    final n = (counts[key] ?? 0) + 1;
+    counts[key] = n > target ? target : n;
+    if (counts[key]! >= target) doneDays.add(key);
+  }
+
+  void removeOne(DateTime d) {
+    final key = dayKey(d);
+    final n = (counts[key] ?? 0) - 1;
+    n <= 0 ? counts.remove(key) : counts[key] = n;
+    if (n < target) doneDays.remove(key);
+  }
+
+  /// A hét (hétfőtől) napjai, amelyiken teljesült.
+  int doneInWeek(DateTime d) {
+    final monday = addDays(d, 1 - d.weekday);
+    return [for (var i = 0; i < 7; i++) addDays(monday, i)].where(isDoneOn).length;
+  }
+
+  /// Ma „rendben van”-e: napi szokásnál ha kész, hetinél ha kész vagy a heti cél már megvan.
+  bool isSatisfiedOn(DateTime d) => isDoneOn(d) || (isWeekly && doneInWeek(d) >= perWeek!);
+
+  /// Hány egymást követő napja teljesül (hetinél: hány egymást követő héten volt meg a cél).
+  /// Ha ma (ezen a héten) még nincs kész, az előzőtől számol, így reggel nem nullázódik le.
   int streak([DateTime? now]) {
     var day = now ?? DateTime.now();
+    if (isWeekly) {
+      if (doneInWeek(day) < perWeek!) day = addDays(day, -7);
+      var weeks = 0;
+      while (doneInWeek(day) >= perWeek!) {
+        weeks++;
+        day = addDays(day, -7);
+      }
+      return weeks;
+    }
     if (!isDoneOn(day)) day = addDays(day, -1);
     var count = 0;
     while (isDoneOn(day)) {
@@ -177,13 +243,29 @@ class Habit {
     return count;
   }
 
-  Map<String, dynamic> toJson() =>
-      {'id': id, 'name': name, 'doneDays': doneDays.toList()};
+  /// A sorozat mértékegysége kiíráshoz.
+  String get streakUnit => isWeekly ? 'hét' : 'nap';
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'doneDays': doneDays.toList(),
+        if (perWeek != null) 'perWeek': perWeek,
+        if (target != 1) 'target': target,
+        if (unit.isNotEmpty) 'unit': unit,
+        if (counts.isNotEmpty) 'counts': counts,
+        if (reminderMinutes != null) 'reminderMinutes': reminderMinutes,
+      };
 
   factory Habit.fromJson(Map<String, dynamic> j) => Habit(
         id: j['id'] as String,
         name: j['name'] as String,
         doneDays: Set<String>.from(j['doneDays'] as List? ?? []),
+        perWeek: (j['perWeek'] as num?)?.toInt(),
+        target: (j['target'] as num?)?.toInt() ?? 1,
+        unit: j['unit'] as String? ?? '',
+        counts: {for (final e in (j['counts'] as Map? ?? {}).entries) e.key as String: (e.value as num).toInt()},
+        reminderMinutes: (j['reminderMinutes'] as num?)?.toInt(),
       );
 }
 
