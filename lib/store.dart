@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -87,6 +89,67 @@ class AppStore extends ChangeNotifier {
     dailyReminder = daily ?? dailyReminder;
     reminderTime = time ?? reminderTime;
     eventReminders = events ?? eventReminders;
+    _save();
+  }
+
+  // Napló zárolása
+
+  /// Be van-e kapcsolva a napló PIN-kódos zárolása.
+  bool get journalLocked => _prefs.getString('pinHash') != null;
+
+  /// Ujjlenyomattal is feloldható-e (csak telefonon).
+  bool get useBiometrics => _prefs.getBool('useBiometrics') ?? false;
+
+  /// Ebben a munkamenetben fel van-e oldva; nem mentjük, újraindításkor zárt.
+  bool journalUnlocked = false;
+
+  bool get journalVisible => !journalLocked || journalUnlocked;
+
+  static String _hash(String salt, String pin) => sha256.convert(utf8.encode('$salt:$pin')).toString();
+
+  /// A PIN-t csak sózott hash-ként tároljuk.
+  void setPin(String pin) {
+    final random = Random.secure();
+    final salt = base64Encode([for (var i = 0; i < 16; i++) random.nextInt(256)]);
+    _prefs.setString('pinSalt', salt);
+    _prefs.setString('pinHash', _hash(salt, pin));
+    journalUnlocked = true;
+    notifyListeners();
+  }
+
+  bool checkPin(String pin) {
+    final salt = _prefs.getString('pinSalt');
+    return salt != null && _prefs.getString('pinHash') == _hash(salt, pin);
+  }
+
+  void setUseBiometrics(bool on) {
+    _prefs.setBool('useBiometrics', on);
+    notifyListeners();
+  }
+
+  void clearPin() {
+    _prefs.remove('pinHash');
+    _prefs.remove('pinSalt');
+    _prefs.remove('useBiometrics');
+    notifyListeners();
+  }
+
+  void unlockJournal() {
+    journalUnlocked = true;
+    notifyListeners();
+  }
+
+  /// Az app háttérbe kerülésekor újra zárunk.
+  void lockJournal() {
+    if (!journalUnlocked) return;
+    journalUnlocked = false;
+    notifyListeners();
+  }
+
+  /// Elfelejtett PIN: a zár csak a naplóbejegyzésekkel együtt törölhető.
+  void resetLockAndJournal() {
+    journal.clear();
+    clearPin();
     _save();
   }
 

@@ -1,5 +1,6 @@
 package hu.eletrend.eletrend
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// Az ujjlenyomatos feloldáshoz (local_auth) FragmentActivity kell.
+class MainActivity : FlutterFragmentActivity()

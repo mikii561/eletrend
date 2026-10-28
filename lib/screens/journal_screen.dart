@@ -12,6 +12,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../stats.dart';
 import '../widgets/tag_icon.dart';
+import 'pin_screen.dart';
 import 'stats_screen.dart';
 import 'tags_screen.dart';
 import 'today_screen.dart' show MoodButton;
@@ -31,6 +32,7 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
+    if (!store.journalVisible) return const _LockedJournal();
     final now = DateTime.now();
     final todayEntry = store.entryFor(now);
     final usedTags = MoodStats(store).tagStats().map((t) => t.tag).toList();
@@ -533,6 +535,37 @@ class _JournalEditorState extends State<JournalEditor> {
             maxLines: 8,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A zárolt napló helyén: lakat és feloldás gomb.
+class _LockedJournal extends StatelessWidget {
+  const _LockedJournal();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Napló')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🔒', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 12),
+              Text('A naplód zárolva van', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () => JournalLock.ensureUnlocked(context),
+                icon: const Icon(Icons.lock_open),
+                label: const Text('Feloldás'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

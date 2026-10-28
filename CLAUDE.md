@@ -34,6 +34,11 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 3. Firebase: bejelentkezés, valódi barátok és meghívók
 4. Ikon, sötét mód, Google Play
 
+## Napló zárolása
+
+- `lib/screens/pin_screen.dart`: PIN (sózott SHA-256, nincs a mentésben) + ujjlenyomat (`local_auth`, csak Androidon). Ehhez a `MainActivity` `FlutterFragmentActivity`, a `LaunchTheme` szülője `Theme.AppCompat…`.
+- **Figyelem:** a `dart run flutter_native_splash:create` felülírja a `styles.xml`-eket, utána az AppCompat szülőt vissza kell írni.
+
 ## Értesítések
 
 - `lib/notifications.dart`: helyi, ütemezett értesítések (flutter_local_notifications), csak Androidon. Minden store-változáskor mindent újraütemez (napi 7 nap előre, programonként előző este 18:00 + 1 órával előtte).

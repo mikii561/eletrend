@@ -5,6 +5,7 @@ import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'pin_screen.dart';
 import 'tags_screen.dart';
 
 /// Beállítások: emlékeztető értesítések.
@@ -129,6 +130,48 @@ class SettingsScreen extends StatelessWidget {
               subtitle: Text('Saját arcok a napokhoz, ${store.visibleTags.length} látható címke'),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TagsScreen())),
+            ),
+          ),
+          const SectionTitle('Napló zárolása'),
+          Card(
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const Text('🔒', style: TextStyle(fontSize: 24)),
+                  title: const Text('PIN-kód a naplóhoz', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: const Text('A Napló csak PIN-kóddal nyílik meg. Ha az app háttérbe kerül, újra bezár.'),
+                  value: store.journalLocked,
+                  onChanged: (on) async {
+                    if (on) {
+                      await JournalLock.createPin(context);
+                    } else if (await JournalLock.ensureUnlocked(context)) {
+                      store.clearPin();
+                    }
+                  },
+                ),
+                if (store.journalLocked) ...[
+                  ListTile(
+                    leading: Icon(Icons.pin_outlined, color: AppColors.primary),
+                    title: const Text('PIN-kód módosítása'),
+                    onTap: () async {
+                      if (await JournalLock.ensureUnlocked(context) && context.mounted) {
+                        await JournalLock.createPin(context);
+                      }
+                    },
+                  ),
+                  FutureBuilder(
+                    future: JournalLock.biometricsAvailable(),
+                    builder: (context, snap) => snap.data != true
+                        ? const SizedBox.shrink()
+                        : SwitchListTile(
+                            secondary: Icon(Icons.fingerprint, color: AppColors.primary),
+                            title: const Text('Feloldás ujjlenyomattal'),
+                            value: store.useBiometrics,
+                            onChanged: store.setUseBiometrics,
+                          ),
+                  ),
+                ],
+              ],
             ),
           ),
           const SectionTitle('Biztonsági mentés'),

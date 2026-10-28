@@ -8,6 +8,7 @@ import '../widgets/common.dart';
 import '../widgets/tag_icon.dart';
 import 'events_screen.dart';
 import 'journal_screen.dart';
+import 'pin_screen.dart';
 import 'settings_screen.dart';
 
 /// Főoldal: mai hangulat, mai szokások és a következő programok.
@@ -77,9 +78,12 @@ class TodayScreen extends StatelessWidget {
                           const SizedBox(height: 12),
                           InkWell(
                             borderRadius: BorderRadius.circular(14),
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => JournalEditor(date: now, existing: entry)),
-                            ),
+                            onTap: () async {
+                              if (!await JournalLock.ensureUnlocked(context) || !context.mounted) return;
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => JournalEditor(date: now, existing: entry)),
+                              );
+                            },
                             child: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
