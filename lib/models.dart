@@ -253,6 +253,43 @@ class Habit {
     return count;
   }
 
+  /// A valaha volt leghosszabb sorozat (napban, hetinél hétben).
+  int longestStreak() {
+    if (doneDays.isEmpty) return 0;
+    final days = doneDays.map((k) => DateTime.parse('${k}T12:00:00')).toList()..sort();
+    var best = 0;
+    if (isWeekly) {
+      // Hétfők, amelyik héten megvolt a cél; aztán az egymást követő hetek.
+      final mondays = {for (final d in days) dayKey(addDays(d, 1 - d.weekday))}
+          .map((k) => DateTime.parse('${k}T12:00:00'))
+          .where((m) => doneInWeek(m) >= perWeek!)
+          .toList()
+        ..sort();
+      DateTime? prev;
+      var run = 0;
+      for (final m in mondays) {
+        run = prev != null && dayKey(addDays(prev, 7)) == dayKey(m) ? run + 1 : 1;
+        if (run > best) best = run;
+        prev = m;
+      }
+      return best;
+    }
+    DateTime? prev;
+    var run = 0;
+    for (final d in days) {
+      run = prev != null && dayKey(addDays(prev, 1)) == dayKey(d) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  }
+
+  /// Hány nap teljesült a [from]–[to] időszakban (mindkettő benne van).
+  int doneBetween(DateTime from, DateTime to) {
+    final a = dayKey(from), b = dayKey(to);
+    return doneDays.where((k) => k.compareTo(a) >= 0 && k.compareTo(b) <= 0).length;
+  }
+
   /// A sorozat mértékegysége kiíráshoz.
   String get streakUnit => isWeekly ? 'hét' : 'nap';
 

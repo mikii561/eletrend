@@ -8,6 +8,7 @@ import '../widgets/common.dart';
 import 'badges_screen.dart';
 import 'breathing_screen.dart';
 import 'habit_editor.dart';
+import 'habit_history_screen.dart';
 import 'today_screen.dart' show CheckCircle, StreakChip, habitProgress;
 
 /// Célok listája az elmúlt 7 nap teljesítésével.
@@ -15,6 +16,9 @@ class HabitsScreen extends StatelessWidget {
   const HabitsScreen({super.key});
 
   Future<void> _addHabit(BuildContext context) => showHabitEditor(context);
+
+  void _openHistory(BuildContext context, Habit h) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => HabitHistoryScreen(habitId: h.id)));
 
   @override
   Widget build(BuildContext context) {
@@ -71,27 +75,36 @@ class HabitsScreen extends StatelessWidget {
                         CheckCircle(done: h.isDoneOn(today), onTap: () => store.toggleHabit(h), size: 40),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(h.name, style: Theme.of(context).textTheme.titleMedium),
-                              if (habitProgress(h, today) != null || h.reminderMinutes != null)
-                                Text(
-                                  [
-                                    ?habitProgress(h, today),
-                                    if (h.reminderMinutes != null)
-                                      '⏰ ${(h.reminderMinutes! ~/ 60).toString().padLeft(2, '0')}:${(h.reminderMinutes! % 60).toString().padLeft(2, '0')}',
-                                  ].join(' · '),
-                                  style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                                ),
-                            ],
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _openHistory(context, h),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(h.name, style: Theme.of(context).textTheme.titleMedium),
+                                if (habitProgress(h, today) != null || h.reminderMinutes != null)
+                                  Text(
+                                    [
+                                      ?habitProgress(h, today),
+                                      if (h.reminderMinutes != null)
+                                        '⏰ ${(h.reminderMinutes! ~/ 60).toString().padLeft(2, '0')}:${(h.reminderMinutes! % 60).toString().padLeft(2, '0')}',
+                                    ].join(' · '),
+                                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                         StreakChip(h.streak(today), unit: h.streakUnit),
                         PopupMenuButton<String>(
                           icon: Icon(Icons.more_vert, color: AppColors.textMuted),
-                          onSelected: (v) => v == 'edit' ? showHabitEditor(context, habit: h) : store.removeHabit(h),
+                          onSelected: (v) => switch (v) {
+                            'edit' => showHabitEditor(context, habit: h),
+                            'history' => _openHistory(context, h),
+                            _ => store.removeHabit(h),
+                          },
                           itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'history', child: Text('Előzmények')),
                             PopupMenuItem(value: 'edit', child: Text('Szerkesztés')),
                             PopupMenuItem(value: 'delete', child: Text('Törlés')),
                           ],
@@ -135,7 +148,12 @@ class HabitsScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           for (final d in days)
-                            _DayDot(day: d, isToday: d.day == today.day, done: h.isDoneOn(d), onTap: () => store.toggleHabit(h, d)),
+                            _DayDot(
+                              day: d,
+                              isToday: d.day == today.day,
+                              done: h.isDoneOn(d),
+                              onTap: () => store.toggleHabit(h, d),
+                            ),
                         ],
                       ),
                     ),
@@ -185,7 +203,10 @@ class _DayDot extends StatelessWidget {
             ),
             child: done
                 ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
-                : Text('${day.day}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
+                : Text(
+                    '${day.day}',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textMuted),
+                  ),
           ),
         ],
       ),

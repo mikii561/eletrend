@@ -68,6 +68,9 @@ void main() {
         store.habits[2].doneDays.add(dayKey(addDays(now, -i)));
       }
       store.habits[2].doneDays.add(dayKey(now));
+      for (var i = 20; i < 200; i += 1 + i % 3) {
+        store.habits[2].doneDays.add(dayKey(addDays(now, -i)));
+      }
       store.habits[0].counts[dayKey(now)] = 5;
       store.saveEvent(Event(id: 'e', title: 'Pizzaest', date: addDays(now, 2), place: 'Budapest', invited: ['Anna', 'Bence'])..bgTheme = 'food');
       store.saveEvent(Event(id: 'f', title: 'Foci', date: addDays(now, 4), repeat: Repeat.weekly));
@@ -87,6 +90,12 @@ void main() {
       await shot('1-ma');
       await tester.tapAt(const Offset(200, 830));
       await shot('4-celok');
+      await tester.tap(find.text('Olvasás').hitTestable());
+      await shot('7-elozmenyek-honap');
+      await tester.tap(find.text('Év'));
+      await shot('8-elozmenyek-ev');
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Programok'));
       await shot('2-programok');
       await tester.tap(find.text('Napló').last);
