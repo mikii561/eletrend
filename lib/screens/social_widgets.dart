@@ -27,9 +27,8 @@ Future<String?> ensureMyName(BuildContext context) async {
 }
 
 void _showError(BuildContext context, Object e) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text('Nem sikerült kapcsolódni. Van internet? ($e)', maxLines: 3),
-  ));
+  ScaffoldMessenger.of(context)
+      .showSnackBar(SnackBar(content: Text('Nem sikerült kapcsolódni. Van internet? ($e)', maxLines: 3)));
 }
 
 /// Meghívólink megosztása: telefonon a megosztás menü, egyébként vágólapra másolás.
@@ -92,15 +91,21 @@ class RsvpSummary extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${s.emoji} ${s.label} (${rsvps.where((r) => r.status == s).length})',
-                      style: const TextStyle(fontWeight: FontWeight.w800)),
+                  Text(
+                    '${s.emoji} ${s.label} (${rsvps.where((r) => r.status == s).length})',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
                     children: [
                       for (final r in rsvps.where((r) => r.status == s))
-                        Chip(avatar: NameAvatar(r.name, radius: 11), label: Text(r.name), visualDensity: VisualDensity.compact),
+                        Chip(
+                          avatar: NameAvatar(r.name, radius: 11),
+                          label: Text(r.name),
+                          visualDensity: VisualDensity.compact,
+                        ),
                     ],
                   ),
                 ],
@@ -149,35 +154,47 @@ class PollCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
-              child: Text('Jelöld be az összeset, ami neked jó.', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              child: Text(
+                'Jelöld be az összeset, ami neked jó.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+              ),
             ),
             for (final o in event.pollOptions)
-              Builder(builder: (context) {
-                final key = o.toIso8601String();
-                final voters = rsvps.where((r) => r.votes.contains(key)).toList();
-                return CheckboxListTile(
-                  value: myVotes.contains(key),
-                  onChanged: (_) => onToggleVote(key),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: Row(
-                    children: [
-                      Flexible(child: Text(formatOption(o), style: const TextStyle(fontWeight: FontWeight.w700))),
-                      if (o == best) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                          decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(8)),
-                          child: const Text('⭐ Legjobb', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+              Builder(
+                builder: (context) {
+                  final key = o.toIso8601String();
+                  final voters = rsvps.where((r) => r.votes.contains(key)).toList();
+                  return CheckboxListTile(
+                    value: myVotes.contains(key),
+                    onChanged: (_) => onToggleVote(key),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: Row(
+                      children: [
+                        Flexible(
+                          child: Text(formatOption(o), style: const TextStyle(fontWeight: FontWeight.w700)),
                         ),
+                        if (o == best) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                            decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(8)),
+                            child: const Text(
+                              '⭐ Legjobb',
+                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                  subtitle: Text(voters.isEmpty ? 'Még senkinek' : '${voters.length}: ${voters.map((r) => r.name).join(', ')}'),
-                  secondary: onChoose == null
-                      ? null
-                      : TextButton(onPressed: () => onChoose!(o), child: const Text('Ez lesz')),
-                );
-              }),
+                    ),
+                    subtitle: Text(
+                      voters.isEmpty ? 'Még senkinek' : '${voters.length}: ${voters.map((r) => r.name).join(', ')}',
+                    ),
+                    secondary: onChoose == null
+                        ? null
+                        : TextButton(onPressed: () => onChoose!(o), child: const Text('Ez lesz')),
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -239,8 +256,10 @@ class _ChatPanelState extends State<ChatPanel> {
                 if (messages.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(8),
-                    child: Text('Még nincs üzenet. Kérdezd meg, ki mit hoz! 🍿',
-                        style: TextStyle(color: AppColors.textMuted)),
+                    child: Text(
+                      'Még nincs üzenet. Kérdezd meg, ki mit hoz! 🍿',
+                      style: TextStyle(color: AppColors.textMuted),
+                    ),
                   );
                 }
                 return Column(
@@ -270,11 +289,7 @@ class _ChatPanelState extends State<ChatPanel> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton.filled(
-                  tooltip: 'Küldés',
-                  onPressed: _sending ? null : _send,
-                  icon: const Icon(Icons.send),
-                ),
+                IconButton.filled(tooltip: 'Küldés', onPressed: _sending ? null : _send, icon: const Icon(Icons.send)),
               ],
             ),
           ],
@@ -324,11 +339,16 @@ class _Bubble extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (!mine)
-                Text(m.name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary)),
+                Text(
+                  m.name,
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: AppColors.primary),
+                ),
               Text(m.text, style: TextStyle(color: mine ? Colors.white : null)),
               if (m.at != null)
-                Text(DateFormat('MMM d. HH:mm', 'hu').format(m.at!),
-                    style: TextStyle(fontSize: 10, color: mine ? Colors.white70 : AppColors.textMuted)),
+                Text(
+                  DateFormat('MMM d. HH:mm', 'hu').format(m.at!),
+                  style: TextStyle(fontSize: 10, color: mine ? Colors.white70 : AppColors.textMuted),
+                ),
             ],
           ),
         ),
@@ -397,7 +417,9 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
     }
     if (!mounted) return;
     if (all.isEmpty) {
-      messenger.showSnackBar(const SnackBar(content: Text('Még nincs barátod az appban. A Barátok oldalon add meg a kódjukat!')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Még nincs barátod az appban. A Barátok oldalon add meg a kódjukat!')),
+      );
       return;
     }
     final picked = await showModalBottomSheet<List<String>>(
@@ -467,8 +489,10 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Küldj meghívólinket a barátaidnak! Visszajelezhetnek, szavazhatnak az időpontról, '
-                      'és írhatnak az üzenőfalra. Nem kell hozzá telepíteniük az appot.'),
+                  const Text(
+                    'Küldj meghívólinket a barátaidnak! Visszajelezhetnek, szavazhatnak az időpontról, '
+                    'és írhatnak az üzenőfalra. Nem kell hozzá telepíteniük az appot.',
+                  ),
                   const SizedBox(height: 12),
                   if (Friends.instance.ready) ...[
                     FilledButton.icon(
@@ -496,8 +520,14 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
       stream: _shared,
       builder: (context, eventSnap) {
         if (eventSnap.hasError) {
-          return Card(child: ListTile(title: Text('Nem sikerült betölteni a visszajelzéseket. Van internet?',
-              style: TextStyle(color: AppColors.textMuted))));
+          return Card(
+            child: ListTile(
+              title: Text(
+                'Nem sikerült betölteni a visszajelzéseket. Van internet?',
+                style: TextStyle(color: AppColors.textMuted),
+              ),
+            ),
+          );
         }
         final shared = eventSnap.data;
         if (shared == null) return const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()));
@@ -519,21 +549,26 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                       if (Friends.instance.ready)
                         ListTile(
                           leading: Icon(Icons.group_add_outlined, color: AppColors.primary),
-                          title: Text('Barátok meghívása',
-                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                          title: Text(
+                            'Barátok meghívása',
+                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                          ),
                           onTap: _busy ? null : _inviteFriends,
                         ),
-                      if (Friends.instance.ready)
+                      if (Friends.instance.ready && StoreScope.of(context).shows(Feature.bumps))
                         ListTile(
                           leading: const IconTile(Icons.waving_hand_outlined),
-                          title: Text('Bump a barátoknak',
-                              style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                          title: Text(
+                            'Bump a barátoknak',
+                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                          ),
                           subtitle: const Text('Emlékeztető képpel, hanggal, konfettivel'),
                           onTap: () async {
                             final all = await Friends.instance.watchFriends().first;
                             if (!context.mounted) return;
                             if (all.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Még nincs barátod az appban.')));
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(content: Text('Még nincs barátod az appban.')));
                               return;
                             }
                             final picked = await showModalBottomSheet<List<String>>(
@@ -544,15 +579,20 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                             if (picked == null || picked.isEmpty || !context.mounted) return;
                             await showBumpComposer(
                               context,
-                              to: {for (final f in all) if (picked.contains(f.uid)) f.uid: f.name},
+                              to: {
+                                for (final f in all)
+                                  if (picked.contains(f.uid)) f.uid: f.name,
+                              },
                               event: widget.event,
                             );
                           },
                         ),
                       ListTile(
                         leading: Icon(Icons.share_outlined, color: AppColors.primary),
-                        title: Text('Meghívólink küldése',
-                            style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                        title: Text(
+                          'Meghívólink küldése',
+                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                        ),
                         onTap: () => shareInvite(context, widget.event.title, Social.instance.linkFor(id)),
                       ),
                     ],
@@ -576,8 +616,10 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                 Card(
                   child: ListTile(
                     leading: Icon(Icons.how_to_vote_outlined, color: AppColors.primary),
-                    title: Text(shared.pollOpen ? 'Lehetőségek módosítása' : 'Időpont-szavazás indítása',
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    title: Text(
+                      shared.pollOpen ? 'Lehetőségek módosítása' : 'Időpont-szavazás indítása',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
                     subtitle: shared.pollOpen
                         ? const Text('A „Ez lesz” gombbal választod ki a végleges időpontot.')
                         : const Text('Ajánlj fel 2–3 időpontot, a barátaid megszavazzák.'),
@@ -621,9 +663,11 @@ class _PollEditorState extends State<_PollEditor> {
     if (time == null) return;
     final option = DateTime(day.year, day.month, day.day, time.hour, time.minute);
     if (_options.contains(option)) return;
-    setState(() => _options
-      ..add(option)
-      ..sort());
+    setState(
+      () => _options
+        ..add(option)
+        ..sort(),
+    );
   }
 
   @override
@@ -653,7 +697,11 @@ class _PollEditorState extends State<_PollEditor> {
                 ),
               ),
             if (_options.length < 3)
-              OutlinedButton.icon(onPressed: _add, icon: const Icon(Icons.add), label: const Text('Időpont hozzáadása')),
+              OutlinedButton.icon(
+                onPressed: _add,
+                icon: const Icon(Icons.add),
+                label: const Text('Időpont hozzáadása'),
+              ),
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _options.length < 2 ? null : () => Navigator.pop(context, _options),
@@ -786,28 +834,36 @@ class _BringListState extends State<BringList> {
                 if (items.isEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 4, 0, 8),
-                    child: Text('Mi kell még? Írd fel, és valaki elvállalja (chips, üdítő, társas…).',
-                        style: TextStyle(color: AppColors.textMuted)),
+                    child: Text(
+                      'Mi kell még? Írd fel, és valaki elvállalja (chips, üdítő, társas…).',
+                      style: TextStyle(color: AppColors.textMuted),
+                    ),
                   )
                 else
                   Padding(
                     padding: const EdgeInsets.fromLTRB(12, 0, 0, 4),
-                    child: Text(missing == 0 ? 'Minden megvan! 🎉' : 'Még $missing tétel vár gazdára',
-                        style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                    child: Text(
+                      missing == 0 ? 'Minden megvan! 🎉' : 'Még $missing tétel vár gazdára',
+                      style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700),
+                    ),
                   ),
                 for (final i in items)
                   ListTile(
                     dense: true,
-                    leading: Icon(i.who == null ? Icons.radio_button_unchecked : Icons.check_circle,
-                        color: i.who == null ? AppColors.textMuted : AppColors.primary),
+                    leading: Icon(
+                      i.who == null ? Icons.radio_button_unchecked : Icons.check_circle,
+                      color: i.who == null ? AppColors.textMuted : AppColors.primary,
+                    ),
                     title: Text(i.title, style: const TextStyle(fontWeight: FontWeight.w700)),
                     subtitle: i.who == null ? null : Text('${i.whoName} hozza'),
                     trailing: i.who == null
                         ? TextButton(onPressed: () => _claim(i, true), child: const Text('Elvállalom'))
                         : i.who == me
-                            ? TextButton(onPressed: () => _claim(i, false), child: const Text('Mégsem'))
-                            : null,
-                    onLongPress: i.addedBy == me || widget.isOwner ? () => Social.instance.deleteItem(widget.eventId, i.id) : null,
+                        ? TextButton(onPressed: () => _claim(i, false), child: const Text('Mégsem'))
+                        : null,
+                    onLongPress: i.addedBy == me || widget.isOwner
+                        ? () => Social.instance.deleteItem(widget.eventId, i.id)
+                        : null,
                   ),
                 Padding(
                   padding: const EdgeInsets.only(left: 12, top: 4),

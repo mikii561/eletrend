@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'community.dart';
+import 'features.dart';
+export 'features.dart';
 import 'models.dart';
 
 /// Az app teljes állapota, a telefonon helyben tárolva.
@@ -63,6 +65,22 @@ class AppStore extends ChangeNotifier {
   /// Kérdezzen-e rá az app napközben (11:00 és 15:00, telefonon értesítéssel).
   bool checkInReminders = false;
 
+  /// A kikapcsolt funkciók (lásd [Feature]).
+  Set<Feature> hiddenFeatures = {};
+
+  /// Vasárnap esti heti összefoglaló értesítés.
+  bool weeklySummary = true;
+
+  bool shows(Feature f) => !hiddenFeatures.contains(f);
+
+  /// Melyik hét összefoglaló-kártyáját zárta be (csak ezen az eszközön).
+  String? get weekCardClosed => _prefs.getString('weekCardClosed');
+
+  void closeWeekCard(String mondayKey) {
+    _prefs.setString('weekCardClosed', mondayKey);
+    notifyListeners();
+  }
+
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
     store._read();
@@ -88,10 +106,7 @@ class AppStore extends ChangeNotifier {
     final faces = list('moodFaces').map(MoodTag.fromJson).toList();
     moodFaces = faces.length == 5 ? faces : [for (var i = 1; i <= 5; i++) defaultMoodFace(i)];
     dailyReminder = _prefs.getBool('dailyReminder') ?? true;
-    reminderTime = TimeOfDay(
-      hour: _prefs.getInt('reminderHour') ?? 20,
-      minute: _prefs.getInt('reminderMinute') ?? 0,
-    );
+    reminderTime = TimeOfDay(hour: _prefs.getInt('reminderHour') ?? 20, minute: _prefs.getInt('reminderMinute') ?? 0);
     eventReminders = _prefs.getBool('eventReminders') ?? true;
     themeMode = ThemeMode.values.asNameMap()[_prefs.getString('themeMode')] ?? ThemeMode.system;
     onboarded = _prefs.getBool('onboarded') ?? false;
@@ -101,6 +116,8 @@ class AppStore extends ChangeNotifier {
     checkIns = list('checkIns').map(CheckIn.fromJson).toList();
     checkInReminders = _prefs.getBool('checkInReminders') ?? false;
     effectsOn = _prefs.getBool('effectsOn') ?? true;
+    hiddenFeatures = _features(_prefs.getStringList('hiddenFeatures'));
+    weeklySummary = _prefs.getBool('weeklySummary') ?? true;
     final home = _prefs.getString('homePlace');
     homePlace = home == null ? null : IdeaPlace.fromJson(jsonDecode(home) as Map<String, dynamic>);
   }
@@ -133,6 +150,8 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('checkIns', jsonEncode(checkIns.map((c) => c.toJson()).toList()));
     _prefs.setBool('checkInReminders', checkInReminders);
     _prefs.setBool('effectsOn', effectsOn);
+    _prefs.setStringList('hiddenFeatures', [for (final f in hiddenFeatures) f.name]);
+    _prefs.setBool('weeklySummary', weeklySummary);
     homePlace == null ? _prefs.remove('homePlace') : _prefs.setString('homePlace', jsonEncode(homePlace!.toJson()));
     notifyListeners();
   }
@@ -150,23 +169,25 @@ class AppStore extends ChangeNotifier {
 
   /// A fiókhoz mentett beállítások és kisebb listák egy dokumentumban.
   Map<String, dynamic> cloudSettings() => {
-        'friends': friends,
-        'myName': myName,
-        'invites': invites.map((i) => i.toJson()).toList(),
-        'dailyReminder': dailyReminder,
-        'reminderHour': reminderTime.hour,
-        'reminderMinute': reminderTime.minute,
-        'eventReminders': eventReminders,
-        'themeMode': themeMode.name,
-        'onboarded': onboarded,
-        'shareStreaks': shareStreaks,
-        if (seenBadges != null) 'seenBadges': seenBadges!.toList(),
-        'challengeHabits': challengeHabits,
-        'checkIns': checkIns.map((c) => c.toJson()).toList(),
-        'checkInReminders': checkInReminders,
-        'effectsOn': effectsOn,
-        if (homePlace != null) 'homePlace': homePlace!.toJson(),
-      };
+    'friends': friends,
+    'myName': myName,
+    'invites': invites.map((i) => i.toJson()).toList(),
+    'dailyReminder': dailyReminder,
+    'reminderHour': reminderTime.hour,
+    'reminderMinute': reminderTime.minute,
+    'eventReminders': eventReminders,
+    'themeMode': themeMode.name,
+    'onboarded': onboarded,
+    'shareStreaks': shareStreaks,
+    if (seenBadges != null) 'seenBadges': seenBadges!.toList(),
+    'challengeHabits': challengeHabits,
+    'checkIns': checkIns.map((c) => c.toJson()).toList(),
+    'checkInReminders': checkInReminders,
+    'effectsOn': effectsOn,
+    'hiddenFeatures': [for (final f in hiddenFeatures) f.name],
+    'weeklySummary': weeklySummary,
+    if (homePlace != null) 'homePlace': homePlace!.toJson(),
+  };
 
   /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
   void applyCloud({
@@ -202,6 +223,8 @@ class AppStore extends ChangeNotifier {
       checkIns = [for (final c in settings['checkIns'] as List? ?? []) CheckIn.fromJson(c as Map<String, dynamic>)];
       checkInReminders = settings['checkInReminders'] as bool? ?? false;
       effectsOn = settings['effectsOn'] as bool? ?? true;
+      hiddenFeatures = _features((settings['hiddenFeatures'] as List?)?.cast<String>());
+      weeklySummary = settings['weeklySummary'] as bool? ?? true;
       final home = settings['homePlace'] as Map<String, dynamic>?;
       if (home != null) homePlace = IdeaPlace.fromJson(home);
     }
@@ -298,10 +321,29 @@ class AppStore extends ChangeNotifier {
 
   /// Ezek a beállítások kerülnek a mentésbe (a zárolás PIN-kódja szándékosan nem).
   static const _backupKeys = [
-    'events', 'habits', 'journal', 'friends', 'moodTags', 'moodFaces',
-    'dailyReminder', 'reminderHour', 'reminderMinute', 'eventReminders', 'themeMode', 'onboarded',
-    'myName', 'invites', 'shareStreaks', 'seenBadges', 'challengeHabits', 'checkIns',
-    'checkInReminders', 'homePlace', 'effectsOn',
+    'events',
+    'habits',
+    'journal',
+    'friends',
+    'moodTags',
+    'moodFaces',
+    'dailyReminder',
+    'reminderHour',
+    'reminderMinute',
+    'eventReminders',
+    'themeMode',
+    'onboarded',
+    'myName',
+    'invites',
+    'shareStreaks',
+    'seenBadges',
+    'challengeHabits',
+    'checkIns',
+    'checkInReminders',
+    'homePlace',
+    'effectsOn',
+    'hiddenFeatures',
+    'weeklySummary',
   ];
 
   /// Minden adat egy JSON-szövegben, fájlba mentéshez.
@@ -311,7 +353,10 @@ class AppStore extends ChangeNotifier {
       'app': 'eletrend',
       'version': 1,
       'exportedAt': DateTime.now().toIso8601String(),
-      'data': {for (final k in _backupKeys) if (_prefs.containsKey(k)) k: _prefs.get(k)},
+      'data': {
+        for (final k in _backupKeys)
+          if (_prefs.containsKey(k)) k: _prefs.get(k),
+      },
     });
   }
 
@@ -390,6 +435,20 @@ class AppStore extends ChangeNotifier {
 
   void setEffectsOn(bool on) {
     effectsOn = on;
+    _save();
+  }
+
+  static Set<Feature> _features(List<String>? names) => {
+    for (final n in names ?? const <String>[]) ?Feature.values.asNameMap()[n],
+  };
+
+  void setFeature(Feature f, bool on) {
+    on ? hiddenFeatures.remove(f) : hiddenFeatures.add(f);
+    _save();
+  }
+
+  void setWeeklySummary(bool on) {
+    weeklySummary = on;
     _save();
   }
 
@@ -482,14 +541,16 @@ class AppStore extends ChangeNotifier {
   // Célok
 
   void addHabit(String name, {int? perWeek, int target = 1, String unit = '', int? reminderMinutes}) {
-    habits.add(Habit(
-      id: newId(),
-      name: name.trim(),
-      perWeek: perWeek,
-      target: target,
-      unit: unit.trim(),
-      reminderMinutes: reminderMinutes,
-    ));
+    habits.add(
+      Habit(
+        id: newId(),
+        name: name.trim(),
+        perWeek: perWeek,
+        target: target,
+        unit: unit.trim(),
+        reminderMinutes: reminderMinutes,
+      ),
+    );
     _save();
   }
 
@@ -609,9 +670,7 @@ class AppStore extends ChangeNotifier {
 
 /// A store elérése a widgetfából: `StoreScope.of(context)`.
 class StoreScope extends InheritedNotifier<AppStore> {
-  const StoreScope({super.key, required AppStore store, required super.child})
-      : super(notifier: store);
+  const StoreScope({super.key, required AppStore store, required super.child}) : super(notifier: store);
 
-  static AppStore of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<StoreScope>()!.notifier!;
+  static AppStore of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<StoreScope>()!.notifier!;
 }

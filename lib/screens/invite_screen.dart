@@ -54,7 +54,8 @@ class _InviteScreenState extends State<InviteScreen> {
       await Social.instance.respond(widget.eventId, name: name, status: status, votes: votes);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Nem sikerült elküldeni. Van internet? ($e)')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Nem sikerült elküldeni. Van internet? ($e)')));
       }
     }
   }
@@ -81,7 +82,9 @@ class _InviteScreenState extends State<InviteScreen> {
             // ListView-ban a kártya a tartalmához méreteződik, nem nyúlik meg.
             return ListView(
               padding: const EdgeInsets.all(16),
-              children: const [EmptyState(emoji: '🤷', text: 'Ez a program már nem létezik.\nLehet, hogy a szervező törölte.')],
+              children: const [
+                EmptyState(emoji: '🤷', text: 'Ez a program már nem létezik.\nLehet, hogy a szervező törölte.'),
+              ],
             );
           }
           // Megjegyezzük, hogy később a Programok között is megtaláld.
@@ -111,8 +114,11 @@ class _InviteScreenState extends State<InviteScreen> {
                             alignment: Alignment.bottomLeft,
                             child: Padding(
                               padding: const EdgeInsets.all(16),
-                              child: Text('Meghívtak! 🎉',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w900)),
+                              child: Text(
+                                'Meghívtak! 🎉',
+                                style: Theme.of(context).textTheme.headlineSmall
+                                    ?.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
+                              ),
                             ),
                           ),
                         ),
@@ -129,8 +135,10 @@ class _InviteScreenState extends State<InviteScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(event.title,
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                                Text(
+                                  event.title,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                                ),
                                 const SizedBox(height: 4),
                                 Text(
                                   event.pollOpen
@@ -139,9 +147,12 @@ class _InviteScreenState extends State<InviteScreen> {
                                   style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700),
                                 ),
                                 if (event.repeat != Repeat.none)
-                                  Text(repeatLabel(Event(id: '', title: '', date: event.date, repeat: event.repeat)),
-                                      style: TextStyle(color: AppColors.textMuted)),
-                                if (event.place.isNotEmpty) Text('📍 ${event.place}', style: TextStyle(color: AppColors.textMuted)),
+                                  Text(
+                                    repeatLabel(Event(id: '', title: '', date: event.date, repeat: event.repeat)),
+                                    style: TextStyle(color: AppColors.textMuted),
+                                  ),
+                                if (event.place.isNotEmpty)
+                                  Text('📍 ${event.place}', style: TextStyle(color: AppColors.textMuted)),
                                 Text('Szervező: ${event.ownerName}', style: TextStyle(color: AppColors.textMuted)),
                               ],
                             ),
@@ -150,8 +161,13 @@ class _InviteScreenState extends State<InviteScreen> {
                       ),
                     ),
                   ),
-                  if (!event.pollOpen && event.lat != null && event.lng != null)
-                    Card(child: WeatherTile(lat: event.lat!, lng: event.lng!, at: event.date)),
+                  if (!event.pollOpen &&
+                      event.lat != null &&
+                      event.lng != null &&
+                      StoreScope.of(context).shows(Feature.weather))
+                    Card(
+                      child: WeatherTile(lat: event.lat!, lng: event.lng!, at: event.date),
+                    ),
                   if (!event.pollOpen)
                     OutlinedButton.icon(
                       onPressed: () => launchUrl(
@@ -172,10 +188,17 @@ class _InviteScreenState extends State<InviteScreen> {
                     controller: _name,
                     textCapitalization: TextCapitalization.words,
                     maxLength: 40,
-                    decoration: const InputDecoration(labelText: 'A neved', prefixIcon: Icon(Icons.person_outline), counterText: ''),
+                    decoration: const InputDecoration(
+                      labelText: 'A neved',
+                      prefixIcon: Icon(Icons.person_outline),
+                      counterText: '',
+                    ),
                   ),
                   const SizedBox(height: 10),
-                  RsvpButtons(current: mine?.status ?? RsvpStatus.none, onChanged: (s) => _respond(status: s)),
+                  RsvpButtons(
+                    current: mine?.status ?? RsvpStatus.none,
+                    onChanged: (s) => _respond(status: s),
+                  ),
                   if (event.pollOpen) ...[
                     const SectionTitle('Időpont'),
                     PollCard(
@@ -190,11 +213,7 @@ class _InviteScreenState extends State<InviteScreen> {
                     ),
                   ],
                   const SectionTitle('Ki mit hoz?'),
-                  BringList(
-                    eventId: event.id,
-                    isOwner: event.ownerUid == Social.instance.uid,
-                    nameOf: _nameOrAsk,
-                  ),
+                  BringList(eventId: event.id, isOwner: event.ownerUid == Social.instance.uid, nameOf: _nameOrAsk),
                   const SectionTitle('Ki jön még?'),
                   Card(child: RsvpSummary(rsvps: rsvps)),
                   const SectionTitle('Üzenőfal'),

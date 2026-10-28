@@ -81,15 +81,18 @@ void main() {
     await tester.pumpAndSettle(); // a fiók adatainak betöltése
     expect(find.text('Üdv az Életrendben!'), findsOneWidget);
 
-    await tester.tap(find.text('Tovább'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tovább'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('📖 10 perc olvasás'));
     await tester.pump();
-    expect(find.text('✓ 📖 10 perc olvasás'), findsOneWidget);
+    await tester.tap(find.text('Tovább 3 céllal'));
+    await tester.pumpAndSettle();
+    expect(find.text('Egy perc este'), findsOneWidget);
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    // A harmadik lépésben kikapcsolt funkció eltűnik az appból.
+    await tester.tap(find.text('Időjárás'));
     await tester.pump();
-    await tester.tap(find.text('Kezdjük 3 céllal!'));
+    expect(store.shows(Feature.weather), isFalse);
+    await tester.tap(find.text('Kezdjük!'));
     await tester.pumpAndSettle();
 
     expect(find.text('Mai célok'), findsOneWidget);

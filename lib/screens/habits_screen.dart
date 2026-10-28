@@ -30,16 +30,18 @@ class HabitsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Célok'),
         actions: [
-          IconButton(
-            tooltip: 'Légzőgyakorlat',
-            icon: const Icon(Icons.self_improvement),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BreathingScreen())),
-          ),
-          IconButton(
-            tooltip: 'Jelvények',
-            icon: const Icon(Icons.emoji_events_outlined),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BadgesScreen())),
-          ),
+          if (store.shows(Feature.breathing))
+            IconButton(
+              tooltip: 'Légzőgyakorlat',
+              icon: const Icon(Icons.self_improvement),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BreathingScreen())),
+            ),
+          if (store.shows(Feature.badges))
+            IconButton(
+              tooltip: 'Jelvények',
+              icon: const Icon(Icons.emoji_events_outlined),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BadgesScreen())),
+            ),
           TextButton.icon(
             onPressed: () => showHabitTemplates(context),
             icon: const Icon(Icons.auto_awesome_outlined),

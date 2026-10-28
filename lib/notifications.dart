@@ -57,6 +57,7 @@ class Notifications {
   static const _checkInBase = 4000; // naponta 2: 4000 + nap * 2 + (0: 11:00, 1: 15:00)
   static const _testId = 9999;
   static const _bumpBase = 5000; // bumpok: 5000 + (azonosító hash % 1000)
+  static const _weeklyId = 6000;
 
   /// Értesítésre koppintáskor (pl. `bump:azonosító`).
   static void Function(String payload)? onTap;
@@ -142,7 +143,13 @@ class Notifications {
         for (final (k, hour) in [(0, 11), (1, 15)]) {
           final when = tz.TZDateTime(tz.local, now.year, now.month, now.day + d, hour);
           if (when.isBefore(now)) continue;
-          await _schedule(_checkInBase + d * 2 + k, when, 'Hogy vagy most? 🙂', 'Egy koppintás az Életrendben, és a statisztika a napszakokat is látja.', _dailyDetails);
+          await _schedule(
+            _checkInBase + d * 2 + k,
+            when,
+            'Hogy vagy most? 🙂',
+            'Egy koppintás az Életrendben, és a statisztika a napszakokat is látja.',
+            _dailyDetails,
+          );
         }
       }
     }
@@ -159,6 +166,20 @@ class Notifications {
         if (h.isSatisfiedOn(day)) continue;
         await _schedule(_habitBase + i * 7 + d, when, '${h.name} ⏰', habitReminderBody(h, day), _dailyDetails);
       }
+    }
+
+    // Heti összefoglaló: a következő vasárnap 19:00.
+    if (store.weeklySummary) {
+      var sunday = tz.TZDateTime(tz.local, now.year, now.month, now.day + (7 - now.weekday) % 7, 19);
+      if (sunday.isBefore(now)) sunday = tz.TZDateTime(tz.local, sunday.year, sunday.month, sunday.day + 7, 19);
+      await _schedule(
+        _weeklyId,
+        sunday,
+        'Így ment a heted 📊',
+        'Nézd meg, hogy haladtál a céljaiddal, és milyen volt a hangulatod.',
+        _dailyDetails,
+        payload: 'weekly',
+      );
     }
 
     if (store.eventReminders) {
@@ -205,7 +226,14 @@ class Notifications {
     return 'Írd le, milyen napod volt, és miért vagy hálás! 🙏';
   }
 
-  static Future<void> _schedule(int id, tz.TZDateTime when, String title, String body, NotificationDetails details) {
+  static Future<void> _schedule(
+    int id,
+    tz.TZDateTime when,
+    String title,
+    String body,
+    NotificationDetails details, {
+    String? payload,
+  }) {
     return _plugin.zonedSchedule(
       id: id,
       scheduledDate: when,
@@ -213,6 +241,7 @@ class Notifications {
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       title: title,
       body: body,
+      payload: payload,
     );
   }
 }

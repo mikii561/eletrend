@@ -16,6 +16,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'auth_screen.dart';
+import 'week_summary_screen.dart';
 
 /// Az app kapuja: bejelentkezés nélkül a regisztráció jön; bejelentkezve betölti a fiók
 /// adatait, és utána a [child] (az app) következik.
@@ -113,23 +114,33 @@ class _AuthGateState extends State<AuthGate> {
     final foreground = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     if (nav == null || !foreground) {
       if (Notifications.supported) {
-        Notifications.showBump(b.id, b.headline, b.eventTitle == null ? 'Koppints a megnyitáshoz' : '📅 ${b.eventTitle}');
+        Notifications.showBump(
+          b.id,
+          b.headline,
+          b.eventTitle == null ? 'Koppints a megnyitáshoz' : '📅 ${b.eventTitle}',
+        );
       }
       Bumps.instance.notShown(b.id);
       return;
     }
     final ctx = nav.context;
     if (store.effectsOn) playEffect(ctx, b.show);
-    ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-      duration: const Duration(seconds: 6),
-      content: Text(b.headline),
-      action: SnackBarAction(label: 'Megnyitom', onPressed: () => openBump(nav.context, b)),
-    ));
+    ScaffoldMessenger.of(ctx).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Text(b.headline),
+        action: SnackBarAction(label: 'Megnyitom', onPressed: () => openBump(nav.context, b)),
+      ),
+    );
     Bumps.instance.markSeen(b.id).catchError((_) {});
   }
 
   /// Értesítésre koppintva: a bump (és a programja) megnyílik, az effekt lejátszódik.
   Future<void> _onNotificationTap(String payload) async {
+    if (payload == 'weekly') {
+      await appNavigatorKey.currentState?.push(MaterialPageRoute<void>(builder: (_) => const WeekSummaryScreen()));
+      return;
+    }
     if (!payload.startsWith('bump:')) return;
     final bump = await Bumps.instance.fetch(payload.substring(5));
     final nav = appNavigatorKey.currentState;
@@ -209,7 +220,10 @@ class _AuthGateState extends State<AuthGate> {
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text('Adataid betöltése…', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+              Text(
+                'Adataid betöltése…',
+                style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700),
+              ),
             ],
           ),
         ),

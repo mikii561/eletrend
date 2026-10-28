@@ -359,3 +359,62 @@ class YearReview {
 
   bool get isEmpty => entries.isEmpty;
 }
+
+/// Egy hét (hétfőtől vasárnapig) összefoglalója: célok, hangulat, napló, programok.
+class WeekSummary {
+  WeekSummary(this.store, DateTime day) : monday = addDays(day, 1 - day.weekday) {
+    final now = DateTime.now();
+    final days = [for (var i = 0; i < 7; i++) addDays(monday, i)];
+    // Csak a már eltelt napok számítanak (vasárnap estig mind a 7).
+    final past = days.where((d) => !DateTime(d.year, d.month, d.day).isAfter(now)).toList();
+    elapsed = past.length;
+
+    for (final h in store.habits) {
+      final done = past.where(h.isDoneOn).length;
+      final possible = h.isWeekly ? h.perWeek! : past.length;
+      goalsDone += h.isWeekly ? (done > possible ? possible : done) : done;
+      goalsPossible += possible;
+      if (done > bestGoalDays) {
+        bestGoal = h;
+        bestGoalDays = done;
+      }
+    }
+
+    entries = [for (final d in days) ?store.entryFor(d)];
+    average = MoodStats.average(entries);
+    final prev = [for (var i = 0; i < 7; i++) ?store.entryFor(addDays(monday, i - 7))];
+    previousAverage = MoodStats.average(prev);
+    events = store.events.where((e) => days.any((d) => dayKey(d) == dayKey(e.date))).length;
+  }
+
+  final AppStore store;
+  final DateTime monday;
+  late final int elapsed;
+  int goalsDone = 0;
+  int goalsPossible = 0;
+  Habit? bestGoal;
+  int bestGoalDays = 0;
+  late final List<JournalEntry> entries;
+  late final double? average;
+  late final double? previousAverage;
+  late final int events;
+
+  DateTime get sunday => addDays(monday, 6);
+
+  /// A célok teljesítése százalékban (null, ha nincs cél).
+  int? get goalPercent => goalsPossible == 0 ? null : (goalsDone * 100 / goalsPossible).round();
+
+  bool get isEmpty => goalsPossible == 0 && entries.isEmpty;
+
+  /// Egy mondat a hétről.
+  String get headline {
+    final p = goalPercent;
+    if (p != null && p >= 80) return 'Nagyon erős heted volt! 💪';
+    if (average != null && previousAverage != null && average! > previousAverage! + 0.3) {
+      return 'Jobb kedved volt, mint az előző héten. 🙂';
+    }
+    if (p != null && p >= 50) return 'Szép munka, tartsd a tempót!';
+    if (entries.isEmpty && goalsDone == 0) return 'Csendes hét volt. Új hét, új lendület!';
+    return 'Minden nap számít, a jövő héten még jobb lesz.';
+  }
+}

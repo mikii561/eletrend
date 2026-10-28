@@ -8,6 +8,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/check_in_card.dart';
 import '../widgets/memory_card.dart';
+import '../widgets/nudge_cards.dart';
 import '../widgets/tag_icon.dart';
 import 'events_screen.dart';
 import 'journal_screen.dart';
@@ -58,6 +59,7 @@ class TodayScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const TodayNudges(),
                 // Hangulat
                 Transform.translate(
                   offset: Offset.zero,
@@ -67,15 +69,24 @@ class TodayScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(entry == null ? 'Milyen napod van?' : 'Mai hangulat: ${StoreScope.of(context).moodFace(entry.mood).name}',
-                              style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            entry == null
+                                ? 'Milyen napod van?'
+                                : 'Mai hangulat: ${StoreScope.of(context).moodFace(entry.mood).name}',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               for (var i = 1; i <= 5; i++)
-                                MoodButton(mood: i, selected: entry?.mood == i, photo: entry?.moodImage, onTap: () => _quickMood(context, i),
-                                    onLongPress: () => showMoodEditor(context, i)),
+                                MoodButton(
+                                  mood: i,
+                                  selected: entry?.mood == i,
+                                  photo: entry?.moodImage,
+                                  onTap: () => _quickMood(context, i),
+                                  onLongPress: () => showMoodEditor(context, i),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -84,7 +95,9 @@ class TodayScreen extends StatelessWidget {
                             onTap: () async {
                               if (!await JournalLock.ensureUnlocked(context) || !context.mounted) return;
                               await Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => JournalEditor(date: now, existing: entry)),
+                                MaterialPageRoute(
+                                  builder: (_) => JournalEditor(date: now, existing: entry),
+                                ),
                               );
                             },
                             child: Container(
@@ -126,9 +139,13 @@ class TodayScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const CheckInCard(),
-                      const MemoryCard(),
-                      SectionTitle('Mai célok', trailing: total == 0 ? null : '$done/$total', onMore: () => onNavigate(2)),
+                      if (store.shows(Feature.checkIn)) const CheckInCard(),
+                      if (store.shows(Feature.memories)) const MemoryCard(),
+                      SectionTitle(
+                        'Mai célok',
+                        trailing: total == 0 ? null : '$done/$total',
+                        onMore: () => onNavigate(2),
+                      ),
                       if (store.habits.isEmpty)
                         EmptyState(
                           emoji: '🌱',
@@ -202,7 +219,12 @@ class _Header extends StatelessWidget {
               children: [
                 Text(
                   date.toUpperCase(),
-                  style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 0.8),
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    letterSpacing: 0.8,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -294,8 +316,14 @@ class StreakChip extends StatelessWidget {
         children: [
           Icon(Icons.local_fire_department_rounded, size: 16, color: days > 0 ? AppColors.accent : AppColors.textMuted),
           const SizedBox(width: 2),
-          Text(unit == 'nap' ? '$days' : '$days $unit',
-              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: days > 0 ? AppColors.accent : AppColors.textMuted)),
+          Text(
+            unit == 'nap' ? '$days' : '$days $unit',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: days > 0 ? AppColors.accent : AppColors.textMuted,
+            ),
+          ),
         ],
       ),
     );

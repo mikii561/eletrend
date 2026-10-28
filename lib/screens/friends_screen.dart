@@ -30,9 +30,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
   void initState() {
     super.initState();
     if (Bumps.instance.ready) {
-      Bumps.instance.settings().then((s) {
-        if (mounted) setState(() => _muted.addAll(s.muted));
-      }).catchError((_) {});
+      Bumps.instance
+          .settings()
+          .then((s) {
+            if (mounted) setState(() => _muted.addAll(s.muted));
+          })
+          .catchError((_) {});
     }
   }
 
@@ -42,7 +45,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
     if (code == null || code.trim().isEmpty) return;
     try {
       await Friends.instance.addByCode(code);
-      messenger.showSnackBar(const SnackBar(content: Text('Jelölés elküldve! Ha elfogadja, megjelenik a barátaid között.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Jelölés elküldve! Ha elfogadja, megjelenik a barátaid között.')),
+      );
     } on FriendException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
@@ -75,25 +80,27 @@ class _FriendsScreenState extends State<FriendsScreen> {
           if (!friends.ready)
             const EmptyState(emoji: '📡', text: 'A barátokhoz internet kell.\nPróbáld újra kicsit később.')
           else ...[
-            Card(
-              child: ListTile(
-                leading: const IconTile(Icons.waving_hand_outlined),
-                title: const Text('Kapott bumpok', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('A barátaid üzenetei, képei, hangüzenetei.'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BumpsInboxScreen())),
+            if (StoreScope.of(context).shows(Feature.bumps))
+              Card(
+                child: ListTile(
+                  leading: const IconTile(Icons.waving_hand_outlined),
+                  title: const Text('Kapott bumpok', style: TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: const Text('A barátaid üzenetei, képei, hangüzenetei.'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BumpsInboxScreen())),
+                ),
               ),
-            ),
-            Card(
-              color: AppColors.accent.withValues(alpha: 0.12),
-              child: ListTile(
-                leading: const IconTile(Icons.flag_outlined),
-                title: const Text('Közös kihívások', style: TextStyle(fontWeight: FontWeight.w800)),
-                subtitle: const Text('Pl. 30 nap edzés a barátaiddal, ranglistával.'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChallengesScreen())),
+            if (StoreScope.of(context).shows(Feature.challenges))
+              Card(
+                color: AppColors.accent.withValues(alpha: 0.12),
+                child: ListTile(
+                  leading: const IconTile(Icons.flag_outlined),
+                  title: const Text('Közös kihívások', style: TextStyle(fontWeight: FontWeight.w800)),
+                  subtitle: const Text('Pl. 30 nap edzés a barátaiddal, ranglistával.'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ChallengesScreen())),
+                ),
               ),
-            ),
             // Saját kód
             Card(
               color: AppColors.primary.withValues(alpha: 0.10),
@@ -101,15 +108,26 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Text('A barátkódod', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                    Text(
+                      'A barátkódod',
+                      style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700),
+                    ),
                     const SizedBox(height: 4),
                     SelectableText(
                       friends.myCode ?? '…',
-                      style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, letterSpacing: 6, color: AppColors.primary),
+                      style: TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 6,
+                        color: AppColors.primary,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text('Add meg a barátodnak, vagy kérd el az övét.',
-                        textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
+                    Text(
+                      'Add meg a barátodnak, vagy kérd el az övét.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textMuted),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
@@ -155,8 +173,16 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton(tooltip: 'Elutasítás', icon: const Icon(Icons.close), onPressed: () => friends.decline(r)),
-                              IconButton.filled(tooltip: 'Elfogadás', icon: const Icon(Icons.check), onPressed: () => friends.accept(r)),
+                              IconButton(
+                                tooltip: 'Elutasítás',
+                                icon: const Icon(Icons.close),
+                                onPressed: () => friends.decline(r),
+                              ),
+                              IconButton.filled(
+                                tooltip: 'Elfogadás',
+                                icon: const Icon(Icons.check),
+                                onPressed: () => friends.accept(r),
+                              ),
                             ],
                           ),
                         ),
@@ -176,8 +202,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 if (list.isEmpty) {
                   return Card(
                     child: ListTile(
-                      title: Text('Még nincs barátod az appban. Küldd el nekik a kódodat!',
-                          style: TextStyle(color: AppColors.textMuted)),
+                      title: Text(
+                        'Még nincs barátod az appban. Küldd el nekik a kódodat!',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
                     ),
                   );
                 }
@@ -194,11 +222,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              IconButton.filledTonal(
-                                tooltip: 'Bump',
-                                onPressed: () => showBumpComposer(context, to: {f.uid: f.name}),
-                                icon: const Text('👋', style: TextStyle(fontSize: 18)),
-                              ),
+                              if (StoreScope.of(context).shows(Feature.bumps))
+                                IconButton.filledTonal(
+                                  tooltip: 'Bump',
+                                  onPressed: () => showBumpComposer(context, to: {f.uid: f.name}),
+                                  icon: const Text('👋', style: TextStyle(fontSize: 18)),
+                                ),
                               PopupMenuButton<String>(
                                 onSelected: (v) async {
                                   if (v == 'remove') return friends.remove(f.uid);
@@ -209,7 +238,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                 itemBuilder: (_) => [
                                   PopupMenuItem(
                                     value: 'mute',
-                                    child: Text(_muted.contains(f.uid) ? 'Bumpok újra engedélyezése' : 'Bumpok némítása tőle'),
+                                    child: Text(
+                                      _muted.contains(f.uid) ? 'Bumpok újra engedélyezése' : 'Bumpok némítása tőle',
+                                    ),
                                   ),
                                   const PopupMenuItem(value: 'remove', child: Text('Barát eltávolítása')),
                                 ],
@@ -250,8 +281,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   ),
                 ListTile(
                   leading: Icon(Icons.person_add_alt_outlined, color: AppColors.primary),
-                  title: Text('Név hozzáadása', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
-                  subtitle: const Text('Akinek nincs fiókja: meghívólinkkel hívhatod, és a költségeknél is szerepelhet.'),
+                  title: Text(
+                    'Név hozzáadása',
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: const Text(
+                    'Akinek nincs fiókja: meghívólinkkel hívhatod, és a költségeknél is szerepelhet.',
+                  ),
                   onTap: () async {
                     final name = await showTextInputSheet(context, title: 'Új név', hint: 'Név', action: 'Hozzáadás');
                     if (name != null) store.addFriend(name);

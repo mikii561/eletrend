@@ -38,11 +38,13 @@ class EventsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Programok'),
         actions: [
-          IconButton(
-            tooltip: 'Közösségi ötletek',
-            icon: const Icon(Icons.lightbulb_outline),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CommunityIdeasScreen())),
-          ),
+          if (store.shows(Feature.community))
+            IconButton(
+              tooltip: 'Közösségi ötletek',
+              icon: const Icon(Icons.lightbulb_outline),
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CommunityIdeasScreen())),
+            ),
           IconButton.filledTonal(
             tooltip: 'Ötlet',
             icon: const Icon(Icons.casino_outlined),
@@ -80,7 +82,8 @@ class EventsScreen extends StatelessWidget {
                     onSelected: (_) => store.removeInvite(i.id),
                     itemBuilder: (_) => const [PopupMenuItem(value: 'remove', child: Text('Eltávolítás a listából'))],
                   ),
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: i.id))),
+                  onTap: () =>
+                      Navigator.of(context).push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: i.id))),
                 ),
               ),
           ],
@@ -114,11 +117,19 @@ class EventCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(e.title, style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      e.title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 2),
                     _IconLine(
                       e.repeat == Repeat.none ? Icons.schedule : Icons.repeat,
-                      [DateFormat('EEEE HH:mm', 'hu').format(next), if (e.repeat != Repeat.none) repeatLabel(e)].join(' • '),
+                      [
+                        DateFormat('EEEE HH:mm', 'hu').format(next),
+                        if (e.repeat != Repeat.none) repeatLabel(e),
+                      ].join(' • '),
                     ),
                     if (e.place.isNotEmpty) _IconLine(Icons.location_on_outlined, e.place),
                   ],
@@ -148,7 +159,12 @@ class _IconLine extends StatelessWidget {
           Icon(icon, size: 15, color: AppColors.textMuted),
           const SizedBox(width: 4),
           Expanded(
-            child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: AppColors.textMuted)),
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: AppColors.textMuted),
+            ),
           ),
         ],
       ),
@@ -221,8 +237,13 @@ class EventDetail extends StatelessWidget {
                         DateBadge(next, size: 58),
                         const SizedBox(width: 14),
                         Expanded(
-                          child: Text(e.title,
-                              style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900, color: Colors.white)),
+                          child: Text(
+                            e.title,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -235,7 +256,9 @@ class EventDetail extends StatelessWidget {
               children: [
                 DateBadge(next, size: 64),
                 const SizedBox(width: 16),
-                Expanded(child: Text(e.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                  child: Text(e.title, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                ),
               ],
             ),
           const SizedBox(height: 20),
@@ -258,7 +281,8 @@ class EventDetail extends StatelessWidget {
                     leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
                     title: Text(e.place),
                   ),
-                if (e.hasLocation) WeatherTile(lat: e.lat!, lng: e.lng!, at: next),
+                if (e.hasLocation && StoreScope.of(context).shows(Feature.weather))
+                  WeatherTile(lat: e.lat!, lng: e.lng!, at: next),
               ],
             ),
           ),
@@ -303,13 +327,15 @@ class EventDetail extends StatelessWidget {
           ),
           const SectionTitle('Meghívottak'),
           if (e.invited.isEmpty)
-            Card(child: ListTile(title: Text('Még senkit nem hívtál meg.', style: TextStyle(color: AppColors.textMuted))))
+            Card(
+              child: ListTile(
+                title: Text('Még senkit nem hívtál meg.', style: TextStyle(color: AppColors.textMuted)),
+              ),
+            )
           else
             Card(
               child: Column(
-                children: [
-                  for (final f in e.invited) ListTile(leading: NameAvatar(f), title: Text(f)),
-                ],
+                children: [for (final f in e.invited) ListTile(leading: NameAvatar(f), title: Text(f))],
               ),
             ),
           OwnerSocialSection(event: e),
@@ -389,9 +415,8 @@ class _EventEditorState extends State<EventEditor> {
   }
 
   Future<void> _pickPlace() async {
-    final picked = await Navigator.of(context).push<Place>(
-      MaterialPageRoute(builder: (_) => LocationPicker(initial: _place)),
-    );
+    final picked = await Navigator.of(context)
+        .push<Place>(MaterialPageRoute(builder: (_) => LocationPicker(initial: _place)));
     if (picked != null) setState(() => _place = picked);
   }
 
@@ -462,7 +487,12 @@ class _EventEditorState extends State<EventEditor> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _PickerTile(icon: Icons.schedule, label: 'Időpont', value: _time.format(context), onTap: _pickTime),
+                child: _PickerTile(
+                  icon: Icons.schedule,
+                  label: 'Időpont',
+                  value: _time.format(context),
+                  onTap: _pickTime,
+                ),
               ),
             ],
           ),
@@ -515,8 +545,10 @@ class _EventEditorState extends State<EventEditor> {
               children: [
                 ListTile(
                   leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
-                  title: Text(place?.name ?? 'Helyszín kiválasztása a térképen',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: place == null ? AppColors.textMuted : null)),
+                  title: Text(
+                    place?.name ?? 'Helyszín kiválasztása a térképen',
+                    style: TextStyle(fontWeight: FontWeight.w700, color: place == null ? AppColors.textMuted : null),
+                  ),
                   trailing: place == null
                       ? const Icon(Icons.map_outlined)
                       : IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _place = null)),
@@ -570,7 +602,10 @@ class _EventEditorState extends State<EventEditor> {
           if (_bgError != null)
             Padding(
               padding: const EdgeInsets.only(top: 6),
-              child: Text(_bgError!, style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+              child: Text(
+                _bgError!,
+                style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600),
+              ),
             ),
 
           // Meghívottak
@@ -630,8 +665,12 @@ class _PickerTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                    Text(value,
-                        maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
                   ],
                 ),
               ),
@@ -645,22 +684,22 @@ class _PickerTile extends StatelessWidget {
 
 /// „minden csütörtökön” alakhoz: hétfőnként, keddenként…
 String weekdayEvery(int weekday) => const [
-      'hétfőnként',
-      'keddenként',
-      'szerdánként',
-      'csütörtökönként',
-      'péntekenként',
-      'szombatonként',
-      'vasárnaponként',
-    ][weekday - 1];
+  'hétfőnként',
+  'keddenként',
+  'szerdánként',
+  'csütörtökönként',
+  'péntekenként',
+  'szombatonként',
+  'vasárnaponként',
+][weekday - 1];
 
 /// Az ismétlődés olvasható leírása, pl. „Hetente, csütörtökönként”.
 String repeatLabel(Event e) => switch (e.repeat) {
-      Repeat.none => '',
-      Repeat.weekly => 'Hetente, ${weekdayEvery(e.date.weekday)}',
-      Repeat.biweekly => 'Kéthetente, ${weekdayEvery(e.date.weekday)}',
-      Repeat.monthly => 'Havonta, minden hónap ${e.date.day}. napján',
-    };
+  Repeat.none => '',
+  Repeat.weekly => 'Hetente, ${weekdayEvery(e.date.weekday)}',
+  Repeat.biweekly => 'Kéthetente, ${weekdayEvery(e.date.weekday)}',
+  Repeat.monthly => 'Havonta, minden hónap ${e.date.day}. napján',
+};
 
 /// Egy háttér-választó négyzet.
 class _BgSwatch extends StatelessWidget {
@@ -684,8 +723,12 @@ class _BgSwatch extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: selected ? AppColors.primary : Colors.transparent, width: 3),
-            gradient: image == null ? LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
-            image: image == null ? null : DecorationImage(image: MemoryImage(TagImages.decode(image!)), fit: BoxFit.cover),
+            gradient: image == null
+                ? LinearGradient(colors: colors, begin: Alignment.topLeft, end: Alignment.bottomRight)
+                : null,
+            image: image == null
+                ? null
+                : DecorationImage(image: MemoryImage(TagImages.decode(image!)), fit: BoxFit.cover),
           ),
           alignment: Alignment.center,
           child: child,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/tag_icon.dart';
 
 /// Pár cél, amivel könnyű elkezdeni.
 const suggestedHabits = [
@@ -15,7 +17,7 @@ const suggestedHabits = [
   '🏋️ Edzés',
 ];
 
-/// Bemutató az első indításkor: mit tud az app, és pár ajánlott cél.
+/// Bemutató az első indításkor, három lépésben: célok, napló, mit szeretnél látni.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -24,18 +26,10 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  static const _steps = 3;
   final _pages = PageController();
   int _page = 0;
   final Set<String> _picked = {suggestedHabits[0], suggestedHabits[1]};
-
-  static const _intro = [
-    ('🌿', 'Üdv az Életrendben!', 'Egy helyen a céljaid, a hangulatod és a programjaid a barátaiddal.'),
-    (
-      '📔',
-      'Napló és hangulat',
-      'Esténként egy perc: milyen napod volt, és miért vagy hálás. A statisztika megmutatja, mi tesz jót neked.',
-    ),
-  ];
 
   void _finish() {
     StoreScope.of(context).finishOnboarding(
@@ -46,7 +40,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  void _next() => _pages.nextPage(duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
+  void _go(int page) =>
+      _pages.animateToPage(page, duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic);
 
   @override
   void dispose() {
@@ -56,176 +51,231 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final last = _page == _intro.length;
+    final last = _page == _steps - 1;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(gradient: AppColors.headerGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: last ? null : () => StoreScope.of(context).finishOnboarding(),
-                  style: TextButton.styleFrom(foregroundColor: Colors.white70),
-                  child: Text(last ? '' : 'Kihagyás'),
-                ),
-              ),
-              Expanded(
-                child: PageView(
-                  controller: _pages,
-                  onPageChanged: (i) => setState(() => _page = i),
-                  children: [
-                    for (final (emoji, title, text) in _intro) _IntroPage(emoji: emoji, title: title, text: text),
-                    _HabitPicker(
-                      picked: _picked,
-                      onToggle: (h) => setState(() => _picked.contains(h) ? _picked.remove(h) : _picked.add(h)),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Lépésjelző és vissza gomb
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 20, 0),
+              child: Row(
                 children: [
-                  for (var i = 0; i <= _intro.length; i++)
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: i == _page ? 22 : 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: i == _page ? Colors.white : Colors.white38,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                  SizedBox(
+                    width: 48,
+                    child: _page == 0
+                        ? null
+                        : IconButton(
+                            tooltip: 'Vissza',
+                            icon: const Icon(Icons.arrow_back),
+                            onPressed: () => _go(_page - 1),
+                          ),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < _steps; i++)
+                          Expanded(
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 250),
+                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: i <= _page ? AppColors.primary : AppColors.divider,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '${_page + 1}/$_steps',
+                    style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+                  ),
                 ],
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                child: FilledButton(
-                  style: FilledButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.primary),
-                  onPressed: last ? _finish : _next,
-                  child: Text(
-                    last ? (_picked.isEmpty ? 'Kezdjük!' : 'Kezdjük ${_picked.length} céllal!') : 'Tovább',
+            ),
+            Expanded(
+              child: PageView(
+                controller: _pages,
+                onPageChanged: (i) => setState(() => _page = i),
+                children: [
+                  _Step(
+                    icon: Icons.check_circle_outline,
+                    title: 'Üdv az Életrendben!',
+                    text: 'Kezdjük a céljaiddal. Válaszd ki, mit szeretnél követni, később bármikor módosíthatod.',
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final h in suggestedHabits)
+                          FilterChip(
+                            label: Text(h),
+                            selected: _picked.contains(h),
+                            onSelected: (on) => setState(() => on ? _picked.add(h) : _picked.remove(h)),
+                          ),
+                      ],
+                    ),
                   ),
+                  const _Step(
+                    icon: Icons.book_outlined,
+                    title: 'Egy perc este',
+                    text:
+                        'Jelöld, milyen napod volt, és írd le, miért vagy hálás. '
+                        'A statisztika idővel megmutatja, mi tesz jót neked.',
+                    child: _JournalStep(),
+                  ),
+                  const _Step(
+                    icon: Icons.tune,
+                    title: 'Szabd magadra',
+                    text:
+                        'Programok a barátaiddal és sok más. Kapcsold ki, ami nem érdekel, '
+                        'később a Beállításokban visszakapcsolhatod.',
+                    child: _FeatureStep(),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+              child: FilledButton(
+                onPressed: last ? _finish : () => _go(_page + 1),
+                child: Text(
+                  last ? 'Kezdjük!' : (_page == 0 && _picked.isNotEmpty ? 'Tovább ${_picked.length} céllal' : 'Tovább'),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _IntroPage extends StatelessWidget {
-  const _IntroPage({required this.emoji, required this.title, required this.text});
+/// Egy lépés: ikon, cím, magyarázat és a lépés saját tartalma.
+class _Step extends StatelessWidget {
+  const _Step({required this.icon, required this.title, required this.text, required this.child});
 
-  final String emoji;
+  final IconData icon;
   final String title;
   final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    // Alacsony képernyőn görgethető, egyébként középre igazított.
-    return LayoutBuilder(
-      builder: (context, box) => SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: box.maxHeight),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 96)),
-              const SizedBox(height: 28),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 17, height: 1.4, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HabitPicker extends StatelessWidget {
-  const _HabitPicker({required this.picked, required this.onToggle});
-
-  final Set<String> picked;
-  final ValueChanged<String> onToggle;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('✅', style: TextStyle(fontSize: 72)),
-          const SizedBox(height: 16),
-          Text(
-            'Mivel kezdenél?',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Koppints azokra a célokra, amiket követni szeretnél. Később bármikor módosíthatod.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 28),
           ),
           const SizedBox(height: 20),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final h in suggestedHabits)
-                _HabitChip(label: h, selected: picked.contains(h), onTap: () => onToggle(h)),
-            ],
-          ),
+          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 8),
+          Text(text, style: TextStyle(color: AppColors.textMuted, fontSize: 16, height: 1.45)),
+          const SizedBox(height: 24),
+          child,
         ],
       ),
     );
   }
 }
 
-/// Ajánlott cél a színátmenetes háttéren: kiválasztva fehér, egyébként áttetsző.
-class _HabitChip extends StatelessWidget {
-  const _HabitChip({required this.label, required this.selected, required this.onTap});
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
+/// Napló lépés: az arcok előnézete és az esti emlékeztető.
+class _JournalStep extends StatelessWidget {
+  const _JournalStep();
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-          decoration: BoxDecoration(
-            color: selected ? Colors.white : Colors.white.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.white.withValues(alpha: selected ? 1 : 0.55), width: 1.5),
-          ),
-          child: Text(
-            selected ? '✓ $label' : label,
-            style: TextStyle(fontWeight: FontWeight.w700, color: selected ? AppColors.primary : Colors.white),
+    final store = StoreScope.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+            child: Column(
+              children: [
+                Text('Milyen napod van?', style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [for (var m = 1; m <= 5; m++) MoodFace(m, size: 32)],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Az arcokra később saját képet is tehetsz.',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                ),
+              ],
+            ),
           ),
         ),
+        Card(
+          child: Column(
+            children: [
+              SwitchListTile(
+                title: const Text('Esti emlékeztető'),
+                subtitle: Text(
+                  Notifications.supported
+                      ? 'Csak ha még nem írtál naplót vagy van kipipálatlan célod.'
+                      : 'Böngészőben a Ma képernyőn jelenik meg.',
+                ),
+                value: store.dailyReminder,
+                onChanged: (on) {
+                  store.setReminders(daily: on);
+                  if (on && Notifications.supported) Notifications.requestPermission();
+                },
+              ),
+              if (store.dailyReminder)
+                ListTile(
+                  title: const Text('Időpont'),
+                  trailing: Text(
+                    store.reminderTime.format(context),
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                  onTap: () async {
+                    final t = await showTimePicker(context: context, initialTime: store.reminderTime);
+                    if (t != null) store.setReminders(time: t);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Funkciók lépés: mi jelenjen meg az appban.
+class _FeatureStep extends StatelessWidget {
+  const _FeatureStep();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
+    return Card(
+      child: Column(
+        children: [
+          for (final f in Feature.values)
+            SwitchListTile(
+              dense: true,
+              secondary: Icon(f.icon, color: AppColors.textMuted),
+              title: Text(f.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+              value: store.shows(f),
+              onChanged: (on) => store.setFeature(f, on),
+            ),
+        ],
       ),
     );
   }

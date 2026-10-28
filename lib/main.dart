@@ -152,9 +152,13 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       store.markBadgesSeen(earned);
       return;
     }
-    final fresh = [for (final a in achievements) if (earned.contains(a.id) && !seen.contains(a.id)) a];
+    final fresh = [
+      for (final a in achievements)
+        if (earned.contains(a.id) && !seen.contains(a.id)) a,
+    ];
     if (fresh.isEmpty) return;
     store.markBadgesSeen(fresh.map((a) => a.id));
+    if (!store.shows(Feature.badges)) return;
     showBadgeEarned(context, fresh.first, more: fresh.length - 1);
   }
 

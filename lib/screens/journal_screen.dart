@@ -15,6 +15,7 @@ import '../widgets/tag_icon.dart';
 import 'pdf_export_sheet.dart';
 import 'pin_screen.dart';
 import 'stats_screen.dart';
+import 'week_summary_screen.dart';
 import 'year_review_screen.dart';
 import 'tags_screen.dart';
 import 'today_screen.dart' show MoodButton;
@@ -291,54 +292,69 @@ class _MoodWeek extends StatelessWidget {
     final today = DateTime.now();
     final days = List.generate(7, (i) => addDays(today, i - 6));
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Az elmúlt hét', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-            const SizedBox(height: 12),
-            SizedBox(
-              height: 110,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const WeekSummaryScreen())),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  for (final d in days)
-                    Builder(
-                      builder: (context) {
-                        final e = store.entryFor(d);
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            e == null ? const SizedBox(height: 18) : EntryFace(e, size: 18),
-                            const SizedBox(height: 4),
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              width: 22,
-                              height: e == null ? 6 : 10.0 + e.mood * 10,
-                              decoration: BoxDecoration(
-                                color: e == null ? AppColors.divider : AppColors.moods[e.mood - 1],
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              DateFormat.E('hu').format(d),
-                              style: TextStyle(
-                                color: dayKey(d) == dayKey(today) ? AppColors.text : AppColors.textMuted,
-                                fontSize: 11,
-                                fontWeight: dayKey(d) == dayKey(today) ? FontWeight.w700 : FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                  const Expanded(
+                    child: Text('Az elmúlt hét', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  ),
+                  Text(
+                    'Heti összefoglaló',
+                    style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  Icon(Icons.chevron_right, size: 18, color: AppColors.primary),
                 ],
               ),
-            ),
-          ],
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 110,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    for (final d in days)
+                      Builder(
+                        builder: (context) {
+                          final e = store.entryFor(d);
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              e == null ? const SizedBox(height: 18) : EntryFace(e, size: 18),
+                              const SizedBox(height: 4),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: 22,
+                                height: e == null ? 6 : 10.0 + e.mood * 10,
+                                decoration: BoxDecoration(
+                                  color: e == null ? AppColors.divider : AppColors.moods[e.mood - 1],
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                DateFormat.E('hu').format(d),
+                                style: TextStyle(
+                                  color: dayKey(d) == dayKey(today) ? AppColors.text : AppColors.textMuted,
+                                  fontSize: 11,
+                                  fontWeight: dayKey(d) == dayKey(today) ? FontWeight.w700 : FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -598,7 +614,11 @@ class _JournalEditorState extends State<JournalEditor> {
                               setState(() => _moodImage = null);
                               ScaffoldMessenger.of(context)
                                 ..hideCurrentSnackBar()
-                                ..showSnackBar(SnackBar(content: Text('Mostantól ez a kép a(z) „${store.moodFace(_mood).name}” arc.')));
+                                ..showSnackBar(
+                                  SnackBar(
+                                    content: Text('Mostantól ez a kép a(z) „${store.moodFace(_mood).name}” arc.'),
+                                  ),
+                                );
                             },
                             icon: const Icon(Icons.push_pin_outlined, size: 18),
                             label: const Text('Legyen mindig ez'),
