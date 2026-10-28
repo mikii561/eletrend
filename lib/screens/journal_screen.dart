@@ -29,6 +29,9 @@ class _JournalScreenState extends State<JournalScreen> {
   /// Kiválasztott címke a lista szűréséhez (null = mind).
   String? _filter;
 
+  /// Keresés a bejegyzésekben (null = nincs keresés).
+  String? _search;
+
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
@@ -37,7 +40,11 @@ class _JournalScreenState extends State<JournalScreen> {
     final todayEntry = store.entryFor(now);
     final usedTags = MoodStats(store).tagStats().map((t) => t.tag).toList();
     final filter = usedTags.contains(_filter) ? _filter : null;
-    final entries = filter == null ? store.journal : store.journal.where((j) => j.tags.contains(filter)).toList();
+    final search = _search;
+    final entries = store.journal
+        .where((j) => filter == null || j.tags.contains(filter))
+        .where((j) => search == null || entryMatches(j, search, store))
+        .toList();
 
     void openEditor(DateTime date, JournalEntry? existing) => Navigator.of(context).push(
           MaterialPageRoute(builder: (_) => JournalEditor(date: date, existing: existing)),
@@ -45,8 +52,19 @@ class _JournalScreenState extends State<JournalScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Napló'),
+        title: search == null
+            ? const Text('Napló')
+            : TextField(
+                autofocus: true,
+                decoration: const InputDecoration(hintText: 'Keresés a naplóban…', prefixIcon: Icon(Icons.search)),
+                onChanged: (v) => setState(() => _search = v),
+              ),
         actions: [
+          IconButton(
+            tooltip: search == null ? 'Keresés' : 'Keresés bezárása',
+            icon: Icon(search == null ? Icons.search : Icons.close),
+            onPressed: () => setState(() => _search = search == null ? '' : null),
+          ),
           IconButton.filledTonal(
             tooltip: 'Statisztika',
             icon: const Icon(Icons.insights),
@@ -63,9 +81,9 @@ class _JournalScreenState extends State<JournalScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
         children: [
-          _MoodWeek(store: store),
+          if (search == null) _MoodWeek(store: store),
           // A hónap első hetében: kész az előző havi összefoglaló.
-          if (now.day <= 7 && !MonthSummary(store, DateTime(now.year, now.month - 1)).isEmpty)
+          if (search == null && now.day <= 7 && !MonthSummary(store, DateTime(now.year, now.month - 1)).isEmpty)
             Card(
               color: AppColors.primary.withValues(alpha: 0.12),
               child: ListTile(
@@ -85,7 +103,10 @@ class _JournalScreenState extends State<JournalScreen> {
               child: EmptyState(emoji: '📔', text: 'Még nincs bejegyzésed.\nÍrd le, milyen napod volt és miért vagy hálás!'),
             )
           else ...[
-            SectionTitle('Bejegyzések', trailing: filter == null ? null : '${entries.length}'),
+            SectionTitle(search == null ? 'Bejegyzések' : 'Találatok',
+                trailing: filter == null && search == null ? null : '${entries.length}'),
+            if (search != null && search.trim().isNotEmpty && entries.isEmpty)
+              const EmptyState(emoji: '🔍', text: 'Nincs ilyen bejegyzés.\nPróbálj más szót, vagy kevesebbet.'),
             if (usedTags.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),

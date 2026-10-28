@@ -182,4 +182,18 @@ void main() {
     expect(monthAdjective(DateTime(2026, 10)), 'az októberi');
     expect(monthAdjective(DateTime(2026, 9)), 'a szeptemberi');
   });
+
+  test('napló keresés: ékezet nélkül is, több szóval, címkére is', () async {
+    final store = await emptyStore();
+    final e = entry(DateTime(2026, 10, 28), 4)
+      ..gratitude = 'Hálás vagyok a napsütésért'
+      ..note = 'Fociztunk Bencével'
+      ..tags = ['nyugodt'];
+    expect(entryMatches(e, 'halas', store), isTrue);
+    expect(entryMatches(e, 'NAPSÜTÉS foci', store), isTrue);
+    expect(entryMatches(e, 'nyugodt', store), isTrue);
+    expect(entryMatches(e, 'foci eső', store), isFalse);
+    expect(entryMatches(e, '  ', store), isTrue);
+    expect(foldAccents('Őszi Ünnep'), 'oszi unnep');
+  });
 }

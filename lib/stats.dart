@@ -229,3 +229,31 @@ String monthAdjective(DateTime month) {
   final name = '${DateFormat.MMMM('hu').format(month)}i';
   return '${'aáeéiíoóöőuúüű'.contains(name[0]) ? 'az' : 'a'} $name';
 }
+
+/// Ékezetek nélküli kisbetűs alak, hogy a keresésnél a „halas” a „hálás”-t is megtalálja.
+String foldAccents(String s) {
+  const from = 'áéíóöőúüűÁÉÍÓÖŐÚÜŰ';
+  const to = 'aeiooouuuAEIOOOUUU';
+  final b = StringBuffer();
+  for (final ch in s.toLowerCase().split('')) {
+    final i = from.indexOf(ch);
+    b.write(i < 0 ? ch : to[i].toLowerCase());
+  }
+  return b.toString();
+}
+
+/// Illeszkedik-e a bejegyzés a keresésre (hála, jegyzet, napi kérdés és válasz, címkék).
+/// Több szónál mindegyiknek szerepelnie kell valahol.
+bool entryMatches(JournalEntry e, String query, AppStore store) {
+  final words = foldAccents(query).split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+  if (words.isEmpty) return true;
+  final text = foldAccents([
+    e.gratitude,
+    e.note,
+    e.question,
+    e.answer,
+    for (final t in e.tags) store.tagFor(t).name,
+    store.moodFace(e.mood).name,
+  ].join(' '));
+  return words.every(text.contains);
+}
