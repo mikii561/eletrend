@@ -34,6 +34,13 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 - A PIN és az ujjlenyomat beállítás eszközönként marad, nem megy a felhőbe.
 - Widget-tesztekben `signInFakeAccount()` (test/helpers.dart), és a végén `Account.instance.sync?.stop()`.
 
+## Admin
+
+- `lib/admin.dart` + `lib/screens/admin_screen.dart`: áttekintés, felhasználók (felfüggesztés `bans/{uid}`, adattörlés), hibák (`errors`, csak release buildben jelent az app), visszajelzések (`feedback`), megosztott programok moderálása.
+- Admin az, akinek van `admins/{uid}` dokumentuma; **csak a Firebase konzolban** lehet felvenni (a szabályok az appból tiltják).
+- Az admin a napló tartalmát nem látja, csak a darabszámokat (`profiles/{uid}`).
+- `appVersion` (lib/admin.dart) a pubspec verzióval együtt léptetendő.
+
 ## Közös programok (Firebase)
 
 - Projekt: `lifest-c95f3` (a felhasználó Google-fiókja). Beállítások: `lib/firebase_options.dart`; névtelen bejelentkezés + Firestore.

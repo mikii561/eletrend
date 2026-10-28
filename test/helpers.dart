@@ -1,4 +1,5 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/admin.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 
@@ -9,5 +10,6 @@ FakeFirebaseFirestore signInFakeAccount({String uid = 'teszt', String email = 't
     auth: MockFirebaseAuth(signedIn: true, mockUser: MockUser(uid: uid, email: email, displayName: 'Teszt')),
     db: db,
   );
+  Admin.instance = Admin(db: db);
   return db;
 }

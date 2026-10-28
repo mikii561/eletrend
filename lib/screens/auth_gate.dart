@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../account.dart';
+import '../admin.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -24,6 +25,7 @@ class _AuthGateState extends State<AuthGate> {
   late StreamSubscription<User?> _sub;
   User? _user;
   bool _loading = false;
+  bool _banned = false;
   String? _error;
 
   @override
@@ -38,15 +40,19 @@ class _AuthGateState extends State<AuthGate> {
     if (user?.uid == _user?.uid) return;
     Account.instance.sync?.stop();
     Account.instance.sync = null;
+    Admin.currentUid = user?.uid;
     setState(() {
       _user = user;
       _error = null;
+      _banned = false;
     });
     if (user != null) _startSync(user);
   }
 
   Future<void> _startSync(User user) async {
     final store = StoreScope.of(context);
+    Admin.currentUid = user.uid;
+    unawaited(_checkAccount(user, store));
     final sync = CloudSync(store: store, uid: user.uid, db: Account.instance.db);
     if (sync.knownDevice) {
       // Ezen az eszközön már ehhez a fiókhoz szinkronizáltunk: azonnal mehet, a felhő a háttérben frissül.
@@ -69,6 +75,23 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
+  /// Felfüggesztett-e a fiók, és az adminnak látható adatlap frissítése.
+  Future<void> _checkAccount(User user, AppStore store) async {
+    final banned = await Admin.instance.isBanned(user.uid);
+    if (mounted && banned != _banned) setState(() => _banned = banned);
+    try {
+      await Admin.instance.updateProfile(
+        uid: user.uid,
+        email: user.email ?? '',
+        store: store,
+        createdAt: user.metadata.creationTime,
+        force: true,
+      );
+    } catch (e) {
+      debugPrint('Adatlap frissítése később: $e');
+    }
+  }
+
   @override
   void dispose() {
     _sub.cancel();
@@ -78,6 +101,25 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_user == null) return const AuthScreen();
+    if (_banned) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const EmptyState(
+                  emoji: '⛔',
+                  text: 'A fiókod fel van függesztve.\nHa szerinted ez tévedés, keresd az app üzemeltetőjét.',
+                ),
+                TextButton(onPressed: Account.instance.logout, child: const Text('Kijelentkezés')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     if (_error != null) {
       return Scaffold(
         body: Center(

@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'admin.dart';
 import 'account.dart';
 import 'firebase_options.dart';
 import 'habits_widget.dart';
@@ -24,6 +25,17 @@ import 'widgets/phone_frame.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Az élesben futó app a hibákat az adminnak jelenti (lásd Admin felület → Hibák).
+  Admin.reportingEnabled = kReleaseMode;
+  final previousOnError = FlutterError.onError;
+  FlutterError.onError = (details) {
+    previousOnError?.call(details);
+    unawaited(Admin.instance.reportError(details.exception, details.stack));
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    unawaited(Admin.instance.reportError(error, stack));
+    return false;
+  };
   await initializeDateFormatting('hu');
   final store = await AppStore.load();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -132,6 +144,12 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
       store.reload().then((_) => Account.instance.sync?.refresh()).catchError((Object e) {
         debugPrint('Frissítés a felhőből később: $e');
       });
+      final user = Account.instance.user;
+      if (user != null) {
+        Admin.instance
+            .updateProfile(uid: user.uid, email: user.email ?? '', store: store)
+            .catchError((Object e) => debugPrint('Adatlap később: $e'));
+      }
     }
   }
 

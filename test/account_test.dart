@@ -1,4 +1,5 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/admin.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
 import 'package:eletrend/store.dart';
@@ -92,6 +93,7 @@ void main() {
     addTearDown(tester.view.reset);
     final db = FakeFirebaseFirestore();
     Account.instance = Account(auth: MockFirebaseAuth(mockUser: MockUser(uid: 'u9', email: 'anna@pelda.hu')), db: db);
+    Admin.instance = Admin(db: db);
     final store = (await tester.runAsync(() => freshDevice()))!;
 
     await tester.pumpWidget(EletrendApp(store: store));
