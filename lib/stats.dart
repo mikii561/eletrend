@@ -257,3 +257,17 @@ bool entryMatches(JournalEntry e, String query, AppStore store) {
   ].join(' '));
   return words.every(text.contains);
 }
+
+/// Egy régi bejegyzés felidézéshez: egy éve, fél éve vagy egy hónapja ezen a napon (az első, ami van).
+({String label, JournalEntry entry})? memoryFor(AppStore store, DateTime now) {
+  for (final (label, months) in [('Egy éve ezen a napon', 12), ('Fél éve ezen a napon', 6), ('Egy hónapja ezen a napon', 1)]) {
+    final target = DateTime(now.year, now.month - months, now.day, 12);
+    // Ha a hónap rövidebb (pl. március 31. → február), azt a napot kihagyjuk, ne csússzon el.
+    if (target.day != now.day) continue;
+    final e = store.entryFor(target);
+    if (e != null && (e.gratitude.isNotEmpty || e.note.isNotEmpty || e.answer.isNotEmpty || e.moodImage != null)) {
+      return (label: label, entry: e);
+    }
+  }
+  return null;
+}

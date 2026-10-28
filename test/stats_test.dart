@@ -196,4 +196,18 @@ void main() {
     expect(entryMatches(e, '  ', store), isTrue);
     expect(foldAccents('Őszi Ünnep'), 'oszi unnep');
   });
+
+  test('emlék: egy éve, ha nincs, fél éve; üres bejegyzés nem számít', () async {
+    final store = await emptyStore();
+    final now = DateTime(2026, 10, 28);
+    expect(memoryFor(store, now), isNull);
+    store.saveEntry(entry(DateTime(2026, 4, 28), 4)..gratitude = 'tavaszi séta');
+    expect(memoryFor(store, now)!.label, 'Fél éve ezen a napon');
+    store.saveEntry(entry(DateTime(2025, 10, 28), 3)); // üres: csak hangulat
+    expect(memoryFor(store, now)!.label, 'Fél éve ezen a napon');
+    store.saveEntry(entry(DateTime(2025, 10, 28), 5)..note = 'Az első nap az új munkahelyen');
+    final m = memoryFor(store, now)!;
+    expect(m.label, 'Egy éve ezen a napon');
+    expect(m.entry.note, contains('munkahely'));
+  });
 }
