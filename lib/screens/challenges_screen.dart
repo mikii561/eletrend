@@ -44,7 +44,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               stream: _mine,
               builder: (context, snap) {
                 if (snap.hasError) return Center(child: Text('Nem sikerült betölteni: ${snap.error}'));
-                final list = snap.data;
+                final list = snap.data?.where((c) => !c.isGoal).toList();
                 if (list == null) return const Center(child: CircularProgressIndicator());
                 if (list.isEmpty) {
                   return const Padding(

@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
           const AccountSection(),
-          const SectionTitle('Beállítások'),
+          const SectionTitle('Általános'),
           Card(
             child: Column(
               children: [

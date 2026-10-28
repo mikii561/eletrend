@@ -17,6 +17,7 @@ class Challenge {
     required this.ownerUid,
     required this.members,
     required this.names,
+    this.kind = '',
   });
 
   final String id;
@@ -27,6 +28,11 @@ class Challenge {
   final String ownerUid;
   final List<String> members;
   final Map<String, String> names;
+
+  /// 'goal': közös cél (a Célok között látszik), egyébként kihívás.
+  final String kind;
+
+  bool get isGoal => kind == 'goal';
 
   DateTime get end => addDays(start, days - 1);
 
@@ -48,7 +54,8 @@ class Challenge {
   /// A kihívás napjai közé esik-e.
   bool covers(DateTime d) {
     final day = DateTime(d.year, d.month, d.day);
-    return !day.isBefore(DateTime(start.year, start.month, start.day)) && !day.isAfter(DateTime(end.year, end.month, end.day));
+    return !day.isBefore(DateTime(start.year, start.month, start.day)) &&
+        !day.isAfter(DateTime(end.year, end.month, end.day));
   }
 
   factory Challenge.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
@@ -62,6 +69,7 @@ class Challenge {
       ownerUid: d['ownerUid'] as String? ?? '',
       members: List<String>.from(d['members'] as List? ?? []),
       names: Map<String, String>.from(d['names'] as Map? ?? {}),
+      kind: d['kind'] as String? ?? '',
     );
   }
 }
@@ -130,9 +138,12 @@ class Challenges {
 
   void _onChange() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 2), () => syncLinkedHabits().catchError((Object e) {
-          debugPrint('Kihívás frissítése később: $e');
-        }));
+    _debounce = Timer(
+      const Duration(seconds: 2),
+      () => syncLinkedHabits().catchError((Object e) {
+        debugPrint('Kihívás frissítése később: $e');
+      }),
+    );
   }
 
   Stream<List<Challenge>> watchMine() => _col
@@ -140,10 +151,46 @@ class Challenges {
       .snapshots()
       .map((q) => [for (final d in q.docs) Challenge.fromDoc(d)]..sort((a, b) => b.start.compareTo(a.start)));
 
+  Future<Challenge?> get(String id) async {
+    final doc = await _col.doc(id).get();
+    return doc.exists ? Challenge.fromDoc(doc) : null;
+  }
+
+  /// Közös célok (a kihívások listájában nem szerepelnek).
+  Stream<List<Challenge>> watchSharedGoals() => watchMine().map(
+    (l) => [
+      for (final c in l)
+        if (c.isGoal) c,
+    ],
+  );
+
+  /// Közös cél indítása egy meglévő célból: a barátok meghívást kapnak, a cél pipái maguktól átmennek.
+  Future<String> shareGoal(Habit habit, Map<String, String> friends) async {
+    final id = await create(
+      title: habit.name.length > 60 ? habit.name.substring(0, 60) : habit.name,
+      emoji: '',
+      days: 366,
+      start: DateTime.now(),
+      friends: friends,
+      kind: 'goal',
+    );
+    _store!.linkChallengeHabit(id, habit.id);
+    await syncLinkedHabits();
+    return id;
+  }
+
+  /// Csatlakozás egy barát közös céljához: saját cél lesz belőle, ugyanazzal a névvel.
+  Future<void> joinSharedGoal(Challenge c) async {
+    final store = _store!;
+    store.addHabit(c.title);
+    store.linkChallengeHabit(c.id, store.habits.last.id);
+    await syncLinkedHabits();
+  }
+
   Stream<List<ChallengeProgress>> watchProgress(String id) => _col.doc(id).collection('progress').snapshots().map((q) {
-        final list = [for (final d in q.docs) ChallengeProgress.fromDoc(d)];
-        return list..sort((a, b) => b.done.length.compareTo(a.done.length));
-      });
+    final list = [for (final d in q.docs) ChallengeProgress.fromDoc(d)];
+    return list..sort((a, b) => b.done.length.compareTo(a.done.length));
+  });
 
   Future<String> create({
     required String title,
@@ -151,6 +198,7 @@ class Challenges {
     required int days,
     required DateTime start,
     required Map<String, String> friends,
+    String kind = '',
   }) async {
     final me = _uid!;
     final name = _store!.myName;
@@ -163,6 +211,7 @@ class Challenges {
       'ownerUid': me,
       'members': [me, ...friends.keys],
       'names': {me: name, ...friends},
+      if (kind.isNotEmpty) 'kind': kind,
       'at': FieldValue.serverTimestamp(),
     });
     await ref.collection('progress').doc(me).set({'name': name, 'done': <String>[], 'cheers': 0});
@@ -218,7 +267,10 @@ class Challenges {
       final doc = await _col.doc(link.key).get();
       if (!doc.exists) continue;
       final c = Challenge.fromDoc(doc);
-      final done = {for (final d in habit.doneDays) if (c.covers(DateTime.parse(d))) d};
+      final done = {
+        for (final d in habit.doneDays)
+          if (c.covers(DateTime.parse(d))) d,
+      };
       final ref = _col.doc(c.id).collection('progress').doc(_uid);
       final snap = await ref.get();
       if (snap.exists && setEquals(ChallengeProgress.fromDoc(snap).done, done)) continue;

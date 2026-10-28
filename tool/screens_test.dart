@@ -88,6 +88,14 @@ void main() {
       }
 
       await shot('1-ma');
+      await tester.tap(find.byTooltip('Beállítások'));
+      await shot('9-beallitasok');
+      await tester.tap(find.text('Funkciók'));
+      await shot('10-funkciok');
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
       await tester.tapAt(const Offset(200, 830));
       await shot('4-celok');
       await tester.tap(find.text('Olvasás').hitTestable());

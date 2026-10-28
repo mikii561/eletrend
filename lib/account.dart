@@ -153,6 +153,11 @@ class CloudSync {
   Timer? _debounce;
   Future<void>? _pushing;
 
+  /// Mindig a szerverről olvasunk: offline a telefon a gyorsítótárból válaszolna, ami hiányos vagy
+  /// régi lehet, és azzal felülírnánk az eszközön lévő adatokat. Így offline inkább hibát kapunk,
+  /// és az eszközön lévő adatokkal megy tovább az app.
+  static const _server = GetOptions(source: Source.server);
+
   CollectionReference<Map<String, dynamic>> _col(String kind) => _db.collection('users').doc(uid).collection(kind);
 
   /// Az app jelenlegi állapota dokumentumokra bontva.
@@ -202,19 +207,22 @@ class CloudSync {
   }
 
   /// Van-e már adat a fiókban (új fióknál nincs).
-  Future<bool> hasCloudData() async => (await _col('meta').doc('settings').get()).exists;
+  Future<bool> hasCloudData() async => (await _col('meta').doc('settings').get(_server)).exists;
 
   /// Letölti a fiók adatait, és ezekkel írja felül az eszközön lévőket.
   Future<void> pull() async {
     final docs = <String, List<Map<String, dynamic>>>{};
     final known = <String, String>{};
     for (final kind in kinds) {
-      final q = await _col(kind).get();
+      final q = await _col(kind).get(_server);
       docs[kind] = [for (final d in q.docs) d.data()];
       for (final d in q.docs) {
         known['$kind/${d.id}'] = _hash(d.data());
       }
     }
+    // Ha közben (vagy offline) az eszközön változott valami, ami még nincs fent, nem írjuk felül:
+    // a következő feltöltés viszi fel, és utána a letöltés hozza a többit.
+    if (store!.syncUid == uid && _hasLocalChanges()) return;
     // Ha a felhőben semmi sem változott, nem cseréljük le az adatokat (egy épp nyitott szerkesztő
     // így a saját példányán dolgozhat tovább).
     final unchanged = known.length == _known.length && known.entries.every((e) => _known[e.key] == e.value);
@@ -232,6 +240,12 @@ class CloudSync {
       settings: docs['meta']!.isEmpty ? null : docs['meta']!.first,
     );
     store!.saveSyncHashes(uid, _known);
+  }
+
+  /// Van-e az eszközön olyan változás, ami még nem került fel.
+  bool _hasLocalChanges() {
+    final now = _snapshot();
+    return now.entries.any((e) => _known[e.key] != _hash(e.value)) || _known.keys.any((k) => !now.containsKey(k));
   }
 
   /// Ezen az eszközön már ehhez a fiókhoz szinkronizáltunk (akkor offline is indulhat).

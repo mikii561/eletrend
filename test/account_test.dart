@@ -132,4 +132,29 @@ void main() {
     expect(u.email, 'anna@gmail.com');
     expect(account.user, isNotNull);
   });
+  test('letöltés nem írja felül a még fel nem töltött helyi változást', () async {
+    final db = FakeFirebaseFirestore();
+    final phone = await freshDevice();
+    phone.addHabit('Séta');
+    final phoneSync = CloudSync(store: phone, uid: 'u2', db: db);
+    await phoneSync.start();
+
+    // Másik eszközön új cél kerül fel.
+    final web = await freshDevice();
+    final webSync = CloudSync(store: web, uid: 'u2', db: db);
+    await webSync.start();
+    web.addHabit('Olvasás');
+    await webSync.push();
+
+    // A telefonon közben (pl. offline) új cél, még nincs fent: a letöltés nem törölheti.
+    phone.addHabit('Edzés');
+    await phoneSync.pull();
+    expect(phone.habits.map((h) => h.name), contains('Edzés'));
+
+    // Feltöltés, aztán letöltés: minden megvan mindkét helyen.
+    await phoneSync.refresh();
+    expect(phone.habits.map((h) => h.name).toSet(), {'Séta', 'Edzés', 'Olvasás'});
+    await webSync.refresh();
+    expect(web.habits.map((h) => h.name).toSet(), {'Séta', 'Edzés', 'Olvasás'});
+  });
 }

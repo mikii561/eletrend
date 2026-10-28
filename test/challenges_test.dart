@@ -52,4 +52,41 @@ void main() {
     gabi.stop();
     anna.stop();
   });
+  test('közös cél: megosztás, csatlakozás saját céllal, pipák átmennek, a kihívások közt nincs', () async {
+    final db = FakeFirebaseFirestore();
+    final gabiStore = await device('Gabi');
+    final annaStore = await device('Anna');
+    final gabi = Challenges(db: db)..start('gabi', gabiStore);
+    final anna = Challenges(db: db)..start('anna', annaStore);
+    final today = DateTime.now();
+
+    gabiStore.addHabit('🚶 10 perc séta');
+    final h = gabiStore.habits.single;
+    gabiStore.toggleHabit(h, today);
+    await gabi.shareGoal(h, {'anna': 'Anna'});
+
+    final invite = (await anna.watchSharedGoals().first).single;
+    expect(invite.isGoal, isTrue);
+    expect(invite.title, '🚶 10 perc séta');
+    expect(invite.names[invite.ownerUid], 'Gabi');
+    expect(await gabi.watchSharedGoals().first, hasLength(1));
+
+    // Anna csatlakozik: saját célja lesz, a pipája megjelenik Gabinál.
+    await anna.joinSharedGoal(invite);
+    expect(annaStore.habits.single.name, '🚶 10 perc séta');
+    expect(annaStore.challengeHabits[invite.id], annaStore.habits.single.id);
+    annaStore.toggleHabit(annaStore.habits.single, today);
+    await anna.syncLinkedHabits();
+
+    final progress = await gabi.watchProgress(invite.id).first;
+    expect(progress.firstWhere((p) => p.uid == 'anna').done, {dayKey(today)});
+    expect(progress.firstWhere((p) => p.uid == 'gabi').done, {dayKey(today)});
+
+    // Gabi leállítja: törlődik mindkettőjüknél.
+    await gabi.delete((await gabi.get(invite.id))!);
+    expect(await anna.watchSharedGoals().first, isEmpty);
+    expect(gabiStore.challengeHabits, isEmpty);
+    gabi.stop();
+    anna.stop();
+  });
 }

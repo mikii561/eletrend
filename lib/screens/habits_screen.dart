@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../challenges.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -9,6 +10,7 @@ import 'badges_screen.dart';
 import 'breathing_screen.dart';
 import 'habit_editor.dart';
 import 'habit_history_screen.dart';
+import 'shared_goal_widgets.dart';
 import 'today_screen.dart' show CheckCircle, StreakChip, habitProgress;
 
 /// Célok listája az elmúlt 7 nap teljesítésével.
@@ -58,6 +60,7 @@ class HabitsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
         children: [
+          const SharedGoalInvites(),
           if (store.habits.isEmpty)
             EmptyState(
               emoji: '🌱',
@@ -103,12 +106,18 @@ class HabitsScreen extends StatelessWidget {
                           onSelected: (v) => switch (v) {
                             'edit' => showHabitEditor(context, habit: h),
                             'history' => _openHistory(context, h),
+                            'share' => showShareGoalSheet(context, h),
+                            'unshare' => stopSharedGoal(context, sharedGoalIdOf(store, h)!),
                             _ => store.removeHabit(h),
                           },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(value: 'history', child: Text('Előzmények')),
-                            PopupMenuItem(value: 'edit', child: Text('Szerkesztés')),
-                            PopupMenuItem(value: 'delete', child: Text('Törlés')),
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(value: 'history', child: Text('Előzmények')),
+                            if (Challenges.instance.ready)
+                              sharedGoalIdOf(store, h) == null
+                                  ? const PopupMenuItem(value: 'share', child: Text('Közös cél egy baráttal'))
+                                  : const PopupMenuItem(value: 'unshare', child: Text('Közös cél leállítása')),
+                            const PopupMenuItem(value: 'edit', child: Text('Szerkesztés')),
+                            const PopupMenuItem(value: 'delete', child: Text('Törlés')),
                           ],
                         ),
                       ],
@@ -159,6 +168,8 @@ class HabitsScreen extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (sharedGoalIdOf(store, h) case final id? when Challenges.instance.ready)
+                      SharedGoalRow(key: ValueKey(id), challengeId: id),
                   ],
                 ),
               ),

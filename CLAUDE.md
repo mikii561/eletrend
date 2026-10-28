@@ -93,3 +93,11 @@ Magyar nyelvű életmód app Flutterben (elsősorban Android): programszervezés
 
 - `lib/notifications.dart`: helyi, ütemezett értesítések (flutter_local_notifications), csak Androidon. Minden store-változáskor mindent újraütemez (napi 7 nap előre, programonként előző este 18:00 + 1 órával előtte).
 - Emulátor: `Medium_Phone_API_37.0`; indítás: `C:\Android\sdk\emulator\emulator.exe -avd Medium_Phone_API_37.0` (a `flutter emulators --launch` csendben nem indítja el).
+
+## Funkciók, heti összefoglaló, közös cél
+
+- Kikapcsolható részek: `lib/features.dart` (`Feature` enum), `store.hiddenFeatures`, `store.shows(f)`. A Beállítások → Funkciók és a bevezető 3. lépése állítja.
+- Beállítások: főoldalon csoportok, mindegyik saját aloldallal (`settings_screen.dart`).
+- Heti összefoglaló: `WeekSummary` (stats.dart) + `week_summary_screen.dart`; értesítés vasárnap 19:00 (`payload: weekly`), böngészőben a Ma képernyő kártyája (`widgets/nudge_cards.dart`, ott az esti napló-kártya is).
+- Közös cél: a kihívás-rendszert használja `kind: 'goal'`-lal (`Challenges.shareGoal` / `joinSharedGoal`, `screens/shared_goal_widgets.dart`); a Kihívások listája ezeket kiszűri. Szabálymódosítás nem kellett.
+- Offline: a `CloudSync` mindig a szerverről olvas (`Source.server`), és nem tölt le, amíg helyi, fel nem töltött változás van.

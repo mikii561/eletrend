@@ -1,4 +1,7 @@
+import 'package:eletrend/challenges.dart';
 import 'package:eletrend/models.dart';
+import 'package:eletrend/screens/habits_screen.dart';
+import 'package:eletrend/screens/shared_goal_widgets.dart';
 import 'package:eletrend/screens/settings_screen.dart';
 import 'package:eletrend/screens/week_summary_screen.dart';
 import 'package:eletrend/stats.dart';
@@ -136,5 +139,48 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('A napsütés'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+  testWidgets('célkártya: közös cél meghívás elfogadása, a barát pipái látszanak', (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final db = signInFakeAccount(uid: 'anna');
+    SharedPreferences.setMockInitialValues({'onboarded': true});
+    final store = await AppStore.load();
+    store.setMyName('Anna');
+    Challenges.instance.start('anna', store);
+
+    // Gabi közös célt indított Annával (közvetlenül az adatbázisban).
+    final gabiStore = store; // csak a névhez kell
+    final gabi = Challenges(db: db)..start('gabi', gabiStore);
+    final id = await gabi.create(
+      title: 'Séta',
+      emoji: '',
+      days: 366,
+      start: DateTime.now(),
+      friends: {'anna': 'Anna'},
+      kind: 'goal',
+    );
+    await db.collection('challenges').doc(id).update({'names.gabi': 'Gabi'});
+    await db.collection('challenges').doc(id).collection('progress').doc('gabi').update({
+      'name': 'Gabi',
+      'done': [dayKey(DateTime.now())],
+    });
+    gabi.stop();
+
+    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
+    await tester.pumpAndSettle();
+    expect(find.text('Gabi közös célt indított veled'), findsOneWidget);
+    await tester.tap(find.text('Csatlakozom'));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pumpAndSettle();
+
+    expect(store.habits.single.name, 'Séta');
+    expect(find.text('Gabi közös célt indított veled'), findsNothing);
+    expect(find.byType(SharedGoalRow), findsOneWidget);
+    expect(find.text('Gabi'), findsOneWidget);
+    expect(find.byTooltip('Buzdítás'), findsOneWidget);
+    Challenges.instance.stop();
   });
 }
