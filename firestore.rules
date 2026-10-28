@@ -147,6 +147,29 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
+      // „Ki mit hoz?”: bárki felírhat tételt; elvállalni csak a saját nevében lehet,
+      // lemondani a sajátját (vagy szervezőként bármelyiket).
+      match /items/{itemId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && !banned()
+          && request.resource.data.addedBy == request.auth.uid
+          && request.resource.data.keys().hasOnly(['title', 'addedBy', 'addedName', 'who', 'whoName', 'at'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() > 0
+          && request.resource.data.title.size() <= 60
+          && request.resource.data.who == null;
+        allow update: if signedIn() && !banned()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['who', 'whoName'])
+          && (request.resource.data.who == request.auth.uid
+            || (request.resource.data.who == null
+              && (resource.data.who == request.auth.uid
+                || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid)));
+        allow delete: if signedIn()
+          && (resource.data.addedBy == request.auth.uid
+            || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid
+            || isAdmin());
+      }
+
       // Üzenőfal: saját néven lehet írni; törölni a sajátot, szervezőként vagy adminként bármelyiket.
       match /messages/{messageId} {
         allow read: if signedIn();

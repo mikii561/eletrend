@@ -101,4 +101,21 @@ void main() {
     expect(store.myName, 'Anna');
     expect(store.invites.single.title, 'Foci');
   });
+
+  test('ki mit hoz: felírás, elvállalás, lemondás', () async {
+    final d = twoDevices();
+    final id = await d.owner.publish(Event(id: '1', title: 'Buli', date: DateTime(2026, 11, 7, 20)), ownerName: 'Gabi');
+    await d.owner.addItem(id, title: 'Chips', name: 'Gabi');
+    await d.guest.addItem(id, title: 'Üdítő', name: 'Anna');
+    var items = await d.guest.watchItems(id).first;
+    expect(items.map((i) => i.title), containsAll(['Chips', 'Üdítő']));
+    final chips = items.firstWhere((i) => i.title == 'Chips');
+    await d.guest.claimItem(id, chips.id, name: 'Anna');
+    items = await d.owner.watchItems(id).first;
+    expect(items.firstWhere((i) => i.title == 'Chips').whoName, 'Anna');
+    expect(items.firstWhere((i) => i.title == 'Chips').who, 'anna');
+    await d.guest.claimItem(id, chips.id);
+    items = await d.owner.watchItems(id).first;
+    expect(items.firstWhere((i) => i.title == 'Chips').who, isNull);
+  });
 }

@@ -169,6 +169,12 @@ class _InviteScreenState extends State<InviteScreen> {
                       },
                     ),
                   ],
+                  const SectionTitle('Ki mit hoz?'),
+                  BringList(
+                    eventId: event.id,
+                    isOwner: event.ownerUid == Social.instance.uid,
+                    nameOf: _nameOrAsk,
+                  ),
                   const SectionTitle('Ki jön még?'),
                   Card(child: RsvpSummary(rsvps: rsvps)),
                   const SectionTitle('Üzenőfal'),

@@ -531,6 +531,8 @@ class _OwnerSocialSectionState extends State<OwnerSocialSection> {
                     ],
                   ),
                 ),
+                const SectionTitle('Ki mit hoz?'),
+                BringList(eventId: id, isOwner: true),
                 const SectionTitle('Időpont'),
                 if (shared.pollOpen)
                   PollCard(
@@ -681,6 +683,126 @@ class _FriendPickerState extends State<_FriendPicker> {
               child: Text(_picked.isEmpty ? 'Válassz barátot' : 'Meghívás (${_picked.length})'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// „Ki mit hoz?”: tételek, amiket bárki elvállalhat; látszik, mi hiányzik még.
+class BringList extends StatefulWidget {
+  const BringList({super.key, required this.eventId, required this.isOwner, this.nameOf});
+
+  final String eventId;
+  final bool isOwner;
+
+  /// A vendég oldalon a név a meghívás képernyőjén van beírva; innen kérjük el.
+  final String? Function()? nameOf;
+
+  @override
+  State<BringList> createState() => _BringListState();
+}
+
+class _BringListState extends State<BringList> {
+  late final Stream<List<BringItem>> _items = Social.instance.watchItems(widget.eventId);
+  final _text = TextEditingController();
+
+  Future<String?> _name() async {
+    final fromField = widget.nameOf?.call();
+    if (fromField != null && fromField.isNotEmpty) return fromField;
+    return ensureMyName(context);
+  }
+
+  Future<void> _add() async {
+    final title = _text.text.trim();
+    if (title.isEmpty) return;
+    final name = await _name();
+    if (name == null || !mounted) return;
+    try {
+      await Social.instance.addItem(widget.eventId, title: title, name: name);
+      _text.clear();
+    } catch (e) {
+      if (mounted) _showError(context, e);
+    }
+  }
+
+  Future<void> _claim(BringItem item, bool take) async {
+    final name = take ? await _name() : null;
+    if (take && name == null) return;
+    try {
+      await Social.instance.claimItem(widget.eventId, item.id, name: name);
+    } catch (e) {
+      if (mounted) _showError(context, e);
+    }
+  }
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final me = Social.instance.uid;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 8, 12, 12),
+        child: StreamBuilder<List<BringItem>>(
+          stream: _items,
+          builder: (context, snap) {
+            final items = snap.data ?? const <BringItem>[];
+            final missing = items.where((i) => i.who == null).length;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (items.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 4, 0, 8),
+                    child: Text('Mi kell még? Írd fel, és valaki elvállalja (chips, üdítő, társas…).',
+                        style: TextStyle(color: AppColors.textMuted)),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 0, 4),
+                    child: Text(missing == 0 ? 'Minden megvan! 🎉' : 'Még $missing tétel vár gazdára',
+                        style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                  ),
+                for (final i in items)
+                  ListTile(
+                    dense: true,
+                    leading: Icon(i.who == null ? Icons.radio_button_unchecked : Icons.check_circle,
+                        color: i.who == null ? AppColors.textMuted : AppColors.primary),
+                    title: Text(i.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    subtitle: i.who == null ? null : Text('${i.whoName} hozza'),
+                    trailing: i.who == null
+                        ? TextButton(onPressed: () => _claim(i, true), child: const Text('Elvállalom'))
+                        : i.who == me
+                            ? TextButton(onPressed: () => _claim(i, false), child: const Text('Mégsem'))
+                            : null,
+                    onLongPress: i.addedBy == me || widget.isOwner ? () => Social.instance.deleteItem(widget.eventId, i.id) : null,
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _text,
+                          maxLength: 60,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: const InputDecoration(hintText: 'Új tétel (pl. chips)', counterText: ''),
+                          onSubmitted: (_) => _add(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filledTonal(tooltip: 'Hozzáadás', onPressed: _add, icon: const Icon(Icons.add)),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

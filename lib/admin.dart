@@ -299,7 +299,7 @@ class Admin {
   /// Egy megosztott program és az üzenőfala törlése (moderálás).
   Future<void> deleteSharedEvent(String id) async {
     final ref = _db.collection('events').doc(id);
-    for (final sub in ['messages', 'rsvps']) {
+    for (final sub in ['messages', 'rsvps', 'items']) {
       final q = await ref.collection(sub).get();
       final batch = _db.batch();
       for (final d in q.docs) {

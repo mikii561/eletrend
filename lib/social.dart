@@ -117,6 +117,30 @@ class ChatMessage {
   }
 }
 
+/// Egy tétel a „Ki mit hoz?” listán.
+class BringItem {
+  const BringItem({required this.id, required this.title, required this.addedBy, this.who, this.whoName});
+
+  final String id;
+  final String title;
+  final String addedBy;
+
+  /// Aki elvállalta (null, ha még senki).
+  final String? who;
+  final String? whoName;
+
+  factory BringItem.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return BringItem(
+      id: doc.id,
+      title: d['title'] as String? ?? '',
+      addedBy: d['addedBy'] as String? ?? '',
+      who: d['who'] as String?,
+      whoName: d['whoName'] as String?,
+    );
+  }
+}
+
 /// Melyik időpont a legjobb: a legtöbben jók rá, egyenlőségnél a korábbi.
 DateTime? bestOption(List<DateTime> options, Iterable<Rsvp> rsvps) {
   if (options.isEmpty) return null;
@@ -245,6 +269,36 @@ class Social {
       'text': text.trim(),
       'at': FieldValue.serverTimestamp(),
     });
+  }
+
+  // „Ki mit hoz?”
+
+  Stream<List<BringItem>> watchItems(String id) async* {
+    await ready();
+    yield* _event(id).collection('items').orderBy('at').snapshots().map((q) => [for (final d in q.docs) BringItem.fromDoc(d)]);
+  }
+
+  Future<void> addItem(String id, {required String title, required String name}) async {
+    await ready();
+    await _event(id).collection('items').add({
+      'title': title.trim().length > 60 ? title.trim().substring(0, 60) : title.trim(),
+      'addedBy': uid,
+      'addedName': name,
+      'who': null,
+      'whoName': null,
+      'at': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Elvállalom (név megadásával), vagy null névvel lemondom.
+  Future<void> claimItem(String id, String itemId, {String? name}) async {
+    await ready();
+    await _event(id).collection('items').doc(itemId).update({'who': name == null ? null : uid, 'whoName': name});
+  }
+
+  Future<void> deleteItem(String id, String itemId) async {
+    await ready();
+    await _event(id).collection('items').doc(itemId).delete();
   }
 
   Future<void> deleteMessage(String id, String messageId) async {
