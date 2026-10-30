@@ -56,7 +56,7 @@ class TodayNudges extends StatelessWidget {
         if (weekDue)
           Card(
             child: ListTile(
-              leading: const IconTile(Icons.insights_outlined, color: AppColors.accent),
+              leading: IconTile(Icons.insights_outlined, color: AppColors.accent),
               title: const Text('Így ment a heted'),
               subtitle: Text(
                 [

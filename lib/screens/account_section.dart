@@ -174,7 +174,7 @@ class AccountSection extends StatelessWidget {
                   builder: (context, snap) => snap.data != true
                       ? const SizedBox.shrink()
                       : ListTile(
-                          leading: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.accent),
+                          leading: Icon(Icons.admin_panel_settings_outlined, color: AppColors.accent),
                           title: const Text('Admin felület', style: TextStyle(fontWeight: FontWeight.w700)),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () =>

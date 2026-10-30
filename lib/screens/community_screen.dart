@@ -546,7 +546,7 @@ class _ShareIdeaState extends State<_ShareIdea> {
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
+              leading: Icon(Icons.location_on_outlined, color: AppColors.accent),
               title: Text(_place == null ? 'Helyszín (nem kötelező)' : _place!.name),
               subtitle: _place == null ? const Text('Így a közelben lakók is megtalálják.') : Text(_place!.label),
               trailing: _place == null ? const Icon(Icons.map_outlined) : IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _place = null)),

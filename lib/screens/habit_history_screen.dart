@@ -254,7 +254,7 @@ class _MonthGrid extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: done
-                ? (AppColors.dark ? const Color(0xFF042F2E) : Colors.white)
+                ? AppColors.onPrimary
                 : future
                 ? AppColors.divider
                 : AppColors.textMuted,

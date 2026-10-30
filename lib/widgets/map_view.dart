@@ -19,7 +19,7 @@ Marker pinMarker(LatLng point) => Marker(
       width: 48,
       height: 48,
       alignment: Alignment.topCenter,
-      child: const Icon(Icons.location_on, size: 48, color: AppColors.accent, shadows: [
+      child: Icon(Icons.location_on, size: 48, color: AppColors.accent, shadows: [
         Shadow(color: Colors.black38, blurRadius: 6, offset: Offset(0, 2)),
       ]),
     );

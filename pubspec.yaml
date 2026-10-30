@@ -134,14 +134,14 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: assets/icon/icon.png
-    background_color: "#0F766E"
-    theme_color: "#0F766E"
+    background_color: "#590907"
+    theme_color: "#590907"
 
 # Indítóképernyő; újragenerálás: dart run flutter_native_splash:create
 flutter_native_splash:
-  color: "#0F766E"
+  color: "#590907"
   image: assets/icon/splash.png
   android_12:
-    color: "#0F766E"
+    color: "#590907"
     image: assets/icon/splash.png
   web: true

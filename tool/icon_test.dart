@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 // A márkaszín (theme.dart), egy árnyalaton belül, hogy ne legyen tarka.
-const _gradient = [Color(0xFF0F766E), Color(0xFF115E59)];
+const _gradient = [Color(0xFF590907), Color(0xFF470705)];
 
 /// A jel: kör, benne pipa, a kör nyílásában egy kis nap. [scale] a 1024-es vászonhoz képest.
 void _drawSymbol(Canvas c, double scale) {
@@ -15,20 +15,20 @@ void _drawSymbol(Canvas c, double scale) {
   c.translate(512, 512);
   c.scale(scale);
   c.translate(-512, -512);
-  final white = Paint()
-    ..color = Colors.white
+  final cream = Paint()
+    ..color = const Color(0xFFF4E9DA)
     ..style = PaintingStyle.stroke
     ..strokeCap = StrokeCap.round
     ..strokeJoin = StrokeJoin.round;
-  c.drawArc(Rect.fromCircle(center: const Offset(512, 512), radius: 300), -1.05, 5.4, false, white..strokeWidth = 72);
+  c.drawArc(Rect.fromCircle(center: const Offset(512, 512), radius: 300), -1.05, 5.4, false, cream..strokeWidth = 72);
   c.drawPath(
     Path()
       ..moveTo(372, 522)
       ..lineTo(478, 626)
       ..lineTo(668, 420),
-    white..strokeWidth = 84,
+    cream..strokeWidth = 84,
   );
-  c.drawCircle(const Offset(536, 213), 58, Paint()..color = const Color(0xFFF59E0B));
+  c.drawCircle(const Offset(536, 213), 58, Paint()..color = const Color(0xFFA5A79B));
   c.restore();
 }
 

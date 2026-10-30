@@ -397,7 +397,7 @@ class MoodButton extends StatelessWidget {
             child: CircleAvatar(
               radius: 11,
               backgroundColor: AppColors.primary,
-              child: const Icon(Icons.edit, size: 13, color: Colors.white),
+              child: Icon(Icons.edit, size: 13, color: AppColors.onPrimary),
             ),
           ),
         ),

@@ -187,7 +187,7 @@ class _LocationPickerState extends State<LocationPicker> {
                           children: [
                             Row(
                               children: [
-                                const Icon(Icons.location_on, color: AppColors.accent),
+                                Icon(Icons.location_on, color: AppColors.accent),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(picked.name,

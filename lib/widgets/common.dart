@@ -116,8 +116,8 @@ class NameAvatar extends StatelessWidget {
   final double radius;
 
   static const _colors = [
-    Color(0xFF0F766E), Color(0xFFB45309), Color(0xFF4338CA),
-    Color(0xFFBE185D), Color(0xFF0369A1), Color(0xFF4D7C0F),
+    Color(0xFF590907), Color(0xFF6B6E5D), Color(0xFF8C5A3C),
+    Color(0xFF7A4E6E), Color(0xFF3F5E5A), Color(0xFFA0672A),
   ];
 
   @override

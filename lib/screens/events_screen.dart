@@ -278,7 +278,7 @@ class EventDetail extends StatelessWidget {
                   ),
                 if (e.place.isNotEmpty)
                   ListTile(
-                    leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
+                    leading: Icon(Icons.location_on_outlined, color: AppColors.accent),
                     title: Text(e.place),
                   ),
                 if (e.hasLocation && StoreScope.of(context).shows(Feature.weather))
@@ -544,7 +544,7 @@ class _EventEditorState extends State<EventEditor> {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.location_on_outlined, color: AppColors.accent),
+                  leading: Icon(Icons.location_on_outlined, color: AppColors.accent),
                   title: Text(
                     place?.name ?? 'Helyszín kiválasztása a térképen',
                     style: TextStyle(fontWeight: FontWeight.w700, color: place == null ? AppColors.textMuted : null),
