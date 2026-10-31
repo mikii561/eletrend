@@ -2,7 +2,6 @@
 // Képernyőképek a dizájn ellenőrzéséhez (nem része a normál teszteknek).
 // Futtatás: ELETREND_SHOTS=<mappa> flutter test tool/screens_test.dart
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:eletrend/account.dart';
