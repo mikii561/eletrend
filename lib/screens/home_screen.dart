@@ -12,6 +12,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/goal_widgets.dart';
+import '../widgets/app_tour.dart';
 import '../widgets/install_card.dart';
 import 'calendar_screen.dart' show OccurrenceTile;
 import 'challenges_screen.dart';
@@ -143,6 +144,7 @@ class _Header extends StatelessWidget {
           Tooltip(
             message: 'Az állapotod a barátaidnak',
             child: ActionChip(
+              key: TourKeys.status,
               avatar: Icon(statusIcon(status), size: 16, color: AppColors.status(status)),
               label: Text(status.label),
               onPressed: () => showStatusSheet(context),
@@ -225,6 +227,7 @@ class _QuickActions extends StatelessWidget {
       ),
     );
     return Row(
+      key: TourKeys.quickActions,
       children: [
         button(
           Icons.event_outlined,

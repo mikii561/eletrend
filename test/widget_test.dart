@@ -20,7 +20,9 @@ Future<AppStore> readyStore() async {
   SharedPreferences.resetStatic();
   SharedPreferences.setMockInitialValues({});
   final store = await AppStore.load();
-  store.finishOnboarding(name: 'Gabi');
+  store
+    ..finishOnboarding(name: 'Gabi')
+    ..setTourDone(true);
   return store;
 }
 
@@ -79,7 +81,43 @@ void main() {
     expect(store.freeWindows, hasLength(1));
     expect(store.shareAvailability, AvailabilityShare.nobody);
     expect(store.showsCard(HomeCard.challenges), isFalse);
-    expect(find.text('Főoldal'), findsOneWidget); // az alsó menü
+    expect(find.text('Főoldal'), findsWidgets); // az alsó menü (és a bemutató)
+
+    // A bevezető után magától jön a bemutató: végig lehet lépkedni rajta.
+    expect(find.text('Tovább'), findsOneWidget);
+    for (final title in ['Főoldal', 'Az állapotod', 'Gyors gombok', 'Naptár', 'Létrehozás', 'Barátok', 'Profil']) {
+      await tester.tap(find.text('Tovább'));
+      await tester.pumpAndSettle();
+      expect(find.text(title), findsWidgets);
+      expect(tester.takeException(), isNull);
+    }
+    await tester.tap(find.text('Kezdjük!'));
+    await tester.pumpAndSettle();
+    expect(store.tourDone, isTrue);
+    expect(find.text('Kezdjük!'), findsNothing);
+    stopServices();
+  });
+
+  testWidgets('bemutató: kihagyható, és a Profilból újraindítható', (tester) async {
+    phone(tester);
+    final store = (await tester.runAsync(readyStore))!..setTourDone(false);
+    await tester.pumpWidget(LifeupApp(store: store));
+    await tester.pumpAndSettle();
+    expect(find.text('1/8'), findsOneWidget);
+    await tester.tap(find.text('Kihagyom'));
+    await tester.pumpAndSettle();
+    expect(store.tourDone, isTrue);
+
+    await tester.tap(find.text('Profil'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView).last, const Offset(0, -1500));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Bemutató újra'));
+    await tester.pumpAndSettle();
+    expect(find.text('1/8'), findsOneWidget);
+    expect(find.textContaining('Szia'), findsOneWidget); // visszavált a Főoldalra
+    await tester.tap(find.text('Kihagyom'));
+    await tester.pumpAndSettle();
     stopServices();
   });
 

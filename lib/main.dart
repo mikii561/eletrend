@@ -24,6 +24,7 @@ import 'screens/onboarding_screen.dart';
 import 'screens/profile_screen.dart';
 import 'store.dart';
 import 'theme.dart';
+import 'widgets/app_tour.dart';
 import 'widgets/phone_frame.dart';
 
 Future<void> main() async {
@@ -114,12 +115,16 @@ class LifeupApp extends StatelessWidget {
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
+  /// A bemutató újraindítása (pl. a Profilból).
+  static void startTour(BuildContext context) => context.findAncestorStateOfType<_HomeShellState>()?.startTour();
+
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _index = 0;
+  bool _touring = false;
 
   /// A középső helyen a Létrehozás gomb van, nem képernyő.
   static const _create = 2;
@@ -128,6 +133,28 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Az első megnyitáskor (a bevezető után) magától jön a bemutató.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !StoreScope.of(context).tourDone) startTour();
+    });
+  }
+
+  /// A Főoldalra vált, és végigvezet a fő részeken.
+  void startTour() {
+    if (_touring) return;
+    _touring = true;
+    setState(() => _index = 0);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showAppTour(
+        context,
+        appTourSteps,
+        onDone: () {
+          _touring = false;
+          if (mounted) StoreScope.of(context).setTourDone(true);
+        },
+      );
+    });
   }
 
   @override
@@ -170,6 +197,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         _ => HomeScreen(onNavigate: _select),
       },
       bottomNavigationBar: NavigationBar(
+        key: TourKeys.navBar,
         selectedIndex: _index,
         onDestinationSelected: _select,
         destinations: [

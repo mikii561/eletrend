@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../account.dart';
 import '../backup.dart';
+import '../main.dart' show HomeShell;
 import '../formatting.dart';
 import '../friends.dart';
 import '../notifications.dart';
@@ -157,6 +158,12 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.upload_outlined,
                   title: 'Export visszatöltése',
                   onTap: () => Backup.restore(context, store),
+                ),
+                SettingsTile(
+                  icon: Icons.school_outlined,
+                  title: 'Bemutató újra',
+                  subtitle: 'Végigvezet az app fő részein',
+                  onTap: () => HomeShell.startTour(context),
                 ),
               ],
             ),

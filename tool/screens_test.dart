@@ -175,6 +175,17 @@ void main() {
         File('$out/${dark ? 'sotet' : 'vilagos'}-$name.png').writeAsBytesSync(png!.buffer.asUint8List());
       }
 
+      // Első megnyitás: a bemutató.
+      await shot('00a-bemutato-1');
+      await tester.tap(find.text('Tovább'));
+      await tester.tap(find.text('Tovább'));
+      await shot('00b-bemutato-3');
+      await tester.tap(find.text('Tovább'));
+      await tester.tap(find.text('Tovább'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tovább'));
+      await shot('00c-bemutato-6');
+      await tester.tap(find.text('Kihagyom'));
       await shot('01-fooldal');
       await tester.drag(find.byType(ListView).first, const Offset(0, -700));
       await shot('02-fooldal-lent');

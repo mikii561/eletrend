@@ -86,6 +86,9 @@ class AppStore extends ChangeNotifier {
   /// Végigment-e már a bevezetőn.
   bool onboarded = false;
 
+  /// Látta-e már a Főoldal bemutatóját (fiókonként egyszer jön elő magától).
+  bool tourDone = false;
+
   /// A Főoldal kártyái sorrendben, és amiket elrejtett.
   List<HomeCard> homeCards = [...HomeCard.values];
   Set<HomeCard> hiddenCards = {};
@@ -167,6 +170,7 @@ class AppStore extends ChangeNotifier {
     'defaultReminderMin': defaultReminderMin,
     'themeMode': themeMode.name,
     'onboarded': onboarded,
+    'tourDone': tourDone,
     'homeCards': [for (final c in homeCards) c.name],
     'hiddenCards': [for (final c in hiddenCards) c.name]..sort(),
     'challengeHabits': challengeHabits,
@@ -190,6 +194,7 @@ class AppStore extends ChangeNotifier {
     if (s.containsKey('defaultReminderMin')) defaultReminderMin = (s['defaultReminderMin'] as num?)?.toInt();
     themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
+    tourDone = s['tourDone'] as bool? ?? tourDone;
     if (s['homeCards'] case final List cards) {
       final order = [for (final c in cards) ?HomeCard.values.asNameMap()[c]];
       // Ha később új kártya jön, a végére kerül.
@@ -280,6 +285,7 @@ class AppStore extends ChangeNotifier {
     defaultReminderMin = 30;
     themeMode = ThemeMode.system;
     onboarded = false;
+    tourDone = false;
     homeCards = [...HomeCard.values];
     hiddenCards = {};
     challengeHabits = {};
@@ -413,6 +419,11 @@ class AppStore extends ChangeNotifier {
     taskReminders = tasks ?? taskReminders;
     birthdayReminders = birthdays ?? birthdayReminders;
     defaultReminderMin = clearDefault ? null : (defaultMin ?? defaultReminderMin);
+    _save();
+  }
+
+  void setTourDone(bool done) {
+    tourDone = done;
     _save();
   }
 
