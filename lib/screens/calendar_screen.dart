@@ -247,6 +247,9 @@ void _layout(List<_Block> blocks) {
 const _hourHeight = 52.0;
 const _gutter = 44.0;
 
+/// A „most” jelző színe (piros, sötét módban világosabb).
+Color get _nowColor => AppColors.dark ? const Color(0xFFFF6B5E) : const Color(0xFFD93025);
+
 /// Idővonal egy vagy több napra (nap- és hétnézet).
 class _Timeline extends StatefulWidget {
   const _Timeline({required this.days, required this.blocks, required this.onCreate});
@@ -283,6 +286,7 @@ class _TimelineState extends State<_Timeline> {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final showsToday = widget.days.any((d) => sameDay(d, now));
     for (final list in widget.blocks) {
       _layout(list);
     }
@@ -317,7 +321,9 @@ class _TimelineState extends State<_Timeline> {
                       left: 0,
                       width: _gutter - 6,
                       child: Text(
-                        h == 0 ? '' : '${h.toString().padLeft(2, '0')}:00',
+                        h == 0 || (showsToday && ((now.hour * 60 + now.minute) - h * 60).abs() < 15)
+                            ? ''
+                            : '${h.toString().padLeft(2, '0')}:00',
                         textAlign: TextAlign.right,
                         style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                       ),
@@ -340,13 +346,34 @@ class _TimelineState extends State<_Timeline> {
                         child: _BlockTile(block: b, compact: widget.days.length > 1),
                       ),
                   for (var i = 0; i < widget.days.length; i++)
-                    if (sameDay(widget.days[i], now))
+                    if (sameDay(widget.days[i], now)) ...[
+                      // A „most” jelző: piros vonal pöttyel, bal oldalt a pontos idővel (Google/Apple naptár
+                      // mintájára), hogy ne lehessen összetéveszteni egy bejegyzéssel.
                       Positioned(
-                        top: 8 + (now.hour * 60 + now.minute) / 60 * _hourHeight - 1,
-                        left: _gutter + i * colWidth,
-                        width: colWidth,
-                        child: Container(height: 2, color: AppColors.primary),
+                        top: 8 + (now.hour * 60 + now.minute) / 60 * _hourHeight - 7,
+                        left: 0,
+                        width: _gutter - 4,
+                        child: Text(
+                          formatTime(now),
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _nowColor),
+                        ),
                       ),
+                      Positioned(
+                        top: 8 + (now.hour * 60 + now.minute) / 60 * _hourHeight - 4,
+                        left: _gutter + i * colWidth - 4,
+                        width: colWidth + 4,
+                        child: Semantics(
+                          label: 'Most: ${formatTime(now)}',
+                          child: Row(
+                            children: [
+                              Container(width: 8, height: 8, decoration: BoxDecoration(color: _nowColor, shape: BoxShape.circle)),
+                              Expanded(child: Container(height: 2, color: _nowColor)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                 ],
               ),
             );
