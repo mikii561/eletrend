@@ -51,7 +51,7 @@ void main() {
   ) async {
     phone(tester);
     SharedPreferences.setMockInitialValues({});
-    final store = (await tester.runAsync(AppStore.load))!;
+    final store = (await tester.runAsync(AppStore.load))!..beginOnboarding(); // új regisztráció
     await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
     expect(find.text('Üdvözlünk a LIFEUP alkalmazásban!'), findsOneWidget);
@@ -123,7 +123,7 @@ void main() {
   testWidgets('bevezető: „Beállítom később” – egyből a kész oldal, név a fiókból, a bemutató jön', (tester) async {
     phone(tester);
     SharedPreferences.setMockInitialValues({});
-    final store = (await tester.runAsync(AppStore.load))!;
+    final store = (await tester.runAsync(AppStore.load))!..beginOnboarding(); // új regisztráció
     await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tovább'));

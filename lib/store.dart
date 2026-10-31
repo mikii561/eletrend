@@ -296,7 +296,7 @@ class AppStore extends ChangeNotifier {
 
   /// Kijelentkezéskor minden adat lekerül erről az eszközről (a fiókban megmaradnak).
   Future<void> clearAll() async {
-    for (final k in [..._dataKeys, 'syncUid', 'syncHashes']) {
+    for (final k in [..._dataKeys, 'syncUid', 'syncHashes', 'onboardingPending']) {
       await _prefs.remove(k);
     }
     _reset();
@@ -372,7 +372,16 @@ class AppStore extends ChangeNotifier {
 
   // Bevezető
 
-  bool get needsOnboarding => !onboarded && habits.isEmpty && events.isEmpty && tasks.isEmpty;
+  /// Az első lépések csak az új regisztrációnál jönnek (nem bejelentkezéskor): ezt a regisztráció állítja be,
+  /// és ezen az eszközön marad, amíg a bevezető végig nem ér (az app közben bezárható).
+  bool get onboardingPending => _prefs.getBool('onboardingPending') ?? false;
+
+  void beginOnboarding() {
+    _prefs.setBool('onboardingPending', true);
+    notifyListeners();
+  }
+
+  bool get needsOnboarding => onboardingPending && !onboarded && habits.isEmpty && events.isEmpty && tasks.isEmpty;
 
   void finishOnboarding({
     String? name,
@@ -387,6 +396,7 @@ class AppStore extends ChangeNotifier {
     shareAvailability = share;
     hiddenCards = {...hidden};
     onboarded = true;
+    _prefs.remove('onboardingPending');
     _save();
   }
 

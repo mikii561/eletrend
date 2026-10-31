@@ -57,6 +57,7 @@ class _AuthScreenState extends State<AuthScreen> {
         final name = _name.text.trim();
         await Account.instance.register(name: name, email: email, password: password);
         if (store.myName.isEmpty) store.setMyName(name);
+        store.beginOnboarding(); // az első lépések csak az új regisztrációnál jönnek
       } else {
         await Account.instance.login(email: email, password: password);
       }
@@ -79,6 +80,7 @@ class _AuthScreenState extends State<AuthScreen> {
     });
     try {
       final user = await Account.instance.signInWithGoogle();
+      if (Account.instance.lastSignInWasNew) store.beginOnboarding();
       if (store.myName.isEmpty && (user.displayName ?? '').isNotEmpty) store.setMyName(user.displayName!);
     } on AccountException catch (e) {
       if (mounted) setState(() => _error = e.message);

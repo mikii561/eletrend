@@ -81,6 +81,12 @@ class Account {
         ? await current.linkWithCredential(credential)
         : await auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
     await result.user!.updateDisplayName(name.trim());
+    // A megerősítő levelet most küldjük; ha nem sikerül, a megerősítő oldalon újra kérhető.
+    try {
+      await sendVerification();
+    } catch (e) {
+      debugPrint('Megerősítő levél később: $e');
+    }
     return result.user!;
   });
 
@@ -92,6 +98,7 @@ class Account {
     if (current != null && current.isAnonymous) {
       try {
         final linked = kIsWeb ? await current.linkWithPopup(provider) : await current.linkWithProvider(provider);
+        lastSignInWasNew = _isNew(linked, fallback: true);
         return linked.user!;
       } on FirebaseAuthException catch (e) {
         // Ehhez a Google-fiókhoz már tartozik fiók: abba lépünk be.
@@ -99,7 +106,53 @@ class Account {
       }
     }
     final result = kIsWeb ? await auth.signInWithPopup(provider) : await auth.signInWithProvider(provider);
+    lastSignInWasNew = _isNew(result, fallback: false);
     return result.user!;
+  });
+
+  /// Új fiókot hozott-e létre a belépés (ha a szolgáltató nem mondja meg, a [fallback]).
+  bool _isNew(UserCredential credential, {required bool fallback}) {
+    try {
+      return credential.additionalUserInfo?.isNewUser ?? fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
+  /// Az utolsó Google-belépés új fiókot hozott-e létre (akkor jönnek az első lépések).
+  bool lastSignInWasNew = false;
+
+  /// Az ennél újabb (e-mail + jelszavas) fiókoknál kötelező az e-mail-cím megerősítése. A korábbi fiókokat
+  /// nem zárjuk ki. A Google-fiók e-mail-címe eleve megerősített.
+  static DateTime verificationFrom = DateTime(2026, 11, 1);
+
+  bool needsVerification(User? u) {
+    if (u == null || u.emailVerified || (u.email ?? '').isEmpty) return false;
+    final created = u.metadata.creationTime;
+    return created != null && !created.isBefore(verificationFrom);
+  }
+
+  /// Megerősítő levél a bejelentkezett fióknak (egy link; kattintás után az app magától továbblép).
+  Future<void> sendVerification() => _guard(() async {
+    final u = auth.currentUser!;
+    await auth.setLanguageCode('hu');
+    try {
+      await u.sendEmailVerification(
+        ActionCodeSettings(url: 'https://mikii561.github.io/eletrend/', handleCodeInApp: false),
+      );
+    } on FirebaseAuthException catch (e) {
+      // Ha a visszatérő cím nincs engedélyezve, a sima levelet küldjük.
+      if (e.code != 'unauthorized-continue-uri' && e.code != 'invalid-continue-uri') rethrow;
+      await u.sendEmailVerification();
+    }
+  });
+
+  /// Megerősítette-e már (frissíti a fiók adatait a szerverről).
+  Future<bool> checkVerified() => _guard(() async {
+    final u = auth.currentUser;
+    if (u == null) return false;
+    await u.reload();
+    return auth.currentUser?.emailVerified == true;
   });
 
   /// Google-fiókkal regisztrált (nincs jelszava).

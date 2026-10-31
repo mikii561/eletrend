@@ -17,6 +17,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'auth_screen.dart';
+import 'verify_email_screen.dart';
 
 /// Az app kapuja: bejelentkezés nélkül a regisztráció jön; bejelentkezve betölti a fiók
 /// adatait, és utána a [child] (az app) következik.
@@ -34,6 +35,10 @@ class _AuthGateState extends State<AuthGate> {
   User? _user;
   bool _loading = false;
   bool _banned = false;
+
+  /// Az új (e-mail + jelszavas) fiók e-mail-címét megerősítette-e már, és látta-e a „Sikeres regisztráció” oldalt.
+  bool _verified = false;
+  bool _showSuccess = false;
   StreamSubscription<void>? _inbox;
   String? _error;
 
@@ -42,7 +47,9 @@ class _AuthGateState extends State<AuthGate> {
     super.initState();
     _user = Account.instance.user;
     _sub = Account.instance.changes.listen(_onUser);
-    if (_user != null) WidgetsBinding.instance.addPostFrameCallback((_) => _startSync(_user!));
+    if (_user != null && !_awaitingVerification) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startSync(_user!));
+    }
   }
 
   void _onUser(User? user) {
@@ -55,8 +62,25 @@ class _AuthGateState extends State<AuthGate> {
       _user = user;
       _error = null;
       _banned = false;
+      _verified = false;
+      _showSuccess = false;
     });
-    if (user != null) _startSync(user);
+    if (user != null && !_awaitingVerification) _startSync(user);
+  }
+
+  /// Megerősítésre vár: addig nem töltünk le és nem hozunk létre semmit a fiókhoz.
+  bool get _awaitingVerification => !_verified && Account.instance.needsVerification(_user);
+
+  void _onVerified() {
+    setState(() {
+      _verified = true;
+      _showSuccess = true;
+    });
+  }
+
+  void _continueAfterSuccess() {
+    setState(() => _showSuccess = false);
+    _startSync(_user!);
   }
 
   Future<void> _startSync(User user) async {
@@ -177,6 +201,10 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_user == null) return const AuthScreen();
+    if (_awaitingVerification) {
+      return VerifyEmailScreen(email: _user!.email ?? '', onVerified: _onVerified);
+    }
+    if (_showSuccess) return RegistrationSuccessScreen(onContinue: _continueAfterSuccess);
     if (_banned) {
       return Scaffold(
         body: Center(
