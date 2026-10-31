@@ -74,6 +74,8 @@ class Event {
     this.shareId,
     this.limit,
     this.inviteOnly = false,
+    this.source,
+    this.externalId,
     Set<String>? skipped,
   }) : skipped = skipped ?? {};
 
@@ -113,11 +115,20 @@ class Event {
   /// Közös programnál: csak a meghívottak láthatják (a link önmagában nem elég).
   bool inviteOnly;
 
+  /// Honnan jött, ha nem itt hozták létre: 'google:{naptár azonosító}'. Null = saját.
+  String? source;
+
+  /// Az eredeti azonosító a másik naptárban (frissítéskor ez alapján cseréljük).
+  String? externalId;
+
   /// Ismétlődő bejegyzés kihagyott alkalmai (napkulcsok), pl. „csak ezt törlöm”.
   Set<String> skipped;
 
   bool get hasLocation => lat != null && lng != null;
   bool get isShared => shareId != null;
+
+  /// Más naptárból jött (pl. Google Naptár), itt csak olvasható.
+  bool get isExternal => source != null;
   Duration get duration => Duration(minutes: durationMin);
 
   /// Az [i]-edik alkalom kezdete (0 = az első). Naptári napokkal számol, így
@@ -198,6 +209,8 @@ class Event {
     'shareId': shareId,
     if (limit != null) 'limit': limit,
     if (inviteOnly) 'inviteOnly': true,
+    if (source != null) 'source': source,
+    if (externalId != null) 'externalId': externalId,
     if (skipped.isNotEmpty) 'skipped': skipped.toList()..sort(),
   };
 
@@ -220,6 +233,8 @@ class Event {
     shareId: j['shareId'] as String?,
     limit: (j['limit'] as num?)?.toInt(),
     inviteOnly: j['inviteOnly'] as bool? ?? false,
+    source: j['source'] as String?,
+    externalId: j['externalId'] as String?,
     skipped: {for (final s in j['skipped'] as List? ?? []) s as String},
   );
 }

@@ -11,6 +11,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'event_detail_screen.dart';
 import 'event_editor.dart';
+import 'google_calendar_screen.dart';
 import 'task_editor.dart';
 
 enum CalendarView {
@@ -103,6 +104,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            tooltip: 'Google Naptár',
+            icon: Icon(store.googleConnected ? Icons.sync : Icons.add_link),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GoogleCalendarScreen())),
+          ),
           IconButton(tooltip: 'Előző', icon: const Icon(Icons.chevron_left), onPressed: () => _step(-1)),
           IconButton(tooltip: 'Következő', icon: const Icon(Icons.chevron_right), onPressed: () => _step(1)),
           TextButton(onPressed: () => setState(() => _focus = startOfDay(DateTime.now())), child: const Text('Ma')),

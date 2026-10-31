@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'models.dart';
 
 /// Hová visz egy tipp gombja.
-enum TipAction { memories, findTime, calendar, friends, homeCards, privacy }
+enum TipAction { memories, findTime, calendar, friends, homeCards, privacy, googleCalendar }
 
 /// Egy rövid „Tudtad?” tipp a Főoldalon.
 class Tip {
@@ -17,6 +17,13 @@ class Tip {
 }
 
 const tips = [
+  Tip(
+    'googleCalendar',
+    Icons.add_link,
+    'Használsz Google Naptárt? Kapcsold össze, és az eseményeid itt is megjelennek.',
+    actionLabel: 'Összekapcsolás',
+    action: TipAction.googleCalendar,
+  ),
   Tip(
     'memories',
     Icons.photo_library_outlined,

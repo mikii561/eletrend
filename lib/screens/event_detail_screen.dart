@@ -197,20 +197,23 @@ class EventDetailScreen extends StatelessWidget {
     final occurrence = start ?? e.nextOccurrence()?.start ?? e.start;
     final end = occurrence.add(e.duration);
     final joined = e.id.startsWith('inv-');
+    // A Google-ből jött esemény csak olvasható: a Google Naptárban lehet módosítani.
+    final external = e.isExternal;
     return Scaffold(
       appBar: AppBar(
         actions: [
-          if (!joined)
+          if (!joined && !external)
             IconButton(
               tooltip: 'Szerkesztés',
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EventEditor(existing: e))),
             ),
-          IconButton(
-            tooltip: joined ? 'Kiveszem a naptáramból' : 'Törlés',
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => _delete(context, e, occurrence),
-          ),
+          if (!external)
+            IconButton(
+              tooltip: joined ? 'Kiveszem a naptáramból' : 'Törlés',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(context, e, occurrence),
+            ),
         ],
       ),
       body: ListView(
@@ -234,12 +237,25 @@ class EventDetailScreen extends StatelessWidget {
             spacing: 6,
             runSpacing: 6,
             children: [
-              Pill(e.category.label, color: AppColors.ofEvent(e), icon: categoryIcon(e.category)),
-              Pill(reminderLabel(e.reminderMin), color: AppColors.textMuted, icon: Icons.notifications_none),
+              if (external)
+                Pill('Google Naptárból', color: AppColors.ofEvent(e), icon: Icons.calendar_month_outlined)
+              else ...[
+                Pill(e.category.label, color: AppColors.ofEvent(e), icon: categoryIcon(e.category)),
+                Pill(reminderLabel(e.reminderMin), color: AppColors.textMuted, icon: Icons.notifications_none),
+              ],
               if (!e.busy) Pill('Szabadnak mutat', color: AppColors.textMuted, icon: Icons.visibility_outlined),
             ],
           ),
-          if (e.shareId != null)
+          if (external)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Text(
+                'Ez az esemény a Google Naptáradból jött. Ott tudod módosítani vagy törölni; '
+                'a következő frissítéskor itt is változik.',
+                style: TextStyle(color: AppColors.textMuted),
+              ),
+            )
+          else if (e.shareId != null)
             SharedEventSection(shareId: e.shareId!, ownEvent: joined ? null : e)
           else ...[
             const SectionTitle('Barátokkal'),

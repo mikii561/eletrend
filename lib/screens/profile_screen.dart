@@ -14,6 +14,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'account_section.dart';
 import 'challenges_screen.dart';
+import 'google_calendar_screen.dart';
 import 'habits_screen.dart';
 import 'nudge_screens.dart';
 import 'privacy_screen.dart';
@@ -126,6 +127,12 @@ class ProfileScreen extends StatelessWidget {
                   title: 'Adatvédelem',
                   subtitle: 'Elérhetőség: ${store.shareAvailability.label.toLowerCase()}',
                   onTap: () => _push(context, const PrivacyScreen()),
+                ),
+                SettingsTile(
+                  icon: Icons.calendar_month_outlined,
+                  title: 'Google Naptár',
+                  subtitle: store.googleConnected ? 'Összekapcsolva' : 'Hozd át az eseményeidet',
+                  onTap: () => _push(context, const GoogleCalendarScreen()),
                 ),
                 SettingsTile(
                   icon: Icons.notifications_none,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import 'challenges_screen.dart';
 import 'event_editor.dart';
+import 'google_calendar_screen.dart';
 import 'find_time_screen.dart';
 import 'habit_editor.dart';
 import 'task_editor.dart';
@@ -72,6 +73,12 @@ Future<void> showCreateSheet(BuildContext context) {
                 'Kihívás',
                 'Közös cél a barátaiddal',
                 () => open(const ChallengesScreen()),
+              ),
+              item(
+                Icons.add_link,
+                'Google Naptár hozzáadása',
+                'Az eseményeid átjönnek ide is',
+                () => open(const GoogleCalendarScreen()),
               ),
               const SizedBox(height: 8),
             ],

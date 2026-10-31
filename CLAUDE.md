@@ -92,3 +92,10 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - `lib/widgets/app_tour.dart`: 9 lépéses bemutató a Főoldalon (kiemelés + kártya); első megnyitáskor magától (`store.tourDone`), a Profilból újraindítható (`HomeShell.startTour`). Az alsó menü fülét a `TourKeys.navBar` öt egyforma részéből számolja.
 - `lib/widgets/memories_demo.dart`: rajzolt, végtelenített animáció (emlék → galéria → nagy fotó); a bemutató Emlékek-lépésében és a `showMemoriesExample` ablakban. Tesztben `pumpAndSettle` helyett `pump(…)` kell, amíg látszik.
 - `lib/tips.dart`: „Tudtad?” tippek a Főoldalon, kétnaponta legfeljebb egy (`pickTip`); a bezárt nem jön vissza (`store.closeTip`, eszközönként), Profil → Főoldal testreszabása → Tippek kapcsoló (`tipsOn`).
+
+## Google Naptár
+
+- `lib/google_calendar.dart`: engedélykérés a Firebase Google-szolgáltatóval (`calendar.readonly` scope; nincs Google a fiókon → `linkWithPopup`, van → `reauthenticateWithPopup`), az OAuth hozzáférés kb. 1 óráig él (csak memóriában). Calendar API: naptárlista + események (`singleEvents=true`, 30 nappal ezelőttől 1 évre előre).
+- Az átjött események `Event`-ek `source: 'google:{naptár}'`, `externalId` mezővel: csak olvashatók, emlékeztető nélkül (a Google maga emlékeztet), frissítéskor naptáranként cserélődnek (`store.replaceGoogleEvents`). Beállítások: `googleCalendars`, `googleEmail`, `googleSyncedAt`.
+- Felület: `screens/google_calendar_screen.dart` (Profil, Naptár fejléc, Létrehozás menü, tipp).
+- **Üzemeltetői beállítás kell**: Google Cloud (lifest-c95f3) → Google Calendar API bekapcsolása, OAuth consent screen: `calendar.readonly` scope; tesztelési módban a felhasználókat „Test users”-ként fel kell venni (vagy közzététel → ellenőrizetlen app figyelmeztetés, max. 100 felhasználó).

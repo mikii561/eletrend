@@ -22,6 +22,7 @@ import 'challenges_screen.dart';
 import 'event_detail_screen.dart';
 import 'event_editor.dart';
 import 'find_time_screen.dart';
+import 'google_calendar_screen.dart';
 import 'habits_screen.dart';
 import 'invite_screen.dart';
 import 'memory_screen.dart';
@@ -712,6 +713,8 @@ class _TipCard extends StatelessWidget {
         push(const HomeCardsScreen());
       case TipAction.privacy:
         push(const PrivacyScreen());
+      case TipAction.googleCalendar:
+        push(const GoogleCalendarScreen());
       case null:
         break;
     }

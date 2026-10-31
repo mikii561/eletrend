@@ -95,6 +95,11 @@ class AppStore extends ChangeNotifier {
   bool tourDone = false;
   bool _tipsOn = true;
 
+  /// Google Naptár: a kiválasztott naptárak (azonosító → név), a fiók, és mikor frissült utoljára.
+  Map<String, String> googleCalendars = {};
+  String? googleEmail;
+  DateTime? googleSyncedAt;
+
   /// A Főoldal kártyái sorrendben, és amiket elrejtett.
   List<HomeCard> homeCards = [...HomeCard.values];
   Set<HomeCard> hiddenCards = {};
@@ -179,6 +184,9 @@ class AppStore extends ChangeNotifier {
     'onboarded': onboarded,
     'tourDone': tourDone,
     'tipsOn': _tipsOn,
+    'googleCalendars': googleCalendars,
+    'googleEmail': googleEmail,
+    'googleSyncedAt': googleSyncedAt?.toIso8601String(),
     'homeCards': [for (final c in homeCards) c.name],
     'hiddenCards': [for (final c in hiddenCards) c.name]..sort(),
     'challengeHabits': challengeHabits,
@@ -205,6 +213,9 @@ class AppStore extends ChangeNotifier {
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
     tourDone = s['tourDone'] as bool? ?? tourDone;
     _tipsOn = s['tipsOn'] as bool? ?? _tipsOn;
+    if (s['googleCalendars'] case final Map g) googleCalendars = Map<String, String>.from(g);
+    if (s.containsKey('googleEmail')) googleEmail = s['googleEmail'] as String?;
+    if (s.containsKey('googleSyncedAt')) googleSyncedAt = DateTime.tryParse(s['googleSyncedAt'] as String? ?? '');
     if (s['homeCards'] case final List cards) {
       final order = [for (final c in cards) ?HomeCard.values.asNameMap()[c]];
       // Ha később új kártya jön, a végére kerül.
@@ -298,6 +309,9 @@ class AppStore extends ChangeNotifier {
     onboarded = false;
     tourDone = false;
     _tipsOn = true;
+    googleCalendars = {};
+    googleEmail = null;
+    googleSyncedAt = null;
     homeCards = [...HomeCard.values];
     hiddenCards = {};
     challengeHabits = {};
@@ -521,6 +535,39 @@ class AppStore extends ChangeNotifier {
   void skipOccurrence(Event e, DateTime start) {
     e.skipped.add(dayKey(start));
     saveEvent(e);
+  }
+
+  // Google Naptár
+
+  /// Össze van-e kapcsolva a Google Naptár (van kiválasztott naptár).
+  bool get googleConnected => googleCalendars.isNotEmpty;
+
+  /// A kiválasztott naptárak egy frissítéssel: a régi másolatok helyére az újak.
+  void replaceGoogleEvents(Map<String, List<Event>> byCalendar, {DateTime? at}) {
+    for (final entry in byCalendar.entries) {
+      events.removeWhere((e) => e.source == 'google:${entry.key}');
+      events.addAll(entry.value);
+    }
+    googleSyncedAt = at ?? DateTime.now();
+    _save();
+  }
+
+  /// Melyik naptárak jöjjenek (azonosító → név). A kivett naptárak eseményei törlődnek innen.
+  void setGoogleCalendars(Map<String, String> calendars, {String? email}) {
+    final removed = googleCalendars.keys.where((id) => !calendars.containsKey(id)).toList();
+    events.removeWhere((e) => removed.any((id) => e.source == 'google:$id'));
+    googleCalendars = {...calendars};
+    if (email != null) googleEmail = email;
+    _save();
+  }
+
+  /// Leválasztás: minden Google-ből jött esemény lekerül innen (a Google Naptárban megmaradnak).
+  void disconnectGoogle() {
+    events.removeWhere((e) => e.source?.startsWith('google:') ?? false);
+    googleCalendars = {};
+    googleEmail = null;
+    googleSyncedAt = null;
+    _save();
   }
 
   /// Mivel ütközne egy új vagy módosított időpont: a már meglévő (nem egész napos) bejegyzések és
