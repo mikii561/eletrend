@@ -104,7 +104,7 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 ## Animációk
 
 - `lib/widgets/motion.dart`: időtartamok (`Motion.fast/medium/slow`), görbék, `Motion.of(context, d)` (csökkentett mozgásnál nulla), `FadeSlideIn` (egyszeri beúszás, lépcsőzhető).
-- Bemutató: a kiemelés `RectTween`-nel csúszik, a kártya `AnimatedSwitcher`-rel úszik át, az egész be/ki halványul. Tesztben a lépések között több képkocka kell (`pump(300ms)` ×4).
+- Bemutató: a kiemelés `RectTween`-nel csúszik, egyetlen kártya követi (`_CardPlacer`, a fölé/alá váltás is folyamatos), mérete `AnimatedSize`-zal igazodik, a tartalma egymás után halványul át (előbb ki a régi, aztán be az új); az egész be/ki halványul. Tesztben a lépések között több képkocka kell (`pump(300ms)` ×4).
 - Tipp bezárása: kicsúszik + `SizeTransition` összecsukás, csak utána `closeTip`. Fülváltás: az új fül `FadeSlideIn` (a régi nem marad meg, mert a Főoldalon GlobalKey-ek vannak). Naptár: lapozáskor irány szerinti csúszás (`_dir`, `_periodKey`). Oldalak: `FadeForwardsPageTransitionsBuilder` (theme.dart).
 
 ## Olvasatlan-számlálók
