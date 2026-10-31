@@ -170,6 +170,10 @@ class _TourState extends State<_Tour> {
           onNext: _next,
           onSkip: _close,
         );
+        // Egy kártya van, ami a kiemeléssel együtt csúszik: a helyét minden képkockán a kiemelés
+        // (animált) helyéből és a kártya (animált) magasságából számoljuk. A „fölötte/alatta”
+        // váltás is folyamatos (0 = fölötte, 1 = alatta, 0,5 = középen).
+        final slow = Motion.of(context, Motion.slow);
         return TweenAnimationBuilder<double>(
           // Megjelenéskor beúszik, bezáráskor elhalványul.
           tween: Tween(begin: 0, end: _closing ? 0 : 1),
@@ -178,65 +182,64 @@ class _TourState extends State<_Tour> {
           builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
           child: Material(
             type: MaterialType.transparency,
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _next,
-                    // A kiemelés lágyan átcsúszik az új helyére.
-                    child: TweenAnimationBuilder<Rect?>(
-                      tween: RectTween(end: target),
-                      duration: Motion.of(context, Motion.slow),
-                      curve: Motion.emphasized,
-                      builder: (context, rect, _) => CustomPaint(
-                        painter: _HolePainter(
-                          hole: rect == null || rect.width < 2 ? null : rect,
-                          color: Colors.black.withValues(alpha: 0.6),
+            child: TweenAnimationBuilder<Rect?>(
+              tween: RectTween(end: target),
+              duration: slow,
+              curve: Motion.emphasized,
+              builder: (context, rect, _) => TweenAnimationBuilder<double>(
+                tween: Tween(end: hole == null ? 0.5 : (below ? 1.0 : 0.0)),
+                duration: slow,
+                curve: Motion.emphasized,
+                builder: (context, side, _) {
+                  final r = rect ?? target;
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _next,
+                          child: CustomPaint(
+                            painter: _HolePainter(hole: r.width < 2 ? null : r, color: Colors.black.withValues(alpha: 0.6)),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                // A kártya: a régi elhalványul, az új a kiemelés felől kicsit becsúszva érkezik.
-                Positioned.fill(
-                  child: AnimatedSwitcher(
-                    duration: medium,
-                    switchInCurve: Motion.curve,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween(begin: Offset(0, below ? -0.03 : 0.03), end: Offset.zero).animate(animation),
-                        child: child,
+                      Positioned.fill(
+                        child: CustomSingleChildLayout(delegate: _CardPlacer(hole: r, side: side), child: card),
                       ),
-                    ),
-                    child: KeyedSubtree(
-                      key: ValueKey(_i),
-                      child: Stack(
-                        children: [
-                          if (hole == null)
-                            Center(child: Padding(padding: const EdgeInsets.all(24), child: card))
-                          else
-                            Positioned(
-                              left: 16,
-                              right: 16,
-                              top: below ? min(hole.bottom + 12, size.height - 220) : null,
-                              bottom: below ? null : max(12, size.height - hole.top + 12),
-                              child: card,
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                    ],
+                  );
+                },
+              ),
             ),
           ),
         );
       },
     );
   }
+}
+
+/// A kártya helye: a kiemelés alatt ([side] = 1), fölött (0), vagy köztes értéknél a kettő
+/// között (középső lépésnél a kiemelés egy pont a képernyő közepén, így a kártya középre kerül).
+class _CardPlacer extends SingleChildLayoutDelegate {
+  _CardPlacer({required this.hole, required this.side});
+
+  final Rect hole;
+  final double side;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints(minWidth: 0, maxWidth: min(constraints.maxWidth - 32, 420), maxHeight: constraints.maxHeight - 24);
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final above = hole.top - 12 - childSize.height;
+    final under = hole.bottom + 12;
+    final top = (above + (under - above) * side).clamp(12.0, max(12.0, size.height - childSize.height - 12)).toDouble();
+    return Offset((size.width - childSize.width) / 2, top);
+  }
+
+  @override
+  bool shouldRelayout(_CardPlacer old) => old.hole != hole || old.side != side;
 }
 
 class _TourCard extends StatelessWidget {
@@ -258,67 +261,103 @@ class _TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 420),
-      child: Card(
-        margin: EdgeInsets.zero,
-        elevation: 6,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
+    final medium = Motion.of(context, Motion.medium);
+    // A kártya kerete és a gombok helyben maradnak; csak a tartalom úszik át, a méret pedig
+    // lágyan igazodik az új tartalomhoz.
+    final content = Column(
+      key: ValueKey(index),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: AppColors.dark ? 0.2 : 0.1),
+                borderRadius: BorderRadius.circular(Space.radiusSmall),
+              ),
+              child: Icon(step.icon, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(step.title, style: Theme.of(context).textTheme.titleLarge)),
+            Text('${index + 1}/$count', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            const SizedBox(width: 8),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Padding(padding: const EdgeInsets.only(right: 8), child: Text(step.text, style: const TextStyle(height: 1.4))),
+        if (step.demo != null) ...[const SizedBox(height: 12), step.demo!],
+      ],
+    );
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 6,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 12, 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AnimatedSize(
+              duration: Motion.of(context, Motion.slow),
+              curve: Motion.emphasized,
+              alignment: Alignment.topCenter,
+              child: AnimatedSwitcher(
+                duration: medium,
+                // Előbb a régi halványul el, csak utána jön az új: a két szöveg nem úszik egymásra.
+                switchInCurve: const Interval(0.45, 1, curve: Curves.easeOut),
+                switchOutCurve: const Interval(0.55, 1, curve: Curves.easeIn),
+                // Az új tartalom felülre igazodik, így nem „ugrál” a régi és az új között.
+                layoutBuilder: (current, previous) => Stack(
+                  alignment: Alignment.topLeft,
+                  children: [...previous, ?current],
+                ),
+                child: content,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                for (var i = 0; i < count; i++)
+                  AnimatedContainer(
+                    duration: medium,
+                    curve: Motion.curve,
+                    width: i == index ? 16 : 6,
+                    height: 6,
+                    margin: const EdgeInsets.only(right: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: AppColors.dark ? 0.2 : 0.1),
-                      borderRadius: BorderRadius.circular(Space.radiusSmall),
+                      color: i == index ? AppColors.primary : AppColors.divider,
+                      borderRadius: BorderRadius.circular(3),
                     ),
-                    child: Icon(step.icon, color: AppColors.primary, size: 20),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(step.title, style: Theme.of(context).textTheme.titleLarge)),
-                  Text('${index + 1}/$count', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                  const SizedBox(width: 8),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Padding(padding: const EdgeInsets.only(right: 8), child: Text(step.text, style: const TextStyle(height: 1.4))),
-              if (step.demo != null) ...[const SizedBox(height: 12), step.demo!],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  for (var i = 0; i < count; i++)
-                    Container(
-                      width: i == index ? 16 : 6,
-                      height: 6,
-                      margin: const EdgeInsets.only(right: 4),
-                      decoration: BoxDecoration(
-                        color: i == index ? AppColors.primary : AppColors.divider,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  if (!last) TextButton(onPressed: onSkip, child: const Text('Kihagyom')),
-                  const Spacer(),
-                  const SizedBox(width: 4),
-                  FilledButton(
-                    style: FilledButton.styleFrom(minimumSize: const Size(96, 40)),
-                    onPressed: onNext,
-                    child: Text(last ? 'Kezdjük!' : 'Tovább'),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                // Az utolsó lépésnél a „Kihagyom” elhalványul (a helye megmarad, hogy ne ugorjon semmi).
+                AnimatedOpacity(
+                  opacity: last ? 0 : 1,
+                  duration: medium,
+                  child: IgnorePointer(
+                    ignoring: last,
+                    child: TextButton(onPressed: onSkip, child: const Text('Kihagyom')),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                const Spacer(),
+                FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(96, 40)),
+                  onPressed: onNext,
+                  child: AnimatedSwitcher(
+                    duration: medium,
+                    child: Text(last ? 'Kezdjük!' : 'Tovább', key: ValueKey(last)),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

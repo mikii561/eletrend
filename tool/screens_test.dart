@@ -201,9 +201,15 @@ void main() {
       await tester.tap(find.text('Tovább'));
       await tester.tap(find.text('Tovább'));
       await shot('00b-bemutato-3');
-      await tester.tap(find.text('Tovább'));
-      await tester.tap(find.text('Tovább'));
-      await tester.pumpAndSettle();
+      // Átmenet képkockánként: fent (állapot) → gyors gombok, majd → alsó menü (oldalt vált a kártya).
+      for (final name in ['00b1-atmenet-gombok', '00b2-atmenet-menu']) {
+        await tester.tap(find.text('Tovább'));
+        for (var f = 0; f < 6; f++) {
+          await tester.pump(const Duration(milliseconds: 70));
+          await shot('$name-$f', settle: false);
+        }
+        await tester.pumpAndSettle();
+      }
       await tester.tap(find.text('Tovább'));
       await shot('00c-bemutato-6');
       await tester.tap(find.text('Tovább'));
