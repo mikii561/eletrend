@@ -25,6 +25,7 @@ import 'screens/profile_screen.dart';
 import 'store.dart';
 import 'theme.dart';
 import 'widgets/app_tour.dart';
+import 'widgets/motion.dart';
 import 'widgets/phone_frame.dart';
 
 Future<void> main() async {
@@ -190,12 +191,18 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: switch (_index) {
-        1 => const CalendarScreen(),
-        3 => const FriendsScreen(),
-        4 => const ProfileScreen(),
-        _ => HomeScreen(onNavigate: _select),
-      },
+      // Fülváltáskor az új fül lágyan beúszik.
+      // (A régi azonnal eltűnik, így sosem él egyszerre két példány ugyanabból a képernyőből.)
+      body: FadeSlideIn(
+        key: ValueKey(_index),
+        offset: 6,
+        child: switch (_index) {
+          1 => const CalendarScreen(),
+          3 => const FriendsScreen(),
+          4 => const ProfileScreen(),
+          _ => HomeScreen(onNavigate: _select),
+        },
+      ),
       bottomNavigationBar: NavigationBar(
         key: TourKeys.navBar,
         selectedIndex: _index,

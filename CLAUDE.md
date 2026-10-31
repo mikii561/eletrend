@@ -100,3 +100,9 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - Az átjött események `Event`-ek `source: 'google:{naptár}'`, `externalId` mezővel: csak olvashatók, emlékeztető nélkül (a Google maga emlékeztet), frissítéskor naptáranként cserélődnek (`store.replaceGoogleEvents`). Beállítások: `googleCalendars`, `googleEmail`, `googleSyncedAt`.
 - Felület: `screens/google_calendar_screen.dart` (Profil, Naptár fejléc, Létrehozás menü, tipp).
 - **Üzemeltetői beállítás kell**: Google Cloud (lifest-c95f3) → Google Calendar API bekapcsolása, OAuth consent screen: `calendar.readonly` scope; tesztelési módban a felhasználókat „Test users”-ként fel kell venni (vagy közzététel → ellenőrizetlen app figyelmeztetés, max. 100 felhasználó).
+
+## Animációk
+
+- `lib/widgets/motion.dart`: időtartamok (`Motion.fast/medium/slow`), görbék, `Motion.of(context, d)` (csökkentett mozgásnál nulla), `FadeSlideIn` (egyszeri beúszás, lépcsőzhető).
+- Bemutató: a kiemelés `RectTween`-nel csúszik, a kártya `AnimatedSwitcher`-rel úszik át, az egész be/ki halványul. Tesztben a lépések között több képkocka kell (`pump(300ms)` ×4).
+- Tipp bezárása: kicsúszik + `SizeTransition` összecsukás, csak utána `closeTip`. Fülváltás: az új fül `FadeSlideIn` (a régi nem marad meg, mert a Főoldalon GlobalKey-ek vannak). Naptár: lapozáskor irány szerinti csúszás (`_dir`, `_periodKey`). Oldalak: `FadeForwardsPageTransitionsBuilder` (theme.dart).

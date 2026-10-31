@@ -9,6 +9,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/motion.dart';
 import 'event_detail_screen.dart';
 import 'event_editor.dart';
 import 'google_calendar_screen.dart';
@@ -41,18 +42,31 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focus = startOfDay(DateTime.now());
 
   void _setView(CalendarView v) => setState(() {
+    _dir = 0;
     _view = v;
     CalendarScreen.lastView = v;
   });
 
+  /// Merre lapozott utoljára (-1 vissza, 1 előre, 0 nézetváltás): ebből jön a csúszás iránya.
+  int _dir = 0;
+
+  /// A megjelenített időszak azonosítója; ha változik, az új tartalom becsúszik.
+  String get _periodKey => switch (_view) {
+        CalendarView.day => 'nap-${dayKey(_focus)}',
+        CalendarView.week => 'het-${dayKey(_monday(_focus))}',
+        CalendarView.month => 'ho-${_focus.year}-${_focus.month}',
+        CalendarView.list => 'lista-${dayKey(_focus)}',
+      };
+
   /// Előre/hátra a nézetnek megfelelő lépéssel.
   void _step(int dir) => setState(() {
-    _focus = switch (_view) {
-      CalendarView.day => DateTime(_focus.year, _focus.month, _focus.day + dir),
-      CalendarView.week || CalendarView.list => DateTime(_focus.year, _focus.month, _focus.day + 7 * dir),
-      CalendarView.month => DateTime(_focus.year, _focus.month + dir, 1),
-    };
-  });
+        _dir = dir;
+        _focus = switch (_view) {
+          CalendarView.day => DateTime(_focus.year, _focus.month, _focus.day + dir),
+          CalendarView.week || CalendarView.list => DateTime(_focus.year, _focus.month, _focus.day + 7 * dir),
+          CalendarView.month => DateTime(_focus.year, _focus.month + dir, 1),
+        };
+      });
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -61,10 +75,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
-    if (picked != null) setState(() => _focus = startOfDay(picked));
+    if (picked != null) {
+      setState(() {
+        _dir = 0;
+        _focus = startOfDay(picked);
+      });
+    }
   }
 
   void _openDay(DateTime d) => setState(() {
+    _dir = 0;
     _focus = startOfDay(d);
     _view = CalendarView.day;
     CalendarScreen.lastView = CalendarView.day;
@@ -111,7 +131,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
           IconButton(tooltip: 'Előző', icon: const Icon(Icons.chevron_left), onPressed: () => _step(-1)),
           IconButton(tooltip: 'Következő', icon: const Icon(Icons.chevron_right), onPressed: () => _step(1)),
-          TextButton(onPressed: () => setState(() => _focus = startOfDay(DateTime.now())), child: const Text('Ma')),
+          TextButton(
+            onPressed: () => setState(() {
+              _dir = 0;
+              _focus = startOfDay(DateTime.now());
+            }),
+            child: const Text('Ma'),
+          ),
           const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
@@ -141,22 +167,46 @@ class _CalendarScreenState extends State<CalendarScreen> {
           final v = d.primaryVelocity ?? 0;
           if (v.abs() > 300) _step(v < 0 ? 1 : -1);
         },
-        child: switch (_view) {
-          CalendarView.month => _MonthView(
-            store: store,
-            focus: _focus,
-            onSelect: (d) => setState(() => _focus = d),
-            onOpenDay: _openDay,
+        // Lapozáskor a következő időszak abból az irányból csúszik be, amerre lapoztál;
+        // nézetváltáskor csak átúszik.
+        child: AnimatedSwitcher(
+          duration: Motion.of(context, Motion.medium),
+          switchInCurve: Motion.curve,
+          switchOutCurve: Curves.easeIn,
+          transitionBuilder: (child, animation) {
+            final incoming = child.key == ValueKey(_periodKey);
+            final dx = _dir == 0 ? 0.0 : (incoming ? 0.08 * _dir : -0.08 * _dir);
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation), child: child),
+            );
+          },
+          child: KeyedSubtree(
+            key: ValueKey(_periodKey),
+            child: switch (_view) {
+              CalendarView.month => _MonthView(
+                store: store,
+                focus: _focus,
+                onSelect: (d) => setState(() {
+                  _dir = 0;
+                  _focus = d;
+                }),
+                onOpenDay: _openDay,
+              ),
+              CalendarView.week => _WeekView(store: store, focus: _focus, onOpenDay: _openDay, onCreate: _create),
+              CalendarView.day => _DayView(
+                store: store,
+                day: _focus,
+                onCreate: _create,
+                onSelect: (d) => setState(() {
+                  _dir = d.isAfter(_focus) ? 1 : -1;
+                  _focus = d;
+                }),
+              ),
+              CalendarView.list => _ListView(store: store, from: _focus),
+            },
           ),
-          CalendarView.week => _WeekView(store: store, focus: _focus, onOpenDay: _openDay, onCreate: _create),
-          CalendarView.day => _DayView(
-            store: store,
-            day: _focus,
-            onCreate: _create,
-            onSelect: (d) => setState(() => _focus = d),
-          ),
-          CalendarView.list => _ListView(store: store, from: _focus),
-        },
+        ),
       ),
     );
   }

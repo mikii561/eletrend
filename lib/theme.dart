@@ -132,6 +132,17 @@ ThemeData buildTheme({bool dark = false}) {
 
   return base.copyWith(
     scaffoldBackgroundColor: background,
+    // Oldalváltás: a Material 3 lágy „előre úszó” átmenete minden platformon egyformán.
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+      },
+    ),
     dividerColor: border,
     dividerTheme: DividerThemeData(color: border, thickness: 1, space: 1),
     textTheme: text.copyWith(

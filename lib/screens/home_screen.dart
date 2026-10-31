@@ -13,6 +13,7 @@ import '../store.dart';
 import '../tips.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/motion.dart';
 import '../widgets/goal_widgets.dart';
 import '../widgets/app_tour.dart';
 import '../widgets/install_card.dart';
@@ -98,9 +99,12 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ],
-            for (final card in store.homeCards)
-              if (store.showsCard(card))
-                switch (card) {
+            // A kártyák megnyitáskor finoman, egymás után úsznak be.
+            for (final (i, card) in store.homeCards.where(store.showsCard).indexed)
+              FadeSlideIn(
+                key: ValueKey(card),
+                delay: Duration(milliseconds: 40 * i),
+                child: switch (card) {
                   HomeCard.schedule => _ScheduleCard(store: store, now: now, onCalendar: () => onNavigate(1)),
                   HomeCard.tasks => _TasksCard(store: store, now: now),
                   HomeCard.goals => _GoalsCard(store: store, now: now),
@@ -110,6 +114,7 @@ class HomeScreen extends StatelessWidget {
                   HomeCard.memories => _MemoryCard(store: store, now: now),
                   HomeCard.week => _WeekCard(store: store, now: now),
                 },
+              ),
           ],
         ),
       ),
@@ -691,14 +696,44 @@ class WeekStats {
 }
 
 /// Egy rövid, bezárható „Tudtad?” tipp. Kétnaponta legfeljebb egy jön; a bezárt nem jön vissza.
-class _TipCard extends StatelessWidget {
+class _TipCard extends StatefulWidget {
   const _TipCard({required this.tip, required this.onNavigate});
 
   final Tip tip;
   final ValueChanged<int> onNavigate;
 
+  @override
+  State<_TipCard> createState() => _TipCardState();
+}
+
+class _TipCardState extends State<_TipCard> with SingleTickerProviderStateMixin {
+  // Bezáráskor: előbb oldalra kicsúszik és elhalványul, aztán a helye összecsukódik.
+  late final _c = AnimationController(vsync: this, duration: Motion.slow);
+  late final _slide = Tween(begin: Offset.zero, end: const Offset(1.1, 0))
+      .animate(CurvedAnimation(parent: _c, curve: const Interval(0, 0.6, curve: Curves.easeInCubic)));
+  late final _fade = Tween(begin: 1.0, end: 0.0).animate(CurvedAnimation(parent: _c, curve: const Interval(0, 0.5)));
+  late final _size = Tween(begin: 1.0, end: 0.0)
+      .animate(CurvedAnimation(parent: _c, curve: const Interval(0.45, 1, curve: Curves.easeInOutCubic)));
+
+  Tip get tip => widget.tip;
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    if (_c.isAnimating) return;
+    final store = StoreScope.of(context);
+    _c.duration = Motion.of(context, Motion.slow);
+    await _c.forward();
+    store.closeTip(tip.id);
+  }
+
   void _act(BuildContext context) {
     final store = StoreScope.of(context);
+    final onNavigate = widget.onNavigate;
     void push(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
     switch (tip.action) {
       case TipAction.memories:
@@ -723,7 +758,17 @@ class _TipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final store = StoreScope.of(context);
+    return SizeTransition(
+      sizeFactor: _size,
+      alignment: Alignment.topCenter,
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(position: _slide, child: _card(context)),
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Container(
@@ -758,7 +803,7 @@ class _TipCard extends StatelessWidget {
             IconButton(
               tooltip: 'Tipp bezárása',
               icon: Icon(Icons.close, size: 18, color: AppColors.textMuted),
-              onPressed: () => store.closeTip(tip.id),
+              onPressed: _dismiss,
             ),
           ],
         ),

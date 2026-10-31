@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 import 'memories_demo.dart';
+import 'motion.dart';
 
 /// A bemutató lépései által kiemelt elemek. Egyszerre csak egy app fut, ezért elég közös kulcs.
 class TourKeys {
@@ -121,7 +122,17 @@ class _Tour extends StatefulWidget {
 class _TourState extends State<_Tour> {
   int _i = 0;
 
-  void _next() => _i + 1 >= widget.steps.length ? widget.onDone() : setState(() => _i++);
+  /// Bezáráskor előbb elhalványul, és csak utána tűnik el.
+  bool _closing = false;
+
+  void _next() => _i + 1 >= widget.steps.length ? _close() : setState(() => _i++);
+
+  Future<void> _close() async {
+    if (_closing) return;
+    setState(() => _closing = true);
+    await Future<void>.delayed(Motion.of(context, Motion.medium));
+    widget.onDone();
+  }
 
   /// A kiemelt elem helye az overlay-en belül (null, ha nincs vagy épp nem látszik).
   Rect? _targetRect(BuildContext context) {
@@ -142,10 +153,13 @@ class _TourState extends State<_Tour> {
   Widget build(BuildContext context) {
     final step = widget.steps[_i];
     final last = _i + 1 == widget.steps.length;
+    final medium = Motion.of(context, Motion.medium);
     return LayoutBuilder(
       builder: (context, c) {
         final hole = _targetRect(context);
         final size = Size(c.maxWidth, c.maxHeight);
+        // Kiemelés nélküli lépésnél a „lyuk” a képernyő közepére zsugorodik, így onnan nyílik ki.
+        final target = hole ?? Rect.fromCenter(center: size.center(Offset.zero), width: 0, height: 0);
         // A kártya a kiemelés alá kerül, ha felül van; fölé, ha alul; középre, ha nincs kiemelés.
         final below = hole != null && hole.center.dy < size.height / 2;
         final card = _TourCard(
@@ -154,30 +168,70 @@ class _TourState extends State<_Tour> {
           count: widget.steps.length,
           last: last,
           onNext: _next,
-          onSkip: widget.onDone,
+          onSkip: _close,
         );
-        return Material(
-          type: MaterialType.transparency,
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: _next,
-                  child: CustomPaint(painter: _HolePainter(hole: hole, color: Colors.black.withValues(alpha: 0.6))),
+        return TweenAnimationBuilder<double>(
+          // Megjelenéskor beúszik, bezáráskor elhalványul.
+          tween: Tween(begin: 0, end: _closing ? 0 : 1),
+          duration: medium,
+          curve: Motion.curve,
+          builder: (context, opacity, child) => Opacity(opacity: opacity, child: child),
+          child: Material(
+            type: MaterialType.transparency,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _next,
+                    // A kiemelés lágyan átcsúszik az új helyére.
+                    child: TweenAnimationBuilder<Rect?>(
+                      tween: RectTween(end: target),
+                      duration: Motion.of(context, Motion.slow),
+                      curve: Motion.emphasized,
+                      builder: (context, rect, _) => CustomPaint(
+                        painter: _HolePainter(
+                          hole: rect == null || rect.width < 2 ? null : rect,
+                          color: Colors.black.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              if (hole == null)
-                Center(child: Padding(padding: const EdgeInsets.all(24), child: card))
-              else
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  top: below ? min(hole.bottom + 12, size.height - 220) : null,
-                  bottom: below ? null : max(12, size.height - hole.top + 12),
-                  child: card,
+                // A kártya: a régi elhalványul, az új a kiemelés felől kicsit becsúszva érkezik.
+                Positioned.fill(
+                  child: AnimatedSwitcher(
+                    duration: medium,
+                    switchInCurve: Motion.curve,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween(begin: Offset(0, below ? -0.03 : 0.03), end: Offset.zero).animate(animation),
+                        child: child,
+                      ),
+                    ),
+                    child: KeyedSubtree(
+                      key: ValueKey(_i),
+                      child: Stack(
+                        children: [
+                          if (hole == null)
+                            Center(child: Padding(padding: const EdgeInsets.all(24), child: card))
+                          else
+                            Positioned(
+                              left: 16,
+                              right: 16,
+                              top: below ? min(hole.bottom + 12, size.height - 220) : null,
+                              bottom: below ? null : max(12, size.height - hole.top + 12),
+                              child: card,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-            ],
+              ],
+            ),
           ),
         );
       },

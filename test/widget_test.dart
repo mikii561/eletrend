@@ -89,7 +89,10 @@ void main() {
     // (Az Emlékek lépésben végtelenített animáció fut, ezért itt nem várunk teljes megállásra.)
     for (final title in ['Főoldal', 'Az állapotod', 'Gyors gombok', 'Naptár', 'Létrehozás', 'Barátok', 'Közös fotók', 'Emlékek', 'Profil']) {
       await tester.tap(find.text('Tovább'));
-      await tester.pump(const Duration(milliseconds: 800));
+      // Néhány képkocka, amíg a kártyák közti átúszás lezajlik (a régi kártya csak utána tűnik el).
+      for (var f = 0; f < 4; f++) {
+        await tester.pump(const Duration(milliseconds: 300));
+      }
       expect(find.text(title), findsWidgets);
       expect(tester.takeException(), isNull);
     }

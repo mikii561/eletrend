@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/motion.dart';
 import '../widgets/conflicts.dart';
 
 /// Feladat felvétele vagy szerkesztése alulról felcsúszó lapon.
@@ -242,20 +243,32 @@ class TaskTile extends StatelessWidget {
         label: t.done ? 'Kész' : 'Kipipálás',
         child: IconButton(
           tooltip: t.done ? 'Visszavonás' : 'Kész',
-          icon: Icon(
-            t.done ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: t.done ? AppColors.primary : AppColors.textMuted,
+          // Kipipáláskor a pipa egy kis rugózással „bepattan”.
+          icon: AnimatedSwitcher(
+            duration: Motion.of(context, Motion.medium),
+            transitionBuilder: (child, animation) => ScaleTransition(
+              scale: CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+              child: FadeTransition(opacity: animation, child: child),
+            ),
+            child: Icon(
+              t.done ? Icons.check_circle : Icons.radio_button_unchecked,
+              key: ValueKey(t.done),
+              color: t.done ? AppColors.primary : AppColors.textMuted,
+            ),
           ),
           onPressed: () => store.toggleTask(t),
         ),
       ),
-      title: Text(
-        t.title,
-        style: TextStyle(
+      // A szöveg színe lágyan halványul el, amikor kész.
+      title: AnimatedDefaultTextStyle(
+        duration: Motion.of(context, Motion.medium),
+        style: DefaultTextStyle.of(context).style.copyWith(
           fontWeight: FontWeight.w500,
-          decoration: t.done ? TextDecoration.lineThrough : null,
-          color: t.done ? AppColors.textMuted : null,
+          fontSize: dense ? 14 : 16,
+          decoration: t.done ? TextDecoration.lineThrough : TextDecoration.none,
+          color: t.done ? AppColors.textMuted : AppColors.text,
         ),
+        child: Text(t.title),
       ),
       subtitle: meta.isEmpty && !overdue
           ? null
