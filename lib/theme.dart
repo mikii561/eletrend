@@ -6,26 +6,32 @@ import 'models.dart';
 
 /// Az app színei és stílusa egy helyen.
 ///
-/// „Papírnapló” paletta: meleg krém alap, mély burgundi márkaszín, zsálya kiemelés;
-/// színátmenetek és pasztell felületek helyett vékony keretek és tiszta tipográfia.
+/// Három megjelenés:
+/// - **Bézs** (alap): „papírnapló” paletta, meleg krém alap, mély burgundi márkaszín, zsálya kiemelés;
+/// - **Fehér**: a megszokott világos app, fehér kártyák, semleges szürkék, fekete kiemelés;
+/// - **Sötét**: a megszokott sötét mód, semleges grafitszürkék, fehér kiemelés.
+/// A kategóriák és az állapotok színei mindegyikben ugyanazok (sötétben világosabb árnyalattal).
 class AppColors {
   /// Sötét módban vagyunk-e. A `MaterialApp.builder` állítja a téma alapján,
   /// így az alábbi getterek mindig az aktuális módhoz illő színt adják.
   static bool dark = false;
 
-  /// Fehér (letisztult) világos mód a bézs (krém) helyett. Sötét módban nincs hatása.
+  /// Fehér világos mód a bézs helyett. Sötét módban nincs hatása.
   static bool white = false;
 
-  /// Márkaszín: világosban mély burgundi, sötétben meleg krém, hogy kiolvasható legyen.
-  static Color get primary => primaryFor(dark);
-  static Color primaryFor(bool dark) => dark ? const Color(0xFFE8D2B5) : const Color(0xFF590907);
+  /// Márkaszín: bézsben mély burgundi, fehérben majdnem fekete, sötétben majdnem fehér.
+  static Color get primary => primaryFor(dark, white: white);
+  static Color primaryFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFFF4F4F5) : (white ? const Color(0xFF18181B) : const Color(0xFF590907));
 
   /// Szöveg/ikon a márkaszínű felületen.
-  static Color get onPrimary => onPrimaryFor(dark);
-  static Color onPrimaryFor(bool dark) => dark ? const Color(0xFF3A0605) : const Color(0xFFFBF6EE);
+  static Color get onPrimary => onPrimaryFor(dark, white: white);
+  static Color onPrimaryFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFF18181B) : (white ? const Color(0xFFFFFFFF) : const Color(0xFFFBF6EE));
 
-  /// Kiemelés (sorozat, legjobb, hely): zsálya; világosban mélyebb árnyalat, hogy olvasható legyen.
-  static Color get accent => dark ? const Color(0xFFA5A79B) : const Color(0xFF6B6E5D);
+  /// Kiemelés (sorozat, legjobb, hely): bézsben zsálya, a másik kettőben semleges szürke.
+  static Color get accent =>
+      dark ? const Color(0xFFA1A1AA) : (white ? const Color(0xFF52525B) : const Color(0xFF6B6E5D));
 
   static Color get background => backgroundFor(dark, white: white);
   static Color get card => cardFor(dark, white: white);
@@ -35,22 +41,22 @@ class AppColors {
   /// Vékony vonalak, keretek, üres karikák szegélye.
   static Color get divider => borderFor(dark, white: white);
 
-  // Három megjelenés: sötét, bézs (krém) és fehér. A fehér semleges szürkéket használ;
-  // a márkaszín (burgundi) és a kategóriák színei ugyanazok, mint a bézsben.
   static Color backgroundFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF1C1412) : (white ? const Color(0xFFF5F5F6) : const Color(0xFFF4E9DA));
+      dark ? const Color(0xFF111113) : (white ? const Color(0xFFF4F4F5) : const Color(0xFFF4E9DA));
   static Color cardFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF2A1F1C) : (white ? const Color(0xFFFFFFFF) : const Color(0xFFFBF6EE));
+      dark ? const Color(0xFF1C1C1F) : (white ? const Color(0xFFFFFFFF) : const Color(0xFFFBF6EE));
   static Color borderFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF3D2E29) : (white ? const Color(0xFFE4E4E7) : const Color(0xFFE8D7C1));
+      dark ? const Color(0xFF2E2E33) : (white ? const Color(0xFFE4E4E7) : const Color(0xFFE8D7C1));
   static Color textFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFFF4E9DA) : (white ? const Color(0xFF1D1A1A) : const Color(0xFF2B1714));
+      dark ? const Color(0xFFF4F4F5) : (white ? const Color(0xFF18181B) : const Color(0xFF2B1714));
   static Color mutedFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFFB5A595) : (white ? const Color(0xFF6B6869) : const Color(0xFF7A6A5E));
+      dark ? const Color(0xFFA1A1AA) : (white ? const Color(0xFF71717A) : const Color(0xFF7A6A5E));
 
-  /// Kiemelt felületek (fejléc, dátum, kész pipa): egyszínű márkaszín, enyhe mélységgel.
+  /// Kiemelt felületek (fejléc, dátum, kész pipa): egyszínű, enyhe mélységgel; rajta fehér a szöveg.
   static LinearGradient get headerGradient => LinearGradient(
-    colors: dark ? const [Color(0xFF7A1512), Color(0xFF5E0C09)] : const [Color(0xFF590907), Color(0xFF470705)],
+    colors: dark
+        ? const [Color(0xFF3F3F46), Color(0xFF2A2A2F)]
+        : (white ? const [Color(0xFF27272A), Color(0xFF18181B)] : const [Color(0xFF590907), Color(0xFF470705)]),
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -121,7 +127,8 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
   final background = AppColors.backgroundFor(dark, white: white);
   final card = AppColors.cardFor(dark, white: white);
   final border = AppColors.borderFor(dark, white: white);
-  final primary = AppColors.primaryFor(dark);
+  final primary = AppColors.primaryFor(dark, white: white);
+  final onPrimary = AppColors.onPrimaryFor(dark, white: white);
   final textColor = AppColors.textFor(dark, white: white);
   final muted = AppColors.mutedFor(dark, white: white);
   final font = GoogleFonts.inter().fontFamily;
@@ -130,8 +137,8 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
     seedColor: primary,
     brightness: dark ? Brightness.dark : Brightness.light,
     primary: primary,
-    onPrimary: AppColors.onPrimaryFor(dark),
-    secondary: const Color(0xFFA5A79B),
+    onPrimary: onPrimary,
+    secondary: dark || white ? muted : const Color(0xFFA5A79B),
     onSecondary: const Color(0xFF2B2D24),
     surface: background,
     onSurface: textColor,
@@ -232,7 +239,7 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primary,
-      foregroundColor: AppColors.onPrimaryFor(dark),
+      foregroundColor: onPrimary,
       elevation: 2,
       highlightElevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -271,9 +278,7 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
       ),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? AppColors.onPrimaryFor(dark) : null,
-      ),
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? onPrimary : null),
       trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? primary : null),
       trackOutlineColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? primary : border),
     ),
@@ -290,8 +295,8 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: dark ? const Color(0xFFF4E9DA) : textColor,
-      contentTextStyle: TextStyle(fontFamily: font, color: dark ? const Color(0xFF2B1714) : card),
+      backgroundColor: textColor,
+      contentTextStyle: TextStyle(fontFamily: font, color: dark ? const Color(0xFF18181B) : card),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );

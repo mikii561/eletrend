@@ -228,19 +228,19 @@ class ProfileScreen extends StatelessWidget {
               RadioListTile(
                 value: 'beige',
                 title: const Text('Bézs'),
-                subtitle: const Text('Meleg krém alap'),
+                subtitle: const Text('Krém és burgundi, a LIFEUP saját színei'),
                 secondary: _ThemeSwatch(dark: false, white: false),
               ),
               RadioListTile(
                 value: 'white',
                 title: const Text('Fehér'),
-                subtitle: const Text('Letisztult, világos'),
+                subtitle: const Text('Letisztult fehér, mint a legtöbb app'),
                 secondary: _ThemeSwatch(dark: false, white: true),
               ),
               RadioListTile(
                 value: 'dark',
                 title: const Text('Sötét'),
-                subtitle: const Text('Kíméli a szemet este'),
+                subtitle: const Text('Klasszikus sötét mód, kíméli a szemet este'),
                 secondary: _ThemeSwatch(dark: true, white: false),
               ),
               if (store.themeMode == ThemeMode.system)
@@ -431,7 +431,10 @@ class _ThemeSwatch extends StatelessWidget {
         child: Container(
           width: 10,
           height: 10,
-          decoration: BoxDecoration(color: AppColors.primaryFor(dark), shape: BoxShape.circle),
+          decoration: BoxDecoration(
+            color: AppColors.primaryFor(dark, white: white),
+            shape: BoxShape.circle,
+          ),
         ),
       ),
     );
