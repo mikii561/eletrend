@@ -400,6 +400,32 @@ class Admin {
 
   Future<void> deleteReport(String id) => _db.collection('reports').doc(id).delete();
 
+  /// Ami az admin figyelmére vár: nyitott visszajelzések és jelentések (a számlálóhoz).
+  Stream<int> watchOpenCount() {
+    late final StreamController<int> controller;
+    var feedback = 0, reports = 0;
+    final subs = <StreamSubscription<void>>[];
+    controller = StreamController<int>(
+      onListen: () {
+        subs
+          ..add(_db.collection('feedback').where('done', isEqualTo: false).snapshots().listen((q) {
+            feedback = q.size;
+            controller.add(feedback + reports);
+          }, onError: controller.addError))
+          ..add(_db.collection('reports').snapshots().listen((q) {
+            reports = q.size;
+            controller.add(feedback + reports);
+          }, onError: controller.addError));
+      },
+      onCancel: () async {
+        for (final s in subs) {
+          await s.cancel();
+        }
+      },
+    );
+    return controller.stream;
+  }
+
   Future<void> setFeedbackDone(String id, bool done) => _db.collection('feedback').doc(id).update({'done': done});
 
   Future<void> deleteFeedback(String id) => _db.collection('feedback').doc(id).delete();

@@ -25,6 +25,7 @@ import 'screens/profile_screen.dart';
 import 'store.dart';
 import 'theme.dart';
 import 'widgets/app_tour.dart';
+import 'widgets/common.dart';
 import 'widgets/motion.dart';
 import 'widgets/phone_frame.dart';
 
@@ -209,8 +210,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         onDestinationSelected: _select,
         destinations: [
           const NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: _HomeTabIcon(selected: false),
+            selectedIcon: _HomeTabIcon(selected: true),
             label: 'Főoldal',
           ),
           const NavigationDestination(
@@ -264,19 +265,39 @@ class _FriendsTabIcon extends StatefulWidget {
 
 class _FriendsTabIconState extends State<_FriendsTabIcon> {
   Stream<List<FriendRequest>>? _requests;
+  Stream<int>? _nudges;
 
   @override
   Widget build(BuildContext context) {
     // A barátok szolgáltatás a bejelentkezés után indul el; addig csak az ikon látszik.
     if (_requests == null && Friends.instance.ready) _requests = Friends.instance.watchRequests();
+    if (_nudges == null && Nudges.instance.ready) _nudges = Nudges.instance.watchUnseenCount();
     final icon = Icon(widget.selected ? Icons.people_alt : Icons.people_alt_outlined);
-    if (_requests == null) return icon;
+    // Szám: függő barátjelölések + olvasatlan bökések.
     return StreamBuilder<List<FriendRequest>>(
       stream: _requests,
-      builder: (context, snap) {
-        final n = snap.data?.length ?? 0;
-        return n == 0 ? icon : Badge(label: Text('$n'), child: icon);
-      },
+      builder: (context, requests) => StreamBuilder<int>(
+        stream: _nudges,
+        builder: (context, nudges) => CountBadge(
+          count: (requests.data?.length ?? 0) + (nudges.data ?? 0),
+          label: 'új jelölés vagy bökés',
+          child: icon,
+        ),
+      ),
     );
   }
+}
+
+/// A Főoldal fül ikonja: a még meg nem nyitott meghívások száma.
+class _HomeTabIcon extends StatelessWidget {
+  const _HomeTabIcon({required this.selected});
+
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) => CountBadge(
+        count: StoreScope.of(context).unseenInvites().length,
+        label: 'új meghívás',
+        child: Icon(selected ? Icons.home : Icons.home_outlined),
+      );
 }

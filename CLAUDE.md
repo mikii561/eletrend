@@ -106,3 +106,9 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - `lib/widgets/motion.dart`: időtartamok (`Motion.fast/medium/slow`), görbék, `Motion.of(context, d)` (csökkentett mozgásnál nulla), `FadeSlideIn` (egyszeri beúszás, lépcsőzhető).
 - Bemutató: a kiemelés `RectTween`-nel csúszik, a kártya `AnimatedSwitcher`-rel úszik át, az egész be/ki halványul. Tesztben a lépések között több képkocka kell (`pump(300ms)` ×4).
 - Tipp bezárása: kicsúszik + `SizeTransition` összecsukás, csak utána `closeTip`. Fülváltás: az új fül `FadeSlideIn` (a régi nem marad meg, mert a Főoldalon GlobalKey-ek vannak). Naptár: lapozáskor irány szerinti csúszás (`_dir`, `_periodKey`). Oldalak: `FadeForwardsPageTransitionsBuilder` (theme.dart).
+
+## Olvasatlan-számlálók
+
+- `CountBadge` (widgets/common.dart). Főoldal fül: `store.unseenInvites()` (meg nem nyitott, jövőbeli, naptárban még nem lévő meghívás; `seenInvites`, megnyitáskor `markInviteSeen`). Barátok fül: függő jelölések + `Nudges.watchUnseenCount()`.
+- Bökés: csak a lista megnyitása (`markAllSeen`) vagy a „Megnyitom” jelöli olvasottnak; felugró sáv/értesítés csak az indítás után érkezőkről jön (a régi olvasatlanokat a szám mutatja).
+- Admin: `Admin.watchOpenCount()` (nyitott visszajelzés + jelentés) a Profil admin menüpontján.

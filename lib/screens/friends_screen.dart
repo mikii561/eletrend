@@ -28,6 +28,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   // Egyszer iratkozunk fel, nem minden újrarajzolásnál.
   late final Stream<List<FriendRequest>>? _requests = Friends.instance.ready ? Friends.instance.watchRequests() : null;
   late final Stream<List<Friend>>? _friends = Friends.instance.ready ? Friends.instance.watchFriends() : null;
+  late final Stream<int> _unseenNudges = Nudges.instance.watchUnseenCount();
   Future<Map<String, FriendAvailability?>>? _availability;
   String _availabilityKey = '';
 
@@ -83,7 +84,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
           if (Nudges.instance.ready)
             IconButton(
               tooltip: 'Kapott bökések',
-              icon: const Icon(Icons.waving_hand_outlined),
+              icon: StreamBuilder<int>(
+                stream: _unseenNudges,
+                builder: (context, snap) => CountBadge(
+                  count: snap.data ?? 0,
+                  label: 'olvasatlan bökés',
+                  child: const Icon(Icons.waving_hand_outlined),
+                ),
+              ),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NudgeInboxScreen())),
             ),
           IconButton(

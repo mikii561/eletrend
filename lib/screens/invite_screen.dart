@@ -29,6 +29,8 @@ class _InviteScreenState extends State<InviteScreen> {
     if (known?.title != e.title || known?.date != e.date) {
       store.saveInvite(Invite(id: e.id, title: e.title, date: e.date, fromName: e.ownerName));
     }
+    // Megnyitotta: már nem számít újnak.
+    store.markInviteSeen(e.id);
   }
 
   @override

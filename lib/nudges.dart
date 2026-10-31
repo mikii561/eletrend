@@ -93,15 +93,45 @@ class Nudges {
   CollectionReference<Map<String, dynamic>> _inbox(String uid) => _db.collection('nudges').doc(uid).collection('items');
 
   /// Figyeli az új (még nem látott) bökéseket; mindegyikre egyszer meghívja az [onNudge]-ot.
+  ///
+  /// Csak a mostantól érkezőkről szól (a korábbi olvasatlanokat a számláló mutatja, nem jönnek elő
+  /// minden indításkor újra). Olvasottá akkor válik, amikor megnyitja (lásd [markAllSeen], [markSeen]).
   void start(String uid, void Function(Nudge nudge) onNudge) {
     stop();
     _uid = uid;
     _onNudge = onNudge;
+    _startedAt = DateTime.now().subtract(const Duration(seconds: 30));
     _sub = _inbox(uid).where('seen', isEqualTo: false).snapshots().listen((q) {
       for (final d in q.docs) {
-        if (_handled.add(d.id)) onNudge(Nudge.fromDoc(d));
+        final n = Nudge.fromDoc(d);
+        if (_isNew(n) && _handled.add(d.id)) onNudge(n);
       }
     }, onError: (Object e) => debugPrint('Bökések később: $e'));
+  }
+
+  DateTime? _startedAt;
+
+  /// Az indítás után érkezett-e (a még szerver-idő nélküli, épp most írt is annak számít).
+  bool _isNew(Nudge n) => n.at == null || _startedAt == null || n.at!.isAfter(_startedAt!);
+
+  /// Az olvasatlan bökések száma (a menü és az ikonok számlálójához).
+  Stream<int> watchUnseenCount() {
+    final uid = _uid;
+    if (uid == null) return Stream.value(0);
+    return _inbox(uid).where('seen', isEqualTo: false).snapshots().map((q) => q.size);
+  }
+
+  /// A bökések listájának megnyitásakor: mind olvasott.
+  Future<void> markAllSeen() async {
+    final uid = _uid;
+    if (uid == null) return;
+    final q = await _inbox(uid).where('seen', isEqualTo: false).get();
+    if (q.docs.isEmpty) return;
+    final batch = _db.batch();
+    for (final d in q.docs) {
+      batch.update(d.reference, {'seen': true});
+    }
+    await batch.commit();
   }
 
   void stop() {
@@ -119,7 +149,8 @@ class Nudges {
     if (uid == null || onNudge == null) return;
     final q = await _inbox(uid).where('seen', isEqualTo: false).get();
     for (final d in q.docs) {
-      if (_handled.add(d.id)) onNudge(Nudge.fromDoc(d));
+      final n = Nudge.fromDoc(d);
+      if (_isNew(n) && _handled.add(d.id)) onNudge(n);
     }
   }
 

@@ -77,7 +77,10 @@ class HomeScreen extends StatelessWidget {
               if (pickTip(closed: store.closedTips, snoozeUntil: store.tipSnoozeUntil, now: now) case final tip?)
                 _TipCard(tip: tip, onNavigate: onNavigate),
             if (pendingInvites.isNotEmpty) ...[
-              SectionTitle('Meghívásaim', trailing: '${pendingInvites.length}'),
+              SectionTitle(
+                'Meghívásaim',
+                trailing: store.unseenInvites(now).isEmpty ? '${pendingInvites.length}' : '${store.unseenInvites(now).length} új',
+              ),
               Card(
                 child: Column(
                   children: [
@@ -91,7 +94,9 @@ class HomeScreen extends StatelessWidget {
                             if (i.fromName.isNotEmpty) i.fromName,
                           ].join(' · '),
                         ),
-                        trailing: const Icon(Icons.chevron_right),
+                        trailing: store.seenInvites.contains(i.id)
+                            ? const Icon(Icons.chevron_right)
+                            : Pill('Új', color: AppColors.danger),
                         onTap: () =>
                             Navigator.of(context).push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: i.id))),
                       ),

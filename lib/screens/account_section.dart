@@ -151,7 +151,16 @@ class AccountSection extends StatelessWidget {
                       : ListTile(
                           leading: Icon(Icons.admin_panel_settings_outlined, color: AppColors.accent),
                           title: const Text('Admin felület', style: TextStyle(fontWeight: FontWeight.w700)),
-                          trailing: const Icon(Icons.chevron_right),
+                          trailing: StreamBuilder<int>(
+                            stream: Admin.instance.watchOpenCount(),
+                            builder: (context, open) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if ((open.data ?? 0) > 0) Pill('${open.data} vár', color: AppColors.danger),
+                                const Icon(Icons.chevron_right),
+                              ],
+                            ),
+                          ),
                           onTap: () =>
                               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdminScreen())),
                         ),

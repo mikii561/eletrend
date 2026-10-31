@@ -40,6 +40,9 @@ class AppStore extends ChangeNotifier {
   /// Programok, ahová meghívtak.
   List<Invite> invites = [];
 
+  /// A már megnyitott meghívások azonosítói (az olvasatlan-számlálóhoz).
+  Set<String> seenInvites = {};
+
   /// A barátaim, ahogy legutóbb láttuk őket (offline is kell, és a születésnap-emlékeztetőhöz).
   List<FriendInfo> friendsCache = [];
 
@@ -191,6 +194,7 @@ class AppStore extends ChangeNotifier {
     'hiddenCards': [for (final c in hiddenCards) c.name]..sort(),
     'challengeHabits': challengeHabits,
     'invites': invites.map((i) => i.toJson()).toList(),
+    'seenInvites': seenInvites.toList()..sort(),
   };
 
   void _applySettings(Map<String, dynamic> s, {bool local = false}) {
@@ -229,6 +233,7 @@ class AppStore extends ChangeNotifier {
       hiddenCards = {for (final c in hidden) ?HomeCard.values.asNameMap()[c]};
     }
     if (s['challengeHabits'] case final Map m) challengeHabits = Map<String, String>.from(m);
+    if (s['seenInvites'] case final List seen) seenInvites = {for (final x in seen) x as String};
     if (s['invites'] case final List list) {
       invites = [for (final i in list) Invite.fromJson(Map<String, dynamic>.from(i as Map))];
     }
@@ -290,6 +295,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void _reset() {
+    seenInvites = {};
     myName = '';
     birthday = null;
     shareBirthday = false;
@@ -681,6 +687,20 @@ class AppStore extends ChangeNotifier {
     invites.removeWhere((i) => i.id == invite.id);
     invites.add(invite);
     invites.sort((a, b) => a.date.compareTo(b.date));
+    _save();
+  }
+
+  /// A még meg nem nyitott, jövőbeli meghívások (amik a naptárban sincsenek még benne).
+  List<Invite> unseenInvites([DateTime? now]) {
+    final today = startOfDay(now ?? DateTime.now());
+    return [
+      for (final i in invites)
+        if (!seenInvites.contains(i.id) && !i.date.isBefore(today) && !events.any((e) => e.shareId == i.id)) i,
+    ];
+  }
+
+  void markInviteSeen(String id) {
+    if (!seenInvites.add(id)) return;
     _save();
   }
 

@@ -144,8 +144,20 @@ class _NudgeComposerState extends State<_NudgeComposer> {
 }
 
 /// A kapott bökések listája.
-class NudgeInboxScreen extends StatelessWidget {
+class NudgeInboxScreen extends StatefulWidget {
   const NudgeInboxScreen({super.key});
+
+  @override
+  State<NudgeInboxScreen> createState() => _NudgeInboxScreenState();
+}
+
+class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // A lista megnyitásával mind olvasott (a számláló eltűnik).
+    Nudges.instance.markAllSeen().catchError((Object e) => debugPrint('Olvasottnak jelölés később: $e'));
+  }
 
   @override
   Widget build(BuildContext context) {

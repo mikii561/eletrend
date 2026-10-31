@@ -387,3 +387,36 @@ class SettingsTile extends StatelessWidget {
     onTap: onTap,
   );
 }
+
+/// Szám egy ikon sarkán (pl. olvasatlan bökések). 0-nál nem látszik; 99 fölött „99+”.
+/// Megjelenéskor és változáskor finoman „bepattan”.
+class CountBadge extends StatelessWidget {
+  const CountBadge({super.key, required this.count, required this.child, this.label});
+
+  final int count;
+  final Widget child;
+
+  /// Felolvasáshoz, pl. „olvasatlan bökés”.
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: count > 0 && label != null ? '$count $label' : null,
+      child: Badge(
+        isLabelVisible: count > 0,
+        backgroundColor: AppColors.danger,
+        textColor: Colors.white,
+        label: TweenAnimationBuilder<double>(
+          key: ValueKey(count),
+          tween: Tween(begin: 0.6, end: 1),
+          duration: MediaQuery.maybeDisableAnimationsOf(context) == true ? Duration.zero : const Duration(milliseconds: 260),
+          curve: Curves.easeOutBack,
+          builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+          child: Text(count > 99 ? '99+' : '$count'),
+        ),
+        child: child,
+      ),
+    );
+  }
+}

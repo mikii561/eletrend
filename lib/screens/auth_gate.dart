@@ -138,7 +138,7 @@ class _AuthGateState extends State<AuthGate> {
         action: SnackBarAction(label: 'Megnyitom', onPressed: () => openNudge(nav.context, n)),
       ),
     );
-    Nudges.instance.markSeen(n.id).catchError((_) {});
+    // Olvasottá csak akkor válik, ha megnyitja (a számláló addig mutatja).
   }
 
   /// Értesítésre koppintva: a bökés (és a programja) megnyílik.

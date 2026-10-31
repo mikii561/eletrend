@@ -8,6 +8,7 @@ import '../main.dart' show HomeShell;
 import '../formatting.dart';
 import '../friends.dart';
 import '../notifications.dart';
+import '../nudges.dart';
 import '../push.dart';
 import '../store.dart';
 import '../theme.dart';
@@ -114,6 +115,16 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.waving_hand_outlined,
                   title: 'Kapott bökések',
                   onTap: () => _push(context, const NudgeInboxScreen()),
+                  trailing: StreamBuilder<int>(
+                    stream: Nudges.instance.watchUnseenCount(),
+                    builder: (context, snap) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if ((snap.data ?? 0) > 0) Pill('${snap.data} új', color: AppColors.danger),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
