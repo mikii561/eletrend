@@ -16,6 +16,7 @@ enum HomeCard {
   friends('Ki ér rá?', Icons.people_alt_outlined),
   birthdays('Születésnapok', Icons.cake_outlined),
   challenges('Kihívások', Icons.emoji_events_outlined),
+  memories('Emlékek', Icons.photo_library_outlined),
   week('A heted', Icons.insights_outlined);
 
   const HomeCard(this.label, this.icon);
@@ -76,6 +77,9 @@ class AppStore extends ChangeNotifier {
   bool eventReminders = true;
   bool taskReminders = true;
   bool birthdayReminders = true;
+
+  /// Szóljon-e, ha egy közös program évfordulója van (pl. ma 1 éve volt).
+  bool memoryReminders = true;
 
   /// Új bejegyzés alapértelmezett emlékeztetője (perc; null = nincs).
   int? defaultReminderMin = 30;
@@ -167,6 +171,7 @@ class AppStore extends ChangeNotifier {
     'eventReminders': eventReminders,
     'taskReminders': taskReminders,
     'birthdayReminders': birthdayReminders,
+    'memoryReminders': memoryReminders,
     'defaultReminderMin': defaultReminderMin,
     'themeMode': themeMode.name,
     'onboarded': onboarded,
@@ -191,6 +196,7 @@ class AppStore extends ChangeNotifier {
     eventReminders = s['eventReminders'] as bool? ?? eventReminders;
     taskReminders = s['taskReminders'] as bool? ?? taskReminders;
     birthdayReminders = s['birthdayReminders'] as bool? ?? birthdayReminders;
+    memoryReminders = s['memoryReminders'] as bool? ?? memoryReminders;
     if (s.containsKey('defaultReminderMin')) defaultReminderMin = (s['defaultReminderMin'] as num?)?.toInt();
     themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
@@ -282,6 +288,7 @@ class AppStore extends ChangeNotifier {
     eventReminders = true;
     taskReminders = true;
     birthdayReminders = true;
+    memoryReminders = true;
     defaultReminderMin = 30;
     themeMode = ThemeMode.system;
     onboarded = false;
@@ -414,7 +421,8 @@ class AppStore extends ChangeNotifier {
 
   // Értesítések, megjelenés, Főoldal
 
-  void setReminders({bool? events, bool? tasks, bool? birthdays, int? defaultMin, bool clearDefault = false}) {
+  void setReminders({bool? events, bool? tasks, bool? birthdays, bool? memories, int? defaultMin, bool clearDefault = false}) {
+    memoryReminders = memories ?? memoryReminders;
     eventReminders = events ?? eventReminders;
     taskReminders = tasks ?? taskReminders;
     birthdayReminders = birthdays ?? birthdayReminders;

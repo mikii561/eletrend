@@ -7,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import 'memories.dart';
 import 'models.dart';
 import 'store.dart';
 
@@ -128,6 +129,7 @@ class Account {
     } else {
       await u.reauthenticateWithCredential(EmailAuthProvider.credential(email: u.email!, password: password ?? ''));
     }
+    await Memories(db: db, auth: auth).deleteAllOf(u.uid);
     await CloudSync(store: null, uid: u.uid, db: db).deleteAll();
     await u.delete();
   });

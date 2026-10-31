@@ -246,6 +246,12 @@ class NotificationSettingsScreen extends StatelessWidget {
                   value: store.birthdayReminders,
                   onChanged: (v) => store.setReminders(birthdays: v),
                 ),
+                SwitchListTile(
+                  title: const Text('Emlékek'),
+                  subtitle: const Text('Ha egy közös program évfordulója van (pl. ma 1 éve volt).'),
+                  value: store.memoryReminders,
+                  onChanged: (v) => store.setReminders(memories: v),
+                ),
               ],
             ),
           ),

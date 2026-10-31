@@ -11,6 +11,7 @@ import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'memory_screen.dart';
 import 'nudge_screens.dart';
 
 /// A felhasználó neve a közös funkciókhoz; ha még nincs, egyszer megkérdezzük.
@@ -707,6 +708,17 @@ class _SharedEventSectionState extends State<SharedEventSection> {
     }
   }
 
+  void _openMemories(SharedEvent shared) => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => MemoryScreen(
+          eventId: shared.id,
+          title: shared.title,
+          start: shared.date,
+          place: shared.place,
+          going: shared.going.contains(Social.instance.uid),
+          ownerUid: shared.ownerUid,
+        ),
+      ));
+
   Future<void> _report(SharedEvent shared) async {
     final reason = await showTextInputSheet(
       context,
@@ -793,6 +805,18 @@ class _SharedEventSectionState extends State<SharedEventSection> {
                 ),
                 const SectionTitle('Reakciók'),
                 ReactionBar(eventId: shared.id),
+                SectionTitle(
+                  'Emlékek',
+                  onMore: () => _openMemories(shared),
+                ),
+                if (shared.date.isAfter(DateTime.now()))
+                  Text('A program után itt oszthatjátok meg egymással a fotókat.', style: TextStyle(color: AppColors.textMuted))
+                else
+                  MemoryStrip(
+                    eventId: shared.id,
+                    going: shared.going.contains(Social.instance.uid),
+                    onOpen: () => _openMemories(shared),
+                  ),
                 if (shared.pollOpen || isOwner) const SectionTitle('Időpont-szavazás'),
                 if (shared.pollOpen)
                   PollCard(

@@ -3,6 +3,7 @@ import 'package:eletrend/admin.dart';
 import 'package:eletrend/availability_service.dart';
 import 'package:eletrend/challenges.dart';
 import 'package:eletrend/friends.dart';
+import 'package:eletrend/memories.dart';
 import 'package:eletrend/nudges.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -22,5 +23,6 @@ FakeFirebaseFirestore signInFakeAccount({String uid = 'teszt', String email = 't
   Challenges.instance = Challenges(db: db);
   Nudges.instance = Nudges(db: db);
   AvailabilityService.instance = AvailabilityService(db: db);
+  Memories.instance = Memories(db: db, auth: Account.instance.auth);
   return db;
 }

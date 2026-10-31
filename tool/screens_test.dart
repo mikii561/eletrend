@@ -2,6 +2,7 @@
 // Képernyőképek a dizájn ellenőrzéséhez (nem része a normál teszteknek).
 // Futtatás: ELETREND_SHOTS=<mappa> flutter test tool/screens_test.dart
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:eletrend/account.dart';
@@ -11,7 +12,9 @@ import 'package:eletrend/friends.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/admin.dart';
 import 'package:eletrend/models.dart';
+import 'package:eletrend/memories.dart';
 import 'package:eletrend/nudges.dart';
+import 'package:image/image.dart' as img;
 import 'package:eletrend/store.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
@@ -157,6 +160,25 @@ void main() {
           FriendInfo(uid: 'f1', name: 'Anna', birthday: '12-24'),
           FriendInfo(uid: 'f2', name: 'Bence'),
         ]);
+      // Egy éve volt közös program, fotókkal: a Főoldalon emlékként jön elő.
+      store.saveEvent(
+        Event(
+          id: 'mem',
+          title: 'Balatoni hétvége',
+          start: DateTime(now.year - 1, now.month, now.day, 10),
+          durationMin: 600,
+          place: 'Balatonfüred',
+          category: EventCategory.social,
+        )..shareId = 'mem1',
+      );
+      Memories.instance = Memories(db: db, auth: Account.instance.auth);
+      for (final (i, color) in [(0, img.ColorRgb8(58, 110, 140)), (1, img.ColorRgb8(200, 150, 80)), (2, img.ColorRgb8(90, 120, 70))]) {
+        final picture = img.Image(width: 900, height: 700);
+        img.fill(picture, color: color);
+        img.fillCircle(picture, x: 300 + i * 150, y: 300, radius: 160, color: img.ColorRgb8(245, 230, 200));
+        final prepared = Memories.prepare(Uint8List.fromList(img.encodePng(picture)));
+        await tester.runAsync(() => Memories.instance.upload('mem1', name: 'Anna', full: prepared.full, thumb: prepared.thumb));
+      }
 
       final key = GlobalKey();
       await tester.pumpWidget(
@@ -189,6 +211,14 @@ void main() {
       await shot('01-fooldal');
       await tester.drag(find.byType(ListView).first, const Offset(0, -700));
       await shot('02-fooldal-lent');
+      await tester.drag(find.byType(ListView).first, const Offset(0, -700));
+      await shot('02b-fooldal-emlek');
+      await tester.tap(find.text('Balatoni hétvége'));
+      await tester.pumpAndSettle();
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
+      await shot('02c-emlekek');
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Naptár'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Nap'));

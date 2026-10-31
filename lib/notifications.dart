@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'memories.dart' show pickMemory;
 import 'models.dart';
 import 'store.dart';
 
@@ -62,6 +63,7 @@ class Notifications {
   static const _taskBase = 2500; // legfeljebb 100
   static const _habitBase = 3000; // célonként 7 nap
   static const _birthdayBase = 4000; // legfeljebb 100
+  static const _memoryBase = 4500; // legfeljebb 30
   static const _nudgeBase = 5000; // 5000 + (azonosító hash % 1000)
   static const _testId = 9999;
 
@@ -224,6 +226,25 @@ class Notifications {
             when,
             'Ma van ${f.name} születésnapja 🎂',
             'Írj neki, vagy szervezz valamit!',
+            channel: 'birthdays',
+          ),
+        );
+      }
+    }
+
+    // Emlékek: ha egy közös program kerek évfordulója van (1 hete, 1/3/6 hónapja, N éve), aznap 10-kor.
+    if (store.memoryReminders) {
+      for (var d = 0; d < 30; d++) {
+        final when = DateTime(now.year, now.month, now.day + d, 10);
+        if (!when.isAfter(now)) continue;
+        final pick = pickMemory(store.events, when);
+        if (pick == null || !pick.anniversary) continue;
+        out.add(
+          PlannedNotification(
+            _memoryBase + d,
+            when,
+            'Emlék: ${pick.event.title} 📸',
+            'Ma ${pick.ago} volt${pick.event.place.isEmpty ? '' : ' · ${pick.event.place}'}. Nézd meg a közös fotókat!',
             channel: 'birthdays',
           ),
         );

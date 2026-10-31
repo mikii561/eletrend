@@ -53,6 +53,13 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - Meghívólink: `https://mikii561.github.io/eletrend/?e=<id>` → `InviteScreen` („Hozzáadom a naptáramhoz”: `SharedEvent.toEvent()`, azonosító `inv-…`).
 - Kihívások és közös cél: `lib/challenges.dart` (`challenges/{id}`, `kind: 'goal'` = közös cél), változatlanul.
 
+## Emlékek (közös fotók)
+
+- `lib/memories.dart`: `events/{id}/photos/{fotó}` (feltöltő, 320 px-es előnézet base64, `audience`: `all`/`going`, `allowDownload`) és `events/{id}/photoData/{fotó}` (a teljes kép, ≤ 650 KB JPEG, base64). **Firestore-ban, nem Storage-ban**: az új Storage-tárolók Blaze csomagot kérnének. Jegyzet: `users/{uid}/myPhotos/{fotó}` (fióktörléshez, index nélkül).
+- A „csak résztvevőknek” fotókat külön lekérdezés hozza (`Memories.watch`), mert a szabály lekérdezésnél nem szűr. A letöltés tiltása csak a felületen érvényes (képernyőképet nem lehet megakadályozni).
+- `pickMemory()`: a múltbeli, nem ismétlődő közös programok közül kerek évforduló (1 hete, 1/3/6 hónapja, N éve), különben háromnaponta másik (legalább 2 hete volt). Főoldal kártya (`HomeCard.memories`), értesítés aznap 10-kor (`memoryReminders`).
+- Felület: `screens/memory_screen.dart` (`MemoryStrip`, `MemoryScreen`, `uploadMemoryPhotos`), a közös program oldalán az „Emlékek” rész a program kezdete után jelenik meg.
+
 ## Szabályok és szerver
 
 - **A szabályok (`firestore.rules`) módosítás után a Firebase konzolban kézzel kell beilleszteni** (Firestore → Rules → Publish); nincs Firebase CLI.

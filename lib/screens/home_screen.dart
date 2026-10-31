@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../availability_service.dart';
 import '../challenges.dart';
 import '../formatting.dart';
+import '../memories.dart';
 import '../friends.dart';
 import '../models.dart';
 import '../store.dart';
@@ -21,6 +22,7 @@ import 'event_editor.dart';
 import 'find_time_screen.dart';
 import 'habits_screen.dart';
 import 'invite_screen.dart';
+import 'memory_screen.dart';
 import 'status_sheet.dart';
 import 'task_editor.dart';
 
@@ -97,6 +99,7 @@ class HomeScreen extends StatelessWidget {
                   HomeCard.friends => const _FriendsCard(),
                   HomeCard.birthdays => _BirthdaysCard(store: store, now: now),
                   HomeCard.challenges => const _ChallengesCard(),
+                  HomeCard.memories => _MemoryCard(store: store, now: now),
                   HomeCard.week => _WeekCard(store: store, now: now),
                 },
           ],
@@ -547,6 +550,69 @@ class _ChallengesCardState extends State<_ChallengesCard> {
           ],
         );
       },
+    );
+  }
+}
+
+/// Egy felbukkanó emlék egy közös programról: mi volt, mikor, hol, és a közös fotók.
+class _MemoryCard extends StatelessWidget {
+  const _MemoryCard({required this.store, required this.now});
+
+  final AppStore store;
+  final DateTime now;
+
+  @override
+  Widget build(BuildContext context) {
+    final pick = pickMemory(store.events, now);
+    if (pick == null) return const SizedBox.shrink();
+    final e = pick.event;
+    void open() => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => MemoryScreen(eventId: e.shareId!, title: e.title, start: pick.occurredAt, place: e.place),
+          ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionTitle(HomeCard.memories.label, trailing: pick.anniversary ? 'ma ${pick.ago}' : pick.ago),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: open,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      IconTile(Icons.photo_library_outlined, color: AppColors.category(EventCategory.shared)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(e.title, style: Theme.of(context).textTheme.titleMedium),
+                            Text(
+                              [
+                                DateFormat('yyyy. MMMM d., EEEE', 'hu').format(pick.occurredAt),
+                                if (e.place.isNotEmpty) e.place,
+                              ].join(' · '),
+                              style: TextStyle(color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  MemoryStrip(eventId: e.shareId!, going: false, canUpload: false, onOpen: open),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

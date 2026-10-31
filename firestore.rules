@@ -41,6 +41,14 @@ service cloud.firestore {
         || isAdmin());
     }
 
+    // Láthatja-e a fotót: a sajátját mindig; a többit, ha látja a programot, és a fotó mindenkinek
+    // szól, vagy ő is ott volt (rajta van a „going” listán).
+    function canSeePhoto(eventId) {
+      return canSeeEvent(eventId) && (resource.data.uid == request.auth.uid
+        || resource.data.audience == 'all'
+        || request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.get('going', []));
+    }
+
     match /admins/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow list, write: if false;
@@ -286,6 +294,40 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['emoji'])
           && request.resource.data.emoji is string && request.resource.data.emoji.size() <= 16;
         allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+      }
+
+      // Közös fotók (emlékek). A feltöltő dönti el, ki láthatja: mindenki, aki látja a programot ('all'),
+      // vagy csak akik mentek ('going'). A lista az előnézetet, a photoData a teljes képet tartalmazza.
+      match /photos/{photoId} {
+        allow read: if canSeePhoto(eventId);
+        allow create: if canSeeEvent(eventId) && !banned()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'name', 'thumb', 'audience', 'allowDownload', 'at'])
+          && request.resource.data.audience in ['all', 'going']
+          && request.resource.data.allowDownload is bool
+          && request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && request.resource.data.thumb is string && request.resource.data.thumb.size() <= 80000;
+        allow update: if signedIn() && resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['audience', 'allowDownload'])
+          && request.resource.data.audience in ['all', 'going'];
+        allow delete: if signedIn() && (resource.data.uid == request.auth.uid
+          || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid
+          || isAdmin());
+      }
+
+      match /photoData/{photoId} {
+        allow read: if canSeePhoto(eventId);
+        allow create: if canSeeEvent(eventId) && !banned()
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'audience', 'data'])
+          && request.resource.data.audience in ['all', 'going']
+          && request.resource.data.data is string && request.resource.data.data.size() <= 900000;
+        allow update: if signedIn() && resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['audience'])
+          && request.resource.data.audience in ['all', 'going'];
+        allow delete: if signedIn() && (resource.data.uid == request.auth.uid
+          || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid
+          || isAdmin());
       }
 
       // Hozzászólások: saját néven lehet írni; törölni a sajátot, szervezőként vagy adminként bármelyiket.
