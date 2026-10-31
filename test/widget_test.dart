@@ -115,7 +115,7 @@ void main() {
     await tester.tap(find.text('Bemutató újra'));
     await tester.pumpAndSettle();
     expect(find.text('1/8'), findsOneWidget);
-    expect(find.textContaining('Szia'), findsOneWidget); // visszavált a Főoldalra
+    expect(find.textContaining(', Gabi'), findsOneWidget); // visszavált a Főoldalra (a köszönés napszakfüggő)
     await tester.tap(find.text('Kihagyom'));
     await tester.pumpAndSettle();
     stopServices();
