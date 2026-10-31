@@ -5,6 +5,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/conflicts.dart';
 
 /// Feladat felvétele vagy szerkesztése alulról felcsúszó lapon.
 Future<void> showTaskEditor(BuildContext context, {TaskItem? task, DateTime? due, DateTime? scheduled}) {
@@ -75,13 +76,22 @@ class _TaskEditorState extends State<_TaskEditor> {
     setState(() => _scheduled = DateTime(day.year, day.month, day.day, time.hour, time.minute));
   }
 
-  void _save() {
+  /// A beosztott időponttal ütköző programok (csak ha be van osztva).
+  List<Conflict> _conflicts(AppStore store) {
+    final s = _scheduled;
+    if (s == null) return const [];
+    return store.conflictsFor(start: s, durationMin: _duration, ignoreTaskId: widget.task?.id);
+  }
+
+  Future<void> _save() async {
     final title = _title.text.trim();
     if (title.isEmpty) {
       setState(() => _error = 'Mi a teendő?');
       return;
     }
     final store = StoreScope.of(context);
+    final navigator = Navigator.of(context);
+    if (!await confirmDespiteConflicts(context, _conflicts(store)) || !mounted) return;
     final t = widget.task ?? TaskItem(id: newId(), title: title);
     t
       ..title = title
@@ -90,7 +100,7 @@ class _TaskEditorState extends State<_TaskEditor> {
       ..durationMin = _duration
       ..category = _category;
     store.saveTask(t);
-    Navigator.pop(context);
+    navigator.pop();
   }
 
   @override
@@ -180,6 +190,7 @@ class _TaskEditorState extends State<_TaskEditor> {
                     ),
                 ],
               ),
+            ConflictHint(conflicts: _conflicts(store)),
             const SizedBox(height: 16),
             Row(
               children: [

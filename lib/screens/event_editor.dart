@@ -12,6 +12,7 @@ import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/conflicts.dart';
 import '../widgets/map_view.dart';
 import 'location_picker.dart';
 import 'social_widgets.dart';
@@ -128,6 +129,15 @@ class _EventEditorState extends State<EventEditor> {
     );
   }
 
+  /// A választott időponttal ütköző programok (a szerkesztett bejegyzés saját magával nem ütközik).
+  List<Conflict> _conflicts(AppStore store) => store.conflictsFor(
+        start: _start,
+        durationMin: _duration,
+        allDay: _allDay,
+        repeat: _repeat,
+        ignoreEventId: _e?.id,
+      );
+
   Future<void> _save() async {
     if (_saving) return;
     final title = _title.text.trim();
@@ -143,6 +153,8 @@ class _EventEditorState extends State<EventEditor> {
 
     final store = StoreScope.of(context);
     final navigator = Navigator.of(context);
+    // Ha az időpontban már van valami, megkérdezzük, biztosan így marad-e.
+    if (!await confirmDespiteConflicts(context, _conflicts(store)) || !mounted) return;
     final e = _e ?? Event(id: newId(), title: '', start: _start);
     e
       ..title = title.length > 100 ? title.substring(0, 100) : title
@@ -295,6 +307,7 @@ class _EventEditorState extends State<EventEditor> {
               ],
             ),
           ),
+          ConflictHint(conflicts: _conflicts(store)),
           const SizedBox(height: 12),
           Card(
             margin: EdgeInsets.zero,

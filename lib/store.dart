@@ -523,6 +523,40 @@ class AppStore extends ChangeNotifier {
     saveEvent(e);
   }
 
+  /// Mivel ütközne egy új vagy módosított időpont: a már meglévő (nem egész napos) bejegyzések és
+  /// beosztott feladatok, amelyek átfednek vele. Ismétlődésnél a következő [occurrences] alkalmat
+  /// nézi. Az egész napos dolgok (pl. születésnap) nem számítanak ütközésnek.
+  List<Conflict> conflictsFor({
+    required DateTime start,
+    required int durationMin,
+    bool allDay = false,
+    Repeat repeat = Repeat.none,
+    String? ignoreEventId,
+    String? ignoreTaskId,
+    int occurrences = 8,
+    DateTime? now,
+  }) {
+    if (allDay || durationMin <= 0) return const [];
+    final probe = Event(id: '_', title: '', start: start, durationMin: durationMin, repeat: repeat);
+    final from = repeat == Repeat.none ? start : (now ?? DateTime.now());
+    final slots = probe.occurrencesBetween(from, from.add(const Duration(days: 400))).take(occurrences);
+    final found = <Conflict>[];
+    for (final slot in slots) {
+      for (final o in occurrencesBetween(slot.start, slot.end)) {
+        if (o.event.id == ignoreEventId || o.event.allDay) continue;
+        found.add(Conflict(title: o.event.title, start: o.start, end: o.end));
+      }
+      for (final t in tasks) {
+        final s = t.scheduled;
+        if (t.done || s == null || t.id == ignoreTaskId) continue;
+        final e = s.add(Duration(minutes: t.durationMin));
+        if (s.isBefore(slot.end) && e.isAfter(slot.start)) found.add(Conflict(title: t.title, start: s, end: e, task: true));
+      }
+    }
+    found.sort((a, b) => a.start.compareTo(b.start));
+    return found;
+  }
+
   // Feladatok
 
   /// Egy nap feladatai: amit erre a napra osztottál be, vagy aminek ma van a határideje.
@@ -669,4 +703,14 @@ class StoreScope extends InheritedNotifier<AppStore> {
   const StoreScope({super.key, required AppStore store, required super.child}) : super(notifier: store);
 
   static AppStore of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<StoreScope>()!.notifier!;
+}
+
+/// Egy ütközés: egy már meglévő bejegyzés vagy beosztott feladat, ami átfed az új időponttal.
+class Conflict {
+  const Conflict({required this.title, required this.start, required this.end, this.task = false});
+
+  final String title;
+  final DateTime start;
+  final DateTime end;
+  final bool task;
 }
