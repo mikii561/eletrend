@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../challenges.dart';
@@ -39,7 +43,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               label: const Text('Új kihívás', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
       body: _mine == null
-          ? const Padding(padding: EdgeInsets.all(16), child: EmptyState(emoji: '📡', text: 'A kihívásokhoz internet kell.'))
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: EmptyState(emoji: '📡', text: 'A kihívásokhoz internet kell.'),
+            )
           : StreamBuilder<List<Challenge>>(
               stream: _mine,
               builder: (context, snap) {
@@ -49,7 +56,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                 if (list.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.all(16),
-                    child: EmptyState(emoji: '🏁', text: 'Még nincs kihívásod.\nHívd ki a barátaidat: ki bírja tovább?'),
+                    child: EmptyState(
+                      emoji: '🏁',
+                      text: 'Még nincs kihívásod.\nHívd ki a barátaidat: ki bírja tovább?',
+                    ),
                   );
                 }
                 return ListView(
@@ -58,15 +68,19 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                     for (final c in list)
                       Card(
                         child: ListTile(
-                          leading: Text(c.emoji, style: const TextStyle(fontSize: 30)),
+                          leading: ChallengeIcon(c, size: 40),
                           title: Text(c.title, style: const TextStyle(fontWeight: FontWeight.w800)),
-                          subtitle: Text(c.isActive()
-                              ? '${c.dayNumber()}. nap a ${c.days}-ból · ${c.members.length} résztvevő'
-                              : c.dayNumber() == 0
-                                  ? 'Kezdés: ${DateFormat('MMM d.', 'hu').format(c.start)} · ${c.members.length} résztvevő'
-                                  : 'Véget ért · ${c.members.length} résztvevő'),
+                          subtitle: Text(
+                            c.isActive()
+                                ? '${c.dayNumber()}. nap a ${c.days}-ból · ${c.members.length} résztvevő'
+                                : c.dayNumber() == 0
+                                ? 'Kezdés: ${DateFormat('MMM d.', 'hu').format(c.start)} · ${c.members.length} résztvevő'
+                                : 'Véget ért · ${c.members.length} résztvevő',
+                          ),
                           trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChallengeDetail(challenge: c))),
+                          onTap: () =>
+                              Navigator.of(context)
+                                  .push(MaterialPageRoute(builder: (_) => ChallengeDetail(challenge: c))),
                         ),
                       ),
                   ],
@@ -88,16 +102,52 @@ class _NewChallengeState extends State<_NewChallenge> {
   final _title = TextEditingController(text: challengeIdeas.first.$2);
   String _emoji = challengeIdeas.first.$1;
   int _days = challengeIdeas.first.$3;
+  late final _daysField = TextEditingController(text: '$_days');
+  late final _emojiField = TextEditingController(text: _emoji);
+  String _image = '';
   DateTime _start = DateTime.now();
   final Map<String, String> _picked = {};
   late final Future<List<Friend>> _friends = Friends.instance.watchFriends().first;
   bool _busy = false;
 
+  /// Kép a galériából; a kihívás ikonja lesz (négyzetre vágva, kicsinyítve).
+  Future<void> _pickImage() async {
+    try {
+      final file = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1000, maxHeight: 1000);
+      if (file == null) return;
+      final image = prepareChallengeIcon(await file.readAsBytes());
+      if (mounted) setState(() => _image = image);
+    } catch (e) {
+      if (mounted) _error(context, e is FormatException ? e.message : e);
+    }
+  }
+
+  void _useIdea(String emoji, String title, int days) => setState(() {
+    _title.text = title;
+    _emoji = emoji;
+    _emojiField.text = emoji;
+    _image = '';
+    _days = days;
+    _daysField.text = '$days';
+  });
+
   Future<void> _create() async {
     if (_title.text.trim().isEmpty) return;
+    if (_days < 1 || _days > maxChallengeDays) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('A napok száma 1 és $maxChallengeDays között lehet.')));
+      return;
+    }
     setState(() => _busy = true);
     try {
-      await Challenges.instance.create(title: _title.text, emoji: _emoji, days: _days, start: _start, friends: _picked);
+      await Challenges.instance.create(
+        title: _title.text,
+        emoji: _emoji.isEmpty ? '🏁' : _emoji,
+        image: _image,
+        days: _days,
+        start: _start,
+        friends: _picked,
+      );
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) _error(context, e);
@@ -109,6 +159,8 @@ class _NewChallengeState extends State<_NewChallenge> {
   @override
   void dispose() {
     _title.dispose();
+    _daysField.dispose();
+    _emojiField.dispose();
     super.dispose();
   }
 
@@ -122,6 +174,8 @@ class _NewChallengeState extends State<_NewChallenge> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Új kihívás', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text('Válassz egy ötletet, vagy alkosd meg a sajátodat.', style: TextStyle(color: AppColors.textMuted)),
             const SizedBox(height: 12),
             Wrap(
               spacing: 6,
@@ -131,12 +185,45 @@ class _NewChallengeState extends State<_NewChallenge> {
                   ChoiceChip(
                     label: Text('$emoji $title'),
                     selected: _title.text == title,
-                    onSelected: (_) => setState(() {
-                      _title.text = title;
-                      _emoji = emoji;
-                      _days = days;
+                    onSelected: (_) => _useIdea(emoji, title, days),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                ChallengeIcon.preview(emoji: _emoji, image: _image, size: 56),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _emojiField,
+                    decoration: const InputDecoration(labelText: 'Emoji', hintText: '🏆', counterText: ''),
+                    onChanged: (v) => setState(() {
+                      // Egyetlen emoji kell: az utolsónak beírtat tartjuk meg.
+                      _emoji = v.characters.isEmpty ? '' : v.characters.last;
+                      if (_emoji.isNotEmpty && _emojiField.text != _emoji) {
+                        _emojiField.value = TextEditingValue(
+                          text: _emoji,
+                          selection: TextSelection.collapsed(offset: _emoji.length),
+                        );
+                      }
+                      if (_emoji.isNotEmpty) _image = '';
                     }),
                   ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _pickImage,
+                  icon: const Icon(Icons.photo_library_outlined),
+                  label: Text(_image.isEmpty ? 'Kép a galériából' : 'Másik kép'),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                ),
+                if (_image.isNotEmpty)
+                  TextButton(onPressed: () => setState(() => _image = ''), child: const Text('Kép törlése')),
               ],
             ),
             const SizedBox(height: 12),
@@ -149,13 +236,34 @@ class _NewChallengeState extends State<_NewChallenge> {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Expanded(child: Text('Hány nap?', style: TextStyle(fontWeight: FontWeight.w700))),
+                const Expanded(
+                  child: Text('Hány nap?', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
                 for (final d in [7, 14, 21, 30])
                   Padding(
                     padding: const EdgeInsets.only(left: 6),
-                    child: ChoiceChip(label: Text('$d'), selected: _days == d, onSelected: (_) => setState(() => _days = d)),
+                    child: ChoiceChip(
+                      label: Text('$d'),
+                      selected: _days == d,
+                      onSelected: (_) => setState(() {
+                        _days = d;
+                        _daysField.text = '$d';
+                      }),
+                    ),
                   ),
               ],
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _daysField,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
+              decoration: InputDecoration(
+                labelText: 'Vagy írd be a napok számát',
+                helperText: 'Például 10 vagy 100 (legfeljebb $maxChallengeDays)',
+                suffixText: 'nap',
+              ),
+              onChanged: (v) => setState(() => _days = int.tryParse(v) ?? 0),
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
@@ -177,9 +285,14 @@ class _NewChallengeState extends State<_NewChallenge> {
               future: _friends,
               builder: (context, snap) {
                 final friends = snap.data;
-                if (friends == null) return const Padding(padding: EdgeInsets.all(12), child: LinearProgressIndicator());
+                if (friends == null) {
+                  return const Padding(padding: EdgeInsets.all(12), child: LinearProgressIndicator());
+                }
                 if (friends.isEmpty) {
-                  return Text('Még nincs barátod az appban; egyedül is elindíthatod.', style: TextStyle(color: AppColors.textMuted));
+                  return Text(
+                    'Még nincs barátod az appban; egyedül is elindíthatod.',
+                    style: TextStyle(color: AppColors.textMuted),
+                  );
                 }
                 return Wrap(
                   spacing: 6,
@@ -227,7 +340,13 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${c.emoji} ${c.title}', overflow: TextOverflow.ellipsis),
+        title: Row(
+          children: [
+            ChallengeIcon(c, size: 28),
+            const SizedBox(width: 10),
+            Expanded(child: Text(c.title, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (v) async {
@@ -266,26 +385,30 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                         c.isActive()
                             ? '${c.dayNumber()}. nap a ${c.days}-ból'
                             : c.dayNumber() == 0
-                                ? 'Még nem kezdődött el'
-                                : 'A kihívás véget ért',
+                            ? 'Még nem kezdődött el'
+                            : 'A kihívás véget ért',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      Text('${DateFormat('MMM d.', 'hu').format(c.start)} – ${DateFormat('MMM d.', 'hu').format(c.end)}',
-                          style: TextStyle(color: AppColors.textMuted)),
+                      Text(
+                        '${DateFormat('MMM d.', 'hu').format(c.start)} – ${DateFormat('MMM d.', 'hu').format(c.end)}',
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
                       const SizedBox(height: 12),
                       if (c.isActive())
                         FilledButton.icon(
                           onPressed: linked != null
                               ? null
                               : () => Challenges.instance.checkIn(c, today, !doneToday).catchError((Object e) {
-                                    if (context.mounted) _error(context, e);
-                                  }),
+                                  if (context.mounted) _error(context, e);
+                                }),
                           icon: Icon(doneToday ? Icons.check_circle : Icons.radio_button_unchecked),
-                          label: Text(linked != null
-                              ? (doneToday ? 'Ma kész ✅ (a célból)' : 'A célod kipipálásával teljesül')
-                              : doneToday
-                                  ? 'Ma kész ✅'
-                                  : 'Ma teljesítettem'),
+                          label: Text(
+                            linked != null
+                                ? (doneToday ? 'Ma kész ✅ (a célból)' : 'A célod kipipálásával teljesül')
+                                : doneToday
+                                ? 'Ma kész ✅'
+                                : 'Ma teljesítettem',
+                          ),
                         ),
                     ],
                   ),
@@ -299,9 +422,20 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                       ListTile(
                         leading: CircleAvatar(
                           backgroundColor: i == 0 ? AppColors.accent : AppColors.background,
-                          child: Text(i == 0 ? '🥇' : i == 1 ? '🥈' : i == 2 ? '🥉' : '${i + 1}.'),
+                          child: Text(
+                            i == 0
+                                ? '🥇'
+                                : i == 1
+                                ? '🥈'
+                                : i == 2
+                                ? '🥉'
+                                : '${i + 1}.',
+                          ),
                         ),
-                        title: Text(p.uid == me ? '${p.name} (te)' : p.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        title: Text(
+                          p.uid == me ? '${p.name} (te)' : p.name,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -322,7 +456,8 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                                 onPressed: () async {
                                   await Challenges.instance.cheer(c.id, p.uid);
                                   if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Megbuzdítottad: ${p.name} 👏')));
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(content: Text('Megbuzdítottad: ${p.name} 👏')));
                                   }
                                 },
                               ),
@@ -348,7 +483,10 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                       items: [
                         const DropdownMenuItem(value: null, child: Text('Nincs (kézzel jelölöm)')),
                         for (final Habit h in store.habits)
-                          DropdownMenuItem(value: h.id, child: Text(h.name, overflow: TextOverflow.ellipsis)),
+                          DropdownMenuItem(
+                            value: h.id,
+                            child: Text(h.name, overflow: TextOverflow.ellipsis),
+                          ),
                       ],
                       onChanged: (v) {
                         store.linkChallengeHabit(c.id, v);
@@ -361,6 +499,50 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// A kihívás ikonja: saját kép, ha van, különben az emoji.
+class ChallengeIcon extends StatelessWidget {
+  const ChallengeIcon(Challenge c, {super.key, this.size = 36}) : emoji = null, image = null, challenge = c;
+
+  /// Ikon egy még el nem mentett kihíváshoz (az új kihívás űrlapján).
+  const ChallengeIcon.preview({super.key, required String this.emoji, required String this.image, this.size = 36})
+    : challenge = null;
+
+  final Challenge? challenge;
+  final String? emoji;
+  final String? image;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final img = challenge?.image ?? image ?? '';
+    final symbol = challenge?.emoji ?? emoji ?? '';
+    if (img.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(size * 0.25),
+        child: Image.memory(
+          base64Decode(img),
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => SizedBox(
+            width: size,
+            height: size,
+            child: const Center(child: Text('🏁')),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Center(
+        child: Text(symbol.isEmpty ? '🏁' : symbol, style: TextStyle(fontSize: size * 0.75)),
       ),
     );
   }

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 
 import 'models.dart';
 import 'store.dart';
@@ -18,6 +20,7 @@ class Challenge {
     required this.members,
     required this.names,
     this.kind = '',
+    this.image = '',
   });
 
   final String id;
@@ -31,6 +34,9 @@ class Challenge {
 
   /// 'goal': közös cél (a Célok között látszik), egyébként kihívás.
   final String kind;
+
+  /// Saját kép az emoji helyett (kicsi JPEG, base64); üres, ha nincs.
+  final String image;
 
   bool get isGoal => kind == 'goal';
 
@@ -70,6 +76,7 @@ class Challenge {
       members: List<String>.from(d['members'] as List? ?? []),
       names: Map<String, String>.from(d['names'] as Map? ?? {}),
       kind: d['kind'] as String? ?? '',
+      image: d['image'] as String? ?? '',
     );
   }
 }
@@ -102,6 +109,27 @@ const challengeIdeas = [
   ('📵', '7 nap esti telefon nélkül', 7),
   ('📖', '30 nap olvasás', 30),
 ];
+
+/// Legfeljebb ennyi napos lehet egy kihívás (a szabályok is ezt engedik).
+const maxChallengeDays = 366;
+
+/// Saját kép a kihíváshoz: középen négyzetre vágva, 192 px-esre kicsinyítve, JPEG (pár tíz KB),
+/// hogy a kihívás dokumentumában elférjen és a barátoknál is gyorsan betöltsön.
+String prepareChallengeIcon(Uint8List bytes) {
+  final decoded = img.decodeImage(bytes);
+  if (decoded == null) throw const FormatException('Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.');
+  final oriented = img.bakeOrientation(decoded);
+  final side = oriented.width < oriented.height ? oriented.width : oriented.height;
+  final square = img.copyCrop(
+    oriented,
+    x: (oriented.width - side) ~/ 2,
+    y: (oriented.height - side) ~/ 2,
+    width: side,
+    height: side,
+  );
+  final small = side > 192 ? img.copyResize(square, width: 192, height: 192) : square;
+  return base64Encode(img.encodeJpg(small, quality: 80));
+}
 
 /// Közös kihívások: `challenges/{id}` (tagok, nevek), `challenges/{id}/progress/{uid}` (teljesített napok, buzdítások).
 class Challenges {
@@ -199,6 +227,7 @@ class Challenges {
     required DateTime start,
     required Map<String, String> friends,
     String kind = '',
+    String image = '',
   }) async {
     final me = _uid!;
     final name = _store!.myName;
@@ -212,6 +241,7 @@ class Challenges {
       'members': [me, ...friends.keys],
       'names': {me: name, ...friends},
       if (kind.isNotEmpty) 'kind': kind,
+      if (image.isNotEmpty) 'image': image,
       'at': FieldValue.serverTimestamp(),
     });
     await ref.collection('progress').doc(me).set({'name': name, 'done': <String>[], 'cheers': 0});

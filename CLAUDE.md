@@ -52,6 +52,7 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - `lib/social.dart`: `events/{id}` (cím, idő, hossz, kategória, hely, jegyzet, `limit`, `inviteOnly`, `invitedUids`, `going`), visszajelzés + szavazat (`rsvps/{uid}`: Megyek/Talán/Nem), hozzászólás (`messages`), reakció (`reactions/{uid}`). A „going” listát a résztvevők csak a saját nevükkel módosíthatják, a létszámot a szabály ellenőrzi.
 - Meghívólink: `https://mikii561.github.io/eletrend/?e=<id>` → `InviteScreen` („Hozzáadom a naptáramhoz”: `SharedEvent.toEvent()`, azonosító `inv-…`).
 - Kihívások és közös cél: `lib/challenges.dart` (`challenges/{id}`, `kind: 'goal'` = közös cél), változatlanul.
+- Új kihívás űrlap: az ötletek (`challengeIdeas`) mellett saját név, emoji, kép a galériából (`image` mező: 192 px-es négyzetes JPEG base64-ben, `prepareChallengeIcon`; megjelenítés: `ChallengeIcon`) és saját napszám (1–`maxChallengeDays` = 366, a szabály is ennyit enged). Szabályváltozás nem kellett.
 
 ## Emlékek (közös fotók)
 

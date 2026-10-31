@@ -613,7 +613,7 @@ class _ChallengesCardState extends State<_ChallengesCard> {
                 children: [
                   for (final c in active.take(3))
                     ListTile(
-                      leading: Text(c.emoji, style: const TextStyle(fontSize: 24)),
+                      leading: ChallengeIcon(c, size: 32),
                       title: Text(c.title),
                       subtitle: Text('${c.dayNumber()}. nap a ${c.days}-ból · ${c.members.length} fő'),
                       trailing: const Icon(Icons.chevron_right),
