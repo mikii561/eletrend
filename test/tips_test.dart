@@ -1,5 +1,4 @@
 import 'package:eletrend/main.dart';
-import 'package:eletrend/store.dart';
 import 'package:eletrend/tips.dart';
 import 'package:eletrend/widgets/memories_demo.dart';
 import 'package:flutter/material.dart';
