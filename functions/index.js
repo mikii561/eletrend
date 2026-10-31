@@ -1,12 +1,11 @@
-// Az Életrend push értesítései: amikor valami történik az adatbázisban (bump, meghívó, üzenet,
+// A LIFEUP push értesítései: amikor valami történik az adatbázisban (bökés, meghívó, hozzászólás,
 // barátjelölés, közös cél), a címzett telefonjára/böngészőjére értesítés megy, akkor is, ha az app
-// be van zárva. Az esti emlékeztető és a heti összefoglaló 15 percenként ellenőrzött időzítés.
+// be van zárva. (Az emlékeztetőket a telefon maga ütemezi, azokhoz nem kell szerver.)
 //
 // A címzett eszközei: users/{uid}/push/{azonosító} (az app menti, lásd lib/push.dart).
 // Telepítés: firebase deploy --only functions (Blaze csomag kell hozzá).
 
 const { onDocumentCreated } = require('firebase-functions/v2/firestore');
-const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { setGlobalOptions, logger } = require('firebase-functions/v2');
 const admin = require('firebase-admin');
 
@@ -52,16 +51,16 @@ async function sendAll(uids, skip, title, body, link) {
   await Promise.all(targets.map((u) => send(u, title, body, link).catch((e) => logger.warn('Push hiba', u, e))));
 }
 
-// Bump: csak ha a címzett nem kapcsolta ki, és nem némította a küldőt.
-exports.pushBump = onDocumentCreated('bumps/{to}/items/{id}', async (event) => {
-  const b = event.data && event.data.data();
-  if (!b) return;
+// Bökés: csak ha a címzett nem kapcsolta ki, és nem némította a küldőt.
+exports.pushNudge = onDocumentCreated('nudges/{to}/items/{id}', async (event) => {
+  const n = event.data && event.data.data();
+  if (!n) return;
   const to = event.params.to;
-  const settings = (await db.collection('bumpSettings').doc(to).get()).data() || {};
-  if (settings.off === true || (settings.muted || []).includes(b.fromUid)) return;
-  const title = `${b.sticker || '👋'} ${b.fromName || 'Egy barátod'} bumpolt`;
-  const body = b.text || (b.eventTitle ? `📅 ${b.eventTitle}` : b.audio ? 'Hangüzenetet küldött' : b.image ? 'Képet küldött' : 'Koppints a megnyitáshoz');
-  await send(to, title, body, `${APP}?n=bump:${event.params.id}`);
+  const settings = (await db.collection('nudgeSettings').doc(to).get()).data() || {};
+  if (settings.off === true || (settings.muted || []).includes(n.fromUid)) return;
+  const title = `${n.emoji || '👋'} ${n.fromName || 'Egy barátod'}`;
+  const body = n.eventTitle ? `${n.text} · ${n.eventTitle}` : n.text;
+  await send(to, title, body, `${APP}?n=nudge:${event.params.id}`);
 });
 
 // Meghívás egy programra.
@@ -89,7 +88,7 @@ exports.pushFriendRequest = onDocumentCreated('requests/{to}/items/{from}', asyn
   await send(event.params.to, `${d.fromName || 'Valaki'} barátnak jelölt`, 'Nyisd meg a Barátok fület az elfogadáshoz.');
 });
 
-// Üzenet egy program üzenőfalán: a szervezőnek és mindenkinek, aki visszajelzett.
+// Hozzászólás egy közös programhoz: a szervezőnek és mindenkinek, aki visszajelzett.
 exports.pushChat = onDocumentCreated('events/{eventId}/messages/{mid}', async (event) => {
   const m = event.data && event.data.data();
   if (!m) return;
@@ -109,72 +108,3 @@ exports.pushChallenge = onDocumentCreated('challenges/{cid}', async (event) => {
   await sendAll(c.members || [], c.ownerUid, title, c.title);
 });
 
-/** Budapesti dátum és idő részei. */
-function budapestNow(date = new Date()) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-GB', {
-      timeZone: TIME_ZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      weekday: 'short',
-      hourCycle: 'h23',
-    })
-      .formatToParts(date)
-      .map((p) => [p.type, p.value]),
-  );
-  return {
-    day: `${parts.year}-${parts.month}-${parts.day}`,
-    minutes: Number(parts.hour) * 60 + Number(parts.minute),
-    sunday: parts.weekday === 'Sun',
-  };
-}
-
-/** A következő nap kulcsa (ÉÉÉÉ-HH-NN). */
-function nextDay(day) {
-  const d = new Date(`${day}T12:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
-
-// Esti emlékeztető és heti összefoglaló, 15 percenként: akinek most jött el a beállított ideje.
-exports.reminders = onSchedule({ schedule: '*/15 * * * *', timeZone: TIME_ZONE }, async () => {
-  const now = budapestNow();
-  const slot = now.minutes - (now.minutes % 15);
-  const inSlot = (m) => m >= slot && m < slot + 15;
-
-  // Csak azoknak, akiknek van push tokenje.
-  const tokens = await db.collectionGroup('push').get();
-  const uids = [...new Set(tokens.docs.map((d) => d.ref.parent.parent.id))];
-
-  await Promise.all(
-    uids.map(async (uid) => {
-      try {
-        const user = db.collection('users').doc(uid);
-        const s = (await user.collection('meta').doc('settings').get()).data() || {};
-
-        if (s.dailyReminder !== false && inSlot((s.reminderHour ?? 20) * 60 + (s.reminderMinute ?? 0))) {
-          const [journal, habits] = await Promise.all([
-            user.collection('journal').where('date', '>=', now.day).where('date', '<', nextDay(now.day)).limit(1).get(),
-            user.collection('habits').get(),
-          ]);
-          const wroteJournal = !journal.empty;
-          const left = habits.docs.filter((h) => !h.get('perWeek') && !(h.get('doneDays') || []).includes(now.day)).length;
-          let body = null;
-          if (left > 0 && !wroteJournal) body = `Még ${left} cél vár rád, és a naplódat sem írtad meg ma.`;
-          else if (left > 0) body = `Még ${left} cél vár rád ma. Hajrá! 💪`;
-          else if (!wroteJournal) body = 'Írd le, milyen napod volt, és miért vagy hálás! 🙏';
-          if (body) await send(uid, 'Hogy telt a napod? 🌙', body);
-        }
-
-        if (now.sunday && s.weeklySummary !== false && inSlot(19 * 60)) {
-          await send(uid, 'Így ment a heted 📊', 'Nézd meg, hogy haladtál a céljaiddal, és milyen volt a hangulatod.', `${APP}?n=weekly`);
-        }
-      } catch (e) {
-        logger.warn('Emlékeztető hiba', uid, e);
-      }
-    }),
-  );
-});

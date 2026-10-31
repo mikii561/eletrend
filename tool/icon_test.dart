@@ -43,7 +43,12 @@ Future<void> _save(String path, void Function(Canvas c) draw) async {
 void main() {
   test('ikonok rajzolása', () async {
     const full = Rect.fromLTWH(0, 0, 1024, 1024);
-    final bg = Paint()..shader = const LinearGradient(colors: _gradient, begin: Alignment.topLeft, end: Alignment.bottomRight).createShader(full);
+    final bg = Paint()
+      ..shader = const LinearGradient(
+        colors: _gradient,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(full);
 
     // Teljes ikon (régi Android, web)
     await _save('assets/icon/icon.png', (c) {

@@ -111,7 +111,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final store = StoreScope.of(context);
-    final hasLocalData = store.journal.isNotEmpty || store.habits.isNotEmpty || store.events.isNotEmpty;
+    final hasLocalData = store.tasks.isNotEmpty || store.habits.isNotEmpty || store.events.isNotEmpty;
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
@@ -130,10 +130,10 @@ class _AuthScreenState extends State<AuthScreen> {
                   height: 120,
                   errorBuilder: (_, _, _) => const Text('🌿', style: TextStyle(fontSize: 64)),
                 ),
-                Text('Életrend', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                Text('LIFEUP', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
                 const SizedBox(height: 6),
                 const Text(
-                  'Célok, napló és programok a barátaiddal. Minden eszközödön ugyanaz.',
+                  'Az életed. Az embereid. Az időd.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
@@ -249,7 +249,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         padding: const EdgeInsets.all(12),
                         child: Text(
                           _register
-                              ? '💾 Az ezen az eszközön lévő naplód, céljaid és programjaid az új fiókodba kerülnek.'
+                              ? '💾 Az ezen az eszközön lévő naptárad, feladataid és céljaid az új fiókodba kerülnek.'
                               : '⚠️ Bejelentkezéskor a fiókod adatai kerülnek az ezen az eszközön lévők helyére. '
                                     'Ha ezeket is meg akarod tartani, inkább regisztrálj velük új fiókot.',
                           style: const TextStyle(fontWeight: FontWeight.w600),

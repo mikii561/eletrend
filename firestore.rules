@@ -1,9 +1,10 @@
 rules_version = '2';
 
-// Életrend adatbázis-szabályai.
-// - users/: mindenki csak a saját adatait látja (az admin sem olvashatja a naplót, csak törölheti).
-// - events/: közös programok; aki ismeri a (kitalálhatatlan) azonosítót, azaz megkapta a
-//   meghívólinket, láthatja és visszajelezhet; módosítani a szervező (és moderáláskor az admin) tud.
+// LIFEUP adatbázis-szabályai. Minden jogosultság itt dől el, nem az appban.
+// - users/: mindenki csak a saját adatait látja (az admin sem olvashatja, csak törölheti).
+// - availability/: csak szabad/foglalt időszakok, és csak a tulajdonos által kiválasztott barátok olvashatják.
+// - events/: közös programok; a link ismerője látja, kivéve a „csak meghívottaknak” programokat.
+// - blocks/: akit letiltottam, nem jelölhet, nem hívhat meg, nem bökhet meg.
 // - admins/: ki admin. Csak a Firebase konzolban lehet beállítani, az appból nem.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,6 +24,23 @@ service cloud.firestore {
       return signedIn() && exists(/databases/$(database)/documents/bans/$(request.auth.uid));
     }
 
+    function isFriend(uid, other) {
+      return exists(/databases/$(database)/documents/friendships/$(uid)/list/$(other));
+    }
+
+    function blockedBy(uid, other) {
+      return exists(/databases/$(database)/documents/blocks/$(uid)/list/$(other));
+    }
+
+    // Láthatja-e a bejelentkezett felhasználó a közös programot.
+    function canSeeEvent(eventId) {
+      let e = get(/databases/$(database)/documents/events/$(eventId)).data;
+      return signedIn() && (e.get('inviteOnly', false) != true
+        || e.ownerUid == request.auth.uid
+        || request.auth.uid in e.get('invitedUids', [])
+        || isAdmin());
+    }
+
     match /admins/{uid} {
       allow get: if signedIn() && request.auth.uid == uid;
       allow list, write: if false;
@@ -34,13 +52,13 @@ service cloud.firestore {
       allow list, write: if isAdmin();
     }
 
-    // A felhasználó saját adatai (napló, szokások, programok…).
+    // A felhasználó saját adatai (naptár, feladatok, célok, csoportok, beállítások).
     match /users/{uid}/{document=**} {
       allow read, write: if realUser() && request.auth.uid == uid && !banned();
       allow delete: if isAdmin();
     }
 
-    // Adatlap az admin felülethez: név, e-mail, utolsó aktivitás, darabszámok (napló tartalma nélkül).
+    // Adatlap az admin felülethez: név, e-mail, utolsó aktivitás, darabszámok (tartalom nélkül).
     match /profiles/{uid} {
       allow get: if isAdmin() || (realUser() && request.auth.uid == uid);
       allow list, delete: if isAdmin();
@@ -71,6 +89,15 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // Jelentés egy felhasználóról vagy programról: bárki (valódi fiókkal) küldhet, csak az admin látja.
+    match /reports/{id} {
+      allow create: if realUser() && !banned()
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['reporterUid', 'userUid', 'eventId', 'reason', 'at'])
+        && request.resource.data.reason is string && request.resource.data.reason.size() <= 500;
+      allow read, delete: if isAdmin();
+    }
+
     // Barátkód → felhasználó. Aki ismeri a kódot, megnézheti; mindenki csak a sajátját hozhatja létre.
     match /codes/{code} {
       allow get: if realUser();
@@ -80,21 +107,42 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['uid']);
     }
 
-    // Névjegy (név, kód, megosztott sorozatok): saját maga és a barátai olvashatják.
+    // Névjegy (név, kód, és amit megoszt: sorozatok, születésnap év nélkül): saját maga és a barátai olvashatják.
+    // Az `invites` mező (hívhatnak-e meg) a meghívó-szabálynál számít.
     match /people/{uid} {
-      allow get: if realUser() && (request.auth.uid == uid
-        || exists(/databases/$(database)/documents/friendships/$(uid)/list/$(request.auth.uid)));
+      allow get: if realUser() && (request.auth.uid == uid || isFriend(uid, request.auth.uid));
       allow write: if realUser() && request.auth.uid == uid && !banned()
-        && request.resource.data.keys().hasOnly(['name', 'code', 'streaks', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'code', 'streaks', 'birthday', 'invites', 'updatedAt'])
         && request.resource.data.name is string && request.resource.data.name.size() <= 40
-        && request.resource.data.streaks is list && request.resource.data.streaks.size() <= 5;
+        && request.resource.data.streaks is list && request.resource.data.streaks.size() <= 5
+        && (request.resource.data.get('birthday', null) == null
+          || (request.resource.data.birthday is string && request.resource.data.birthday.matches('[0-9]{2}-[0-9]{2}')));
       allow delete: if isAdmin();
     }
 
-    // Barátjelölés: a küldő a saját nevében küldhet; a címzett látja és törli.
+    // Elérhetőség: csak foglalt időszakok (cím nélkül) és „mikor szoktam ráérni” sávok.
+    // Csak a `viewers` listában szereplők olvashatják; a listát a tulajdonos állítja.
+    match /availability/{uid} {
+      allow get: if realUser() && (request.auth.uid == uid || request.auth.uid in resource.data.viewers);
+      allow list: if false;
+      allow create, update: if realUser() && request.auth.uid == uid && !banned()
+        && request.resource.data.keys().hasOnly(['manual', 'manualUntil', 'busy', 'windows', 'offset', 'viewers', 'updatedAt'])
+        && request.resource.data.busy is list && request.resource.data.busy.size() <= 400
+        && request.resource.data.windows is list && request.resource.data.windows.size() <= 20
+        && request.resource.data.viewers is list && request.resource.data.viewers.size() <= 1000;
+      allow delete: if (realUser() && request.auth.uid == uid) || isAdmin();
+    }
+
+    // Letiltás: mindenki a saját listáját kezeli.
+    match /blocks/{uid}/list/{other} {
+      allow read, write: if realUser() && request.auth.uid == uid;
+    }
+
+    // Barátjelölés: a küldő a saját nevében küldhet (ha nincs letiltva); a címzett látja és törli.
     match /requests/{to}/items/{from} {
       allow read: if realUser() && request.auth.uid == to;
       allow create, update: if realUser() && request.auth.uid == from && from != to && !banned()
+        && !blockedBy(to, from)
         && request.resource.data.keys().hasOnly(['fromName', 'at'])
         && request.resource.data.fromName is string && request.resource.data.fromName.size() <= 40;
       allow delete: if realUser() && (request.auth.uid == to || request.auth.uid == from);
@@ -110,92 +158,47 @@ service cloud.firestore {
       allow delete: if realUser() && (request.auth.uid == uid || request.auth.uid == friend);
     }
 
-    // Meghívás egy gombnyomással: csak a barátod küldhet.
+    // Meghívás egy gombnyomással: csak barát küldhet, ha a címzett nem tiltotta le és nem kapcsolta ki.
     match /inbox/{uid}/items/{eventId} {
       allow read, delete: if realUser() && request.auth.uid == uid;
       allow create, update: if realUser() && !banned()
         && request.resource.data.fromUid == request.auth.uid
-        && exists(/databases/$(database)/documents/friendships/$(uid)/list/$(request.auth.uid))
+        && isFriend(uid, request.auth.uid)
+        && !blockedBy(uid, request.auth.uid)
+        && (!exists(/databases/$(database)/documents/people/$(uid))
+          || get(/databases/$(database)/documents/people/$(uid)).data.get('invites', true) != false)
         && request.resource.data.keys().hasOnly(['title', 'date', 'fromUid', 'fromName', 'at'])
         && request.resource.data.title is string && request.resource.data.title.size() <= 100;
     }
 
-    // Bump: csak barát küldhet, és csak ha a címzett nem kapcsolta ki / nem némította.
-    match /bumps/{to}/items/{id} {
+    // Bökés: csak barát küldhet, naponta legfeljebb 3-at ugyanannak (az azonosító: küldő_nap_0–2,
+    // és meglévőt nem lehet felülírni), és csak ha a címzett nem kapcsolta ki / nem némította.
+    match /nudges/{to}/items/{id} {
       allow read, delete: if realUser() && request.auth.uid == to;
       allow update: if realUser() && request.auth.uid == to
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seen']);
       allow create: if realUser() && !banned()
         && request.resource.data.fromUid == request.auth.uid
-        && exists(/databases/$(database)/documents/friendships/$(to)/list/$(request.auth.uid))
-        && (!exists(/databases/$(database)/documents/bumpSettings/$(to))
-          || (get(/databases/$(database)/documents/bumpSettings/$(to)).data.get('off', false) != true
-            && !(request.auth.uid in get(/databases/$(database)/documents/bumpSettings/$(to)).data.get('muted', []))))
-        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'text', 'effect', 'sticker', 'image',
-          'audio', 'audioMime', 'eventId', 'eventTitle', 'seen', 'at'])
+        && id.matches(request.auth.uid + '_[0-9]{8}_[0-2]')
+        && isFriend(to, request.auth.uid)
+        && !blockedBy(to, request.auth.uid)
+        && (!exists(/databases/$(database)/documents/nudgeSettings/$(to))
+          || (get(/databases/$(database)/documents/nudgeSettings/$(to)).data.get('off', false) != true
+            && !(request.auth.uid in get(/databases/$(database)/documents/nudgeSettings/$(to)).data.get('muted', []))))
+        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'text', 'emoji', 'eventId', 'eventTitle', 'seen', 'at'])
         && request.resource.data.seen == false
-        && request.resource.data.text is string && request.resource.data.text.size() <= 200
-        && (request.resource.data.image == null || request.resource.data.image.size() <= 650000)
-        && (request.resource.data.audio == null || request.resource.data.audio.size() <= 250000);
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 120
+        && request.resource.data.emoji is string && request.resource.data.emoji.size() <= 16;
     }
 
-    // Bump-beállítások (kikapcsolás, némítás): csak a saját.
-    match /bumpSettings/{uid} {
+    // Bökés-beállítások (kikapcsolás, némítás): csak a saját.
+    match /nudgeSettings/{uid} {
       allow read, write: if realUser() && request.auth.uid == uid;
     }
 
-    // Közösségi ötletek: minden bejelentkezett felhasználó látja; megosztani valódi fiókkal lehet,
-    // módosítani a szerző, törölni a szerző vagy az admin.
-    match /ideas/{id} {
-      allow read: if signedIn();
-      allow create: if realUser() && !banned()
-        && request.resource.data.authorUid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['title', 'text', 'emoji', 'tags', 'authorUid', 'authorName',
-          'placeName', 'city', 'country', 'lat', 'lng', 'createdAt'])
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 60
-        && request.resource.data.text is string && request.resource.data.text.size() <= 300
-        && request.resource.data.tags is list && request.resource.data.tags.size() <= 5
-        && request.resource.data.authorName is string && request.resource.data.authorName.size() <= 40
-        && request.resource.data.createdAt == request.time;
-      allow update: if realUser() && !banned()
-        && resource.data.authorUid == request.auth.uid
-        && request.resource.data.authorUid == request.auth.uid
-        && request.resource.data.title.size() <= 60
-        && request.resource.data.text.size() <= 300;
-      allow delete: if realUser() && (resource.data.authorUid == request.auth.uid || isAdmin());
-
-      // Kedvelés és csillag: mindenki csak a sajátját.
-      match /votes/{uid} {
-        allow write: if realUser() && !banned() && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['ideaId', 'liked', 'rating'])
-          && request.resource.data.ideaId == id
-          && request.resource.data.liked is bool
-          && request.resource.data.rating is int
-          && request.resource.data.rating >= 0 && request.resource.data.rating <= 5;
-        allow delete: if realUser() && (request.auth.uid == uid || isAdmin());
-      }
-
-      // Jelentés: bárki (valódi fiókkal) jelezheti; csak az admin látja.
-      match /reports/{uid} {
-        allow create, update: if realUser() && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['ideaId', 'reason', 'at'])
-          && request.resource.data.ideaId == id
-          && request.resource.data.reason is string && request.resource.data.reason.size() <= 200;
-        allow delete: if isAdmin();
-      }
-    }
-
-    // Összesítéshez: a szavazatokat mindenki, a jelentéseket csak az admin kérdezheti le egyben.
-    match /{path=**}/votes/{uid} {
-      allow read: if signedIn();
-    }
-    match /{path=**}/reports/{uid} {
-      allow read: if isAdmin();
-    }
-
-    // Közös kihívás: csak a tagjai látják; a szervező kezeli, a többiek kiléphetnek.
+    // Közös kihívás és közös cél: csak a tagjai látják; a szervező kezeli, a többiek kiléphetnek.
     match /challenges/{cid} {
       allow read: if realUser() && request.auth.uid in resource.data.members;
       allow create: if realUser() && !banned()
@@ -236,22 +239,35 @@ service cloud.firestore {
       }
     }
 
+    // Közös program. A szervező bármit módosíthat; a résztvevők csak a saját nevüket tehetik fel a
+    // „going” listára vagy vehetik le, és a létszámkorlátot a szabály ellenőrzi.
     match /events/{eventId} {
-      allow get: if signedIn();
+      allow get: if signedIn() && (resource.data.get('inviteOnly', false) != true
+        || resource.data.ownerUid == request.auth.uid
+        || request.auth.uid in resource.data.get('invitedUids', [])
+        || isAdmin());
       allow list: if isAdmin();
       allow create: if signedIn() && !banned()
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.title is string
-        && request.resource.data.title.size() <= 100;
-      allow update: if signedIn() && !banned()
-        && resource.data.ownerUid == request.auth.uid
-        && request.resource.data.ownerUid == request.auth.uid;
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.get('going', []).size() <= 1;
+      allow update: if signedIn() && !banned() && (
+        (resource.data.ownerUid == request.auth.uid && request.resource.data.ownerUid == request.auth.uid)
+        || (canSeeEvent(eventId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['going'])
+          && request.resource.data.going.toSet().difference(resource.data.get('going', []).toSet())
+            .union(resource.data.get('going', []).toSet().difference(request.resource.data.going.toSet()))
+            .hasOnly([request.auth.uid])
+          && (resource.data.get('limit', null) == null
+            || request.resource.data.going.size() <= resource.data.limit
+            || request.resource.data.going.size() < resource.data.get('going', []).size())));
       allow delete: if (signedIn() && resource.data.ownerUid == request.auth.uid) || isAdmin();
 
       // Visszajelzés és szavazat: mindenki csak a sajátját írhatja.
       match /rsvps/{uid} {
-        allow read: if signedIn();
-        allow write: if signedIn() && !banned()
+        allow read: if canSeeEvent(eventId);
+        allow write: if canSeeEvent(eventId) && !banned()
           && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['name', 'status', 'votes', 'updatedAt'])
           && request.resource.data.name is string
@@ -263,33 +279,19 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
 
-      // „Ki mit hoz?”: bárki felírhat tételt; elvállalni csak a saját nevében lehet,
-      // lemondani a sajátját (vagy szervezőként bármelyiket).
-      match /items/{itemId} {
-        allow read: if signedIn();
-        allow create: if signedIn() && !banned()
-          && request.resource.data.addedBy == request.auth.uid
-          && request.resource.data.keys().hasOnly(['title', 'addedBy', 'addedName', 'who', 'whoName', 'at'])
-          && request.resource.data.title is string
-          && request.resource.data.title.size() > 0
-          && request.resource.data.title.size() <= 60
-          && request.resource.data.who == null;
-        allow update: if signedIn() && !banned()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['who', 'whoName'])
-          && (request.resource.data.who == request.auth.uid
-            || (request.resource.data.who == null
-              && (resource.data.who == request.auth.uid
-                || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid)));
-        allow delete: if signedIn()
-          && (resource.data.addedBy == request.auth.uid
-            || get(/databases/$(database)/documents/events/$(eventId)).data.ownerUid == request.auth.uid
-            || isAdmin());
+      // Reakció: mindenki egyet, a sajátját.
+      match /reactions/{uid} {
+        allow read: if canSeeEvent(eventId);
+        allow write: if canSeeEvent(eventId) && !banned() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['emoji'])
+          && request.resource.data.emoji is string && request.resource.data.emoji.size() <= 16;
+        allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
       }
 
-      // Üzenőfal: saját néven lehet írni; törölni a sajátot, szervezőként vagy adminként bármelyiket.
+      // Hozzászólások: saját néven lehet írni; törölni a sajátot, szervezőként vagy adminként bármelyiket.
       match /messages/{messageId} {
-        allow read: if signedIn();
-        allow create: if signedIn() && !banned()
+        allow read: if canSeeEvent(eventId);
+        allow create: if canSeeEvent(eventId) && !banned()
           && request.resource.data.uid == request.auth.uid
           && request.resource.data.keys().hasOnly(['uid', 'name', 'text', 'at'])
           && request.resource.data.text is string

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../admin.dart';
-import '../community.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
@@ -29,12 +28,12 @@ class AdminScreen extends StatelessWidget {
               Tab(text: 'Hibák'),
               Tab(text: 'Visszajelzések'),
               Tab(text: 'Programok'),
-              Tab(text: 'Ötletek'),
+              Tab(text: 'Jelentések'),
             ],
           ),
         ),
         body: const TabBarView(
-          children: [_Overview(), _Users(), _Errors(), _FeedbackList(), _SharedEvents(), _CommunityIdeas()],
+          children: [_Overview(), _Users(), _Errors(), _FeedbackList(), _SharedEvents(), _Reports()],
         ),
       ),
     );
@@ -71,7 +70,12 @@ class _LoaderState<T> extends State<_Loader<T>> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              EmptyState(emoji: '⚠️', text: 'Nem sikerült betölteni.\n${snap.error}', action: 'Újra', onAction: _reload),
+              EmptyState(
+                emoji: '⚠️',
+                text: 'Nem sikerült betölteni.\n${snap.error}',
+                action: 'Újra',
+                onAction: _reload,
+              ),
             ],
           );
         }
@@ -95,36 +99,69 @@ class _Overview extends StatelessWidget {
       builder: (context, s, _) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Row(children: [
-            _Tile('Felhasználó', '${s.total}'),
-            const SizedBox(width: 8),
-            _Tile('Aktív (7 nap)', '${s.active7}'),
-            const SizedBox(width: 8),
-            _Tile('Aktív (30 nap)', '${s.active30}'),
-          ]),
+          Row(
+            children: [
+              _Tile('Felhasználó', '${s.total}'),
+              const SizedBox(width: 8),
+              _Tile('Aktív (7 nap)', '${s.active7}'),
+              const SizedBox(width: 8),
+              _Tile('Aktív (30 nap)', '${s.active30}'),
+            ],
+          ),
           const SizedBox(height: 8),
-          Row(children: [
-            _Tile('Új a héten', '${s.newThisWeek}'),
-            const SizedBox(width: 8),
-            _Tile('Nyitott visszajelzés', '${s.openFeedback}'),
-            const SizedBox(width: 8),
-            _Tile('Hiba (24 óra)', '${s.errors24h}', warn: s.errors24h > 0),
-          ]),
+          Row(
+            children: [
+              _Tile('Új a héten', '${s.newThisWeek}'),
+              const SizedBox(width: 8),
+              _Tile('Nyitott visszajelzés', '${s.openFeedback}'),
+              const SizedBox(width: 8),
+              _Tile('Hiba (24 óra)', '${s.errors24h}', warn: s.errors24h > 0),
+            ],
+          ),
           const SectionTitle('Tartalom összesen'),
           Card(
-            child: Column(children: [
-              ListTile(leading: const IconTile(Icons.menu_book_outlined), title: const Text('Naplóbejegyzés'), trailing: _Num(s.totals['journal'])),
-              ListTile(leading: const IconTile(Icons.task_alt), title: const Text('Cél'), trailing: _Num(s.totals['habits'])),
-              ListTile(leading: const IconTile(Icons.celebration_outlined), title: const Text('Program'), trailing: _Num(s.totals['events'])),
-              ListTile(leading: const IconTile(Icons.link), title: const Text('Megosztott program'), trailing: _Num(s.sharedEvents)),
-            ]),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const IconTile(Icons.checklist),
+                  title: const Text('Feladat'),
+                  trailing: _Num(s.totals['tasks']),
+                ),
+                ListTile(
+                  leading: const IconTile(Icons.task_alt),
+                  title: const Text('Cél'),
+                  trailing: _Num(s.totals['habits']),
+                ),
+                ListTile(
+                  leading: const IconTile(Icons.celebration_outlined),
+                  title: const Text('Naptárbejegyzés'),
+                  trailing: _Num(s.totals['events']),
+                ),
+                ListTile(
+                  leading: const IconTile(Icons.link),
+                  title: const Text('Megosztott program'),
+                  trailing: _Num(s.sharedEvents),
+                ),
+              ],
+            ),
           ),
           const SectionTitle('Platformok'),
           Card(
-            child: Column(children: [
-              for (final e in s.platforms.entries)
-                ListTile(title: Text(e.key == 'web' ? '🌐 Weboldal' : e.key == 'android' ? '🤖 Android' : e.key), trailing: _Num(e.value)),
-            ]),
+            child: Column(
+              children: [
+                for (final e in s.platforms.entries)
+                  ListTile(
+                    title: Text(
+                      e.key == 'web'
+                          ? '🌐 Weboldal'
+                          : e.key == 'android'
+                          ? '🤖 Android'
+                          : e.key,
+                    ),
+                    trailing: _Num(e.value),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -141,17 +178,26 @@ class _Tile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-        child: Card(
-          margin: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(children: [
-              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: warn ? Colors.red.shade400 : null)),
-              Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-            ]),
-          ),
+    child: Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: warn ? Colors.red.shade400 : null),
+            ),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _Num extends StatelessWidget {
@@ -160,7 +206,8 @@ class _Num extends StatelessWidget {
   final int? value;
 
   @override
-  Widget build(BuildContext context) => Text('${value ?? 0}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16));
+  Widget build(BuildContext context) =>
+      Text('${value ?? 0}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16));
 }
 
 class _Users extends StatefulWidget {
@@ -179,12 +226,17 @@ class _UsersState extends State<_Users> {
       load: Admin.instance.users,
       builder: (context, users, reload) {
         final q = _query.toLowerCase();
-        final shown = users.where((u) => q.isEmpty || u.name.toLowerCase().contains(q) || u.email.toLowerCase().contains(q)).toList();
+        final shown = users
+            .where((u) => q.isEmpty || u.name.toLowerCase().contains(q) || u.email.toLowerCase().contains(q))
+            .toList();
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
             TextField(
-              decoration: const InputDecoration(hintText: 'Keresés névre vagy e-mailre', prefixIcon: Icon(Icons.search)),
+              decoration: const InputDecoration(
+                hintText: 'Keresés névre vagy e-mailre',
+                prefixIcon: Icon(Icons.search),
+              ),
               onChanged: (v) => setState(() => _query = v),
             ),
             const SizedBox(height: 8),
@@ -193,8 +245,10 @@ class _UsersState extends State<_Users> {
               Card(
                 child: ListTile(
                   leading: NameAvatar(u.name.isEmpty ? '?' : u.name),
-                  title: Text('${u.name.isEmpty ? '(névtelen)' : u.name}${u.banned ? '  ⛔' : ''}',
-                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  title: Text(
+                    '${u.name.isEmpty ? '(névtelen)' : u.name}${u.banned ? '  ⛔' : ''}',
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                   subtitle: Text('${u.email}\nUtoljára: ${_when(u.lastSeen)} • ${u.platform} ${u.version}'),
                   isThreeLine: true,
                   onTap: () async {
@@ -262,57 +316,66 @@ class _UserDetailState extends State<_UserDetail> {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            child: Column(children: [
-              ListTile(title: const Text('E-mail'), subtitle: Text(u.email)),
-              ListTile(
-                title: const Text('Azonosító (UID)'),
-                subtitle: Text(u.uid),
-                trailing: IconButton(
-                  tooltip: 'Másolás',
-                  icon: const Icon(Icons.copy),
-                  onPressed: () => Clipboard.setData(ClipboardData(text: u.uid)),
+            child: Column(
+              children: [
+                ListTile(title: const Text('E-mail'), subtitle: Text(u.email)),
+                ListTile(
+                  title: const Text('Azonosító (UID)'),
+                  subtitle: Text(u.uid),
+                  trailing: IconButton(
+                    tooltip: 'Másolás',
+                    icon: const Icon(Icons.copy),
+                    onPressed: () => Clipboard.setData(ClipboardData(text: u.uid)),
+                  ),
                 ),
-              ),
-              ListTile(title: const Text('Regisztrált'), subtitle: Text(_when(u.createdAt))),
-              ListTile(title: const Text('Utoljára aktív'), subtitle: Text(_when(u.lastSeen))),
-              ListTile(title: const Text('Eszköz, verzió'), subtitle: Text('${u.platform} • ${u.version}')),
-              ListTile(
-                title: const Text('Adatai'),
-                subtitle: Text('${u.counts['journal'] ?? 0} napló • ${u.counts['habits'] ?? 0} cél • ${u.counts['events'] ?? 0} program'),
-              ),
-            ]),
+                ListTile(title: const Text('Regisztrált'), subtitle: Text(_when(u.createdAt))),
+                ListTile(title: const Text('Utoljára aktív'), subtitle: Text(_when(u.lastSeen))),
+                ListTile(title: const Text('Eszköz, verzió'), subtitle: Text('${u.platform} • ${u.version}')),
+                ListTile(
+                  title: const Text('Adatai'),
+                  subtitle: Text(
+                    '${u.counts['events'] ?? 0} bejegyzés • ${u.counts['tasks'] ?? 0} feladat • ${u.counts['habits'] ?? 0} cél',
+                  ),
+                ),
+              ],
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(8),
-            child: Text('A napló tartalmát adatvédelmi okból az admin sem látja.',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+            child: Text(
+              'A bejegyzések, feladatok tartalmát adatvédelmi okból az admin sem látja.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+            ),
           ),
           const SectionTitle('Kezelés'),
           Card(
-            child: Column(children: [
-              SwitchListTile(
-                secondary: const IconTile(Icons.block),
-                title: const Text('Felfüggesztve'),
-                subtitle: const Text('Nem tudja használni az appot, amíg vissza nem kapcsolod.'),
-                value: _banned,
-                onChanged: _busy
-                    ? null
-                    : (on) => _run(() async {
+            child: Column(
+              children: [
+                SwitchListTile(
+                  secondary: const IconTile(Icons.block),
+                  title: const Text('Felfüggesztve'),
+                  subtitle: const Text('Nem tudja használni az appot, amíg vissza nem kapcsolod.'),
+                  value: _banned,
+                  onChanged: _busy
+                      ? null
+                      : (on) => _run(() async {
                           await Admin.instance.setBanned(u.uid, on);
                           setState(() => _banned = on);
                         }, on ? 'Felfüggesztve' : 'Felfüggesztés feloldva'),
-              ),
-              ListTile(
-                leading: Icon(Icons.delete_forever_outlined, color: Colors.red.shade400),
-                title: Text('Minden adatának törlése', style: TextStyle(color: Colors.red.shade400)),
-                subtitle: const Text('A fiókot a Firebase konzolban (Authentication) lehet törölni.'),
-                enabled: !_busy,
-                onTap: () async {
-                  if (!await _confirm('Törlöd ${u.name} összes adatát?', 'Napló, célok, programok. Nem vonható vissza.')) return;
-                  await _run(() => Admin.instance.deleteUserData(u.uid), 'Adatok törölve');
-                },
-              ),
-            ]),
+                ),
+                ListTile(
+                  leading: Icon(Icons.delete_forever_outlined, color: Colors.red.shade400),
+                  title: Text('Minden adatának törlése', style: TextStyle(color: Colors.red.shade400)),
+                  subtitle: const Text('A fiókot a Firebase konzolban (Authentication) lehet törölni.'),
+                  enabled: !_busy,
+                  onTap: () async {
+                    final ok = await _confirm('Törlöd ${u.name} összes adatát?', 'Naptár, feladatok, célok. Nem vonható vissza.');
+                    if (!ok) return;
+                    await _run(() => Admin.instance.deleteUserData(u.uid), 'Adatok törölve');
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -335,7 +398,10 @@ class _Errors extends StatelessWidget {
         }
         final sorted = groups.entries.toList()..sort((a, b) => b.value.length.compareTo(a.value.length));
         if (sorted.isEmpty) {
-          return ListView(padding: const EdgeInsets.all(16), children: const [EmptyState(emoji: '🎉', text: 'Nincs bejelentett hiba.')]);
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: const [EmptyState(emoji: '🎉', text: 'Nincs bejelentett hiba.')],
+          );
         }
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -343,29 +409,38 @@ class _Errors extends StatelessWidget {
             for (final g in sorted)
               Card(
                 child: ExpansionTile(
-                  title: Text(g.key, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  subtitle: Text('${g.value.length}× • utoljára ${_when(g.value.first.at)} • '
-                      '${{for (final e in g.value) '${e.platform} ${e.version}'}.join(', ')}'),
+                  title: Text(
+                    g.key,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  subtitle: Text(
+                    '${g.value.length}× • utoljára ${_when(g.value.first.at)} • '
+                    '${{for (final e in g.value) '${e.platform} ${e.version}'}.join(', ')}',
+                  ),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   children: [
                     SelectableText(g.value.first.stack, style: const TextStyle(fontFamily: 'monospace', fontSize: 11)),
                     const SizedBox(height: 8),
-                    Row(children: [
-                      TextButton.icon(
-                        onPressed: () => Clipboard.setData(ClipboardData(text: '${g.key}\n\n${g.value.first.stack}')),
-                        icon: const Icon(Icons.copy, size: 18),
-                        label: const Text('Másolás'),
-                      ),
-                      const Spacer(),
-                      TextButton.icon(
-                        onPressed: () async {
-                          await Admin.instance.deleteErrorsLike(g.key);
-                          reload();
-                        },
-                        icon: const Icon(Icons.check, size: 18),
-                        label: const Text('Javítva, törlés'),
-                      ),
-                    ]),
+                    Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => Clipboard.setData(ClipboardData(text: '${g.key}\n\n${g.value.first.stack}')),
+                          icon: const Icon(Icons.copy, size: 18),
+                          label: const Text('Másolás'),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          onPressed: () async {
+                            await Admin.instance.deleteErrorsLike(g.key);
+                            reload();
+                          },
+                          icon: const Icon(Icons.check, size: 18),
+                          label: const Text('Javítva, törlés'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -385,7 +460,10 @@ class _FeedbackList extends StatelessWidget {
       load: Admin.instance.feedback,
       builder: (context, items, reload) {
         if (items.isEmpty) {
-          return ListView(padding: const EdgeInsets.all(16), children: const [EmptyState(emoji: '📭', text: 'Még nincs visszajelzés.')]);
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: const [EmptyState(emoji: '📭', text: 'Még nincs visszajelzés.')],
+          );
         }
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -397,28 +475,33 @@ class _FeedbackList extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${f.done ? '✅ ' : ''}${f.name} • ${f.email}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                      Text(
+                        '${f.done ? '✅ ' : ''}${f.name} • ${f.email}',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
                       Text(_when(f.at), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                       const SizedBox(height: 6),
                       SelectableText(f.text),
-                      Row(children: [
-                        const Spacer(),
-                        TextButton(
-                          onPressed: () async {
-                            await Admin.instance.setFeedbackDone(f.id, !f.done);
-                            reload();
-                          },
-                          child: Text(f.done ? 'Újranyitás' : 'Kész'),
-                        ),
-                        IconButton(
-                          tooltip: 'Törlés',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () async {
-                            await Admin.instance.deleteFeedback(f.id);
-                            reload();
-                          },
-                        ),
-                      ]),
+                      Row(
+                        children: [
+                          const Spacer(),
+                          TextButton(
+                            onPressed: () async {
+                              await Admin.instance.setFeedbackDone(f.id, !f.done);
+                              reload();
+                            },
+                            child: Text(f.done ? 'Újranyitás' : 'Kész'),
+                          ),
+                          IconButton(
+                            tooltip: 'Törlés',
+                            icon: const Icon(Icons.delete_outline),
+                            onPressed: () async {
+                              await Admin.instance.deleteFeedback(f.id);
+                              reload();
+                            },
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -439,7 +522,10 @@ class _SharedEvents extends StatelessWidget {
       load: Admin.instance.sharedEvents,
       builder: (context, events, reload) {
         if (events.isEmpty) {
-          return ListView(padding: const EdgeInsets.all(16), children: const [EmptyState(emoji: '🔗', text: 'Nincs megosztott program.')]);
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: const [EmptyState(emoji: '🔗', text: 'Nincs megosztott program.')],
+          );
         }
         return ListView(
           padding: const EdgeInsets.all(16),
@@ -478,42 +564,42 @@ class _SharedEvents extends StatelessWidget {
   }
 }
 
-/// Közösségi ötletek moderálása: a jelentettek elöl, a jelentések okával.
-class _CommunityIdeas extends StatelessWidget {
-  const _CommunityIdeas();
-
-  static Future<(List<CommunityIdea>, Map<String, List<String>>)> _load() async =>
-      (await Community.instance.latest(), await Community.instance.reports());
+/// Felhasználói jelentések: kiről vagy melyik programról, miért. Innen lehet felfüggeszteni
+/// (a Felhasználók fülön) vagy a programot törölni (a Programok fülön).
+class _Reports extends StatelessWidget {
+  const _Reports();
 
   @override
   Widget build(BuildContext context) {
-    return _Loader<(List<CommunityIdea>, Map<String, List<String>>)>(
-      load: _load,
-      builder: (context, data, reload) {
-        final (ideas, reports) = data;
-        final sorted = [...ideas]..sort((a, b) => (reports[b.id]?.length ?? 0).compareTo(reports[a.id]?.length ?? 0));
-        if (sorted.isEmpty) {
-          return ListView(padding: const EdgeInsets.all(16), children: const [EmptyState(emoji: '💡', text: 'Még nincs közösségi ötlet.')]);
+    return _Loader<List<UserReport>>(
+      load: Admin.instance.reports,
+      builder: (context, reports, reload) {
+        if (reports.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: const [EmptyState(emoji: '🚩', text: 'Nincs jelentés.')],
+          );
         }
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            for (final i in sorted)
+            for (final r in reports)
               Card(
-                color: (reports[i.id]?.isNotEmpty ?? false) ? Colors.red.withValues(alpha: 0.08) : null,
                 child: ListTile(
-                  leading: Text(i.emoji, style: const TextStyle(fontSize: 26)),
-                  title: Text(i.title, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: Text([
-                    '${i.authorName} · ${i.place.label.isEmpty ? 'hely nélkül' : i.place.label}',
-                    if (reports[i.id] != null) '🚩 ${reports[i.id]!.length} jelentés: ${reports[i.id]!.where((r) => r.isNotEmpty).join('; ')}',
-                  ].join('\n')),
-                  isThreeLine: reports[i.id] != null,
+                  leading: const IconTile(Icons.flag_outlined),
+                  title: Text(r.reason.isEmpty ? '(indoklás nélkül)' : r.reason),
+                  subtitle: SelectableText(
+                    [
+                      if (r.userUid != null) 'Felhasználó: ${r.userUid}',
+                      if (r.eventId != null) 'Program: ${r.eventId}',
+                      'Bejelentő: ${r.reporterUid} • ${_when(r.at)}',
+                    ].join('\n'),
+                  ),
                   trailing: IconButton(
-                    tooltip: 'Törlés',
-                    icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
+                    tooltip: 'Kezelve (törlés)',
+                    icon: const Icon(Icons.done),
                     onPressed: () async {
-                      await Community.instance.delete(i.id, asAdmin: true);
+                      await Admin.instance.deleteReport(r.id);
                       reload();
                     },
                   ),

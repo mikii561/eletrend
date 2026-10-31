@@ -39,7 +39,7 @@ const habitPacks = [
   HabitPack('🧘', 'Nyugalom', 'Lassíts le egy kicsit.', [
     HabitSpec('🧘 5 perc meditáció'),
     HabitSpec('🌬️ Légzőgyakorlat'),
-    HabitSpec('🙏 Hála napló'),
+    HabitSpec('🙏 3 dolog, amiért hálás vagyok'),
     HabitSpec('🌳 Idő a szabadban', perWeek: 3),
   ]),
   HabitPack('💸', 'Pénzügyek', 'Rend a pénztárcában.', [

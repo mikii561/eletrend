@@ -7,24 +7,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-import 'admin.dart';
-import 'badges.dart';
-import 'bumps.dart';
 import 'account.dart';
+import 'admin.dart';
 import 'app_navigator.dart';
 import 'firebase_options.dart';
 import 'friends.dart';
-import 'habits_widget.dart';
 import 'notifications.dart';
+import 'nudges.dart';
 import 'screens/auth_gate.dart';
-import 'screens/badges_screen.dart';
-import 'screens/events_screen.dart';
+import 'screens/calendar_screen.dart';
+import 'screens/create_sheet.dart';
 import 'screens/friends_screen.dart';
-import 'screens/habits_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/invite_screen.dart';
-import 'screens/journal_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/today_screen.dart';
+import 'screens/profile_screen.dart';
 import 'store.dart';
 import 'theme.dart';
 import 'widgets/phone_frame.dart';
@@ -47,18 +44,16 @@ Future<void> main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Böngészőben a bejelentkezés kis késéssel töltődik vissza; megvárjuk, hogy ne villanjon fel a regisztráció.
   await FirebaseAuth.instance.authStateChanges().first;
-  runApp(EletrendApp(store: store));
+  runApp(LifeupApp(store: store));
   _openInviteFromLink();
-  // Az app megjelenése után, hogy az engedélykérő ablak az app fölött jelenjen meg.
   unawaited(Notifications.init(store));
-  unawaited(HabitsWidget.init(store));
 }
 
 /// Ha meghívólinkkel nyitották meg a weboldalt (…/eletrend/?e=azonosító), rögtön a meghívás jön.
 void _openInviteFromLink() {
   if (!kIsWeb) return;
   final tap = Uri.base.queryParameters['n'];
-  if (tap != null && RegExp(r'^(weekly|bump:[A-Za-z0-9]{10,40})$').hasMatch(tap)) Notifications.pendingTap = tap;
+  if (tap != null && RegExp(r'^nudge:[A-Za-z0-9_]{10,80}$').hasMatch(tap)) Notifications.pendingTap = tap;
   final id = Uri.base.queryParameters['e'];
   if (id == null || !RegExp(r'^[A-Za-z0-9]{10,40}$').hasMatch(id)) return;
   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -66,8 +61,8 @@ void _openInviteFromLink() {
   });
 }
 
-class EletrendApp extends StatelessWidget {
-  const EletrendApp({super.key, required this.store});
+class LifeupApp extends StatelessWidget {
+  const LifeupApp({super.key, required this.store});
 
   final AppStore store;
 
@@ -95,7 +90,7 @@ class EletrendApp extends StatelessWidget {
       child: ListenableBuilder(
         listenable: store,
         builder: (context, _) => MaterialApp(
-          title: 'Életrend',
+          title: 'LIFEUP',
           navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
           locale: const Locale('hu'),
@@ -115,7 +110,7 @@ class EletrendApp extends StatelessWidget {
   }
 }
 
-/// Alsó navigációs sáv a négy fő képernyővel.
+/// Az alsó menü: Főoldal, Naptár, Létrehozás (kiemelt), Barátok, Profil.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -125,44 +120,9 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   int _index = 0;
-  AppStore? _store;
-  Timer? _badgeCheck;
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final store = StoreScope.of(context);
-    if (store != _store) {
-      _store?.removeListener(_onStoreChange);
-      _store = store..addListener(_onStoreChange);
-      _onStoreChange();
-    }
-  }
-
-  void _onStoreChange() {
-    _badgeCheck?.cancel();
-    _badgeCheck = Timer(const Duration(milliseconds: 800), _checkBadges);
-  }
-
-  /// Új jelvény? Ünnepeljük. (Elsőre a már meglévőket csendben „láttuk”-nak vesszük.)
-  void _checkBadges() {
-    final store = _store;
-    if (store == null || !mounted) return;
-    final earned = earnedBadges(store);
-    final seen = store.seenBadges;
-    if (seen == null) {
-      store.markBadgesSeen(earned);
-      return;
-    }
-    final fresh = [
-      for (final a in achievements)
-        if (earned.contains(a.id) && !seen.contains(a.id)) a,
-    ];
-    if (fresh.isEmpty) return;
-    store.markBadgesSeen(fresh.map((a) => a.id));
-    if (!store.shows(Feature.badges)) return;
-    showBadgeEarned(context, fresh.first, more: fresh.length - 1);
-  }
+  /// A középső helyen a Létrehozás gomb van, nem képernyő.
+  static const _create = 2;
 
   @override
   void initState() {
@@ -172,67 +132,89 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _badgeCheck?.cancel();
-    _store?.removeListener(_onStoreChange);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  /// Ha az app háttérbe kerül (vagy böngészőben másik fülre váltasz), a napló újra zárolódik.
+  /// Visszatéréskor: a máshol történt változások le, a közben jött bökések, az adatlap frissítése.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
     final store = StoreScope.of(context);
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
-      store.lockJournal();
-    } else if (state == AppLifecycleState.resumed) {
-      // Közben a widgeten is kipipálhattál valamit, vagy egy másik eszközön módosítottál.
-      store.reload().then((_) => Account.instance.sync?.refresh()).catchError((Object e) {
-        debugPrint('Frissítés a felhőből később: $e');
-      });
-      Bumps.instance.checkNow().catchError((Object e) => debugPrint('Bumpok később: $e'));
-      final user = Account.instance.user;
-      if (user != null) {
-        Admin.instance
-            .updateProfile(uid: user.uid, email: user.email ?? '', store: store)
-            .catchError((Object e) => debugPrint('Adatlap később: $e'));
-      }
+    Account.instance.sync?.refresh().catchError((Object e) => debugPrint('Frissítés a felhőből később: $e'));
+    Nudges.instance.checkNow().catchError((Object e) => debugPrint('Bökések később: $e'));
+    Friends.instance.refreshCache().catchError((Object e) => debugPrint('Barátok később: $e'));
+    final user = Account.instance.user;
+    if (user != null) {
+      Admin.instance
+          .updateProfile(uid: user.uid, email: user.email ?? '', store: store)
+          .catchError((Object e) => debugPrint('Adatlap később: $e'));
     }
   }
 
-  void _goTo(int i) => setState(() => _index = i);
+  void _select(int i) {
+    if (i == _create) {
+      showCreateSheet(context);
+      return;
+    }
+    setState(() => _index = i);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
-      TodayScreen(onNavigate: _goTo),
-      const EventsScreen(),
-      const HabitsScreen(),
-      const JournalScreen(),
-      const FriendsScreen(),
-    ];
     return Scaffold(
-      body: screens[_index],
+      body: switch (_index) {
+        1 => const CalendarScreen(),
+        3 => const FriendsScreen(),
+        4 => const ProfileScreen(),
+        _ => HomeScreen(onNavigate: _select),
+      },
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: _goTo,
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.wb_sunny_outlined), selectedIcon: Icon(Icons.wb_sunny), label: 'Ma'),
-          NavigationDestination(icon: Icon(Icons.event_outlined), selectedIcon: Icon(Icons.event), label: 'Programok'),
-          NavigationDestination(
-            icon: Icon(Icons.check_circle_outline),
-            selectedIcon: Icon(Icons.check_circle),
-            label: 'Célok',
+        onDestinationSelected: _select,
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Főoldal',
           ),
-          NavigationDestination(icon: Icon(Icons.book_outlined), selectedIcon: Icon(Icons.book), label: 'Napló'),
+          const NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
+            label: 'Naptár',
+          ),
           NavigationDestination(
+            icon: const _CreateButton(),
+            label: 'Létrehozás',
+            tooltip: 'Új bejegyzés, feladat, közös program',
+          ),
+          const NavigationDestination(
             icon: _FriendsTabIcon(selected: false),
             selectedIcon: _FriendsTabIcon(selected: true),
             label: 'Barátok',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profil',
           ),
         ],
       ),
     );
   }
+}
+
+/// A kiemelt, kerek Létrehozás gomb a menü közepén.
+class _CreateButton extends StatelessWidget {
+  const _CreateButton();
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 48,
+    height: 36,
+    decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(14)),
+    child: Icon(Icons.add, color: AppColors.onPrimary, size: 26),
+  );
 }
 
 /// A Barátok fül ikonja; ha barátjelölés vár rád, a számát is mutatja.

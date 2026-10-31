@@ -8,15 +8,27 @@ import 'models.dart';
 
 /// Visszajelzés egy meghívásra.
 enum RsvpStatus {
-  yes('Jövök', '✅'),
-  maybe('Talán', '🤔'),
-  no('Nem jövök', '❌'),
-  none('Még nem jelzett', '⏳');
+  yes('Megyek'),
+  maybe('Talán'),
+  no('Nem megyek'),
+  none('Még nem jelzett');
 
-  const RsvpStatus(this.label, this.emoji);
+  const RsvpStatus(this.label);
 
   final String label;
-  final String emoji;
+}
+
+/// Reakciók egy közös programra (egy ember egyet választhat).
+const reactionEmojis = ['🎉', '❤️', '😂', '👍', '🔥'];
+
+/// Hiba a közös funkcióknál, magyarul.
+class SocialException implements Exception {
+  const SocialException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
 }
 
 /// Egy megosztott program a felhőben (amit a meghívottak is látnak).
@@ -27,12 +39,17 @@ class SharedEvent {
     required this.date,
     required this.ownerUid,
     required this.ownerName,
+    this.durationMin = 120,
+    this.allDay = false,
+    this.category = EventCategory.social,
     this.place = '',
+    this.notes = '',
     this.repeat = Repeat.none,
     this.lat,
     this.lng,
-    this.bgTheme,
-    this.bgImage,
+    this.limit,
+    this.inviteOnly = false,
+    this.going = const [],
     this.pollOptions = const [],
     this.pollClosed = false,
   });
@@ -42,16 +59,21 @@ class SharedEvent {
   final DateTime date;
   final String ownerUid;
   final String ownerName;
+  final int durationMin;
+  final bool allDay;
+  final EventCategory category;
   final String place;
+  final String notes;
   final Repeat repeat;
-
-  /// A helyszín koordinátái (az időjáráshoz), ha a szervező térképen választotta.
   final double? lat;
   final double? lng;
 
-  /// A szervező által választott háttér.
-  final String? bgTheme;
-  final String? bgImage;
+  /// Létszámkorlát (null = nincs); a [going] lista hosszát a szabályok ellenőrzik.
+  final int? limit;
+  final bool inviteOnly;
+
+  /// Akik jönnek (a létszámkorláthoz).
+  final List<String> going;
 
   /// Az időpont-szavazás lehetőségei (üres, ha nincs szavazás).
   final List<DateTime> pollOptions;
@@ -59,7 +81,9 @@ class SharedEvent {
   /// A szervező már kiválasztotta a végleges időpontot.
   final bool pollClosed;
 
+  DateTime get end => date.add(Duration(minutes: durationMin));
   bool get pollOpen => pollOptions.length >= 2 && !pollClosed;
+  bool get full => limit != null && going.length >= limit!;
 
   factory SharedEvent.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -69,16 +93,37 @@ class SharedEvent {
       date: DateTime.parse(d['date'] as String),
       ownerUid: d['ownerUid'] as String? ?? '',
       ownerName: d['ownerName'] as String? ?? '',
+      durationMin: (d['durationMin'] as num?)?.toInt() ?? 120,
+      allDay: d['allDay'] as bool? ?? false,
+      category: EventCategory.values.asNameMap()[d['category']] ?? EventCategory.social,
       place: d['place'] as String? ?? '',
+      notes: d['notes'] as String? ?? '',
       lat: (d['lat'] as num?)?.toDouble(),
       lng: (d['lng'] as num?)?.toDouble(),
-      bgTheme: d['bgTheme'] as String?,
-      bgImage: d['bgImage'] as String?,
       repeat: Repeat.values.asNameMap()[d['repeat']] ?? Repeat.none,
+      limit: (d['limit'] as num?)?.toInt(),
+      inviteOnly: d['inviteOnly'] as bool? ?? false,
+      going: List<String>.from(d['going'] as List? ?? []),
       pollOptions: [for (final o in d['pollOptions'] as List? ?? []) DateTime.parse(o as String)],
       pollClosed: d['pollClosed'] as bool? ?? false,
     );
   }
+
+  /// A program a saját naptáramba (ha elfogadom a meghívást).
+  Event toEvent() => Event(
+    id: 'inv-$id',
+    title: title,
+    start: date,
+    durationMin: durationMin,
+    allDay: allDay,
+    category: EventCategory.shared,
+    place: place,
+    lat: lat,
+    lng: lng,
+    notes: notes,
+    repeat: repeat,
+    shareId: id,
+  );
 }
 
 class Rsvp {
@@ -125,43 +170,20 @@ class ChatMessage {
   }
 }
 
-/// Egy tétel a „Ki mit hoz?” listán.
-class BringItem {
-  const BringItem({required this.id, required this.title, required this.addedBy, this.who, this.whoName});
-
-  final String id;
-  final String title;
-  final String addedBy;
-
-  /// Aki elvállalta (null, ha még senki).
-  final String? who;
-  final String? whoName;
-
-  factory BringItem.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final d = doc.data()!;
-    return BringItem(
-      id: doc.id,
-      title: d['title'] as String? ?? '',
-      addedBy: d['addedBy'] as String? ?? '',
-      who: d['who'] as String?,
-      whoName: d['whoName'] as String?,
-    );
-  }
-}
-
 /// Melyik időpont a legjobb: a legtöbben jók rá, egyenlőségnél a korábbi.
 DateTime? bestOption(List<DateTime> options, Iterable<Rsvp> rsvps) {
   if (options.isEmpty) return null;
   int votes(DateTime o) => rsvps.where((r) => r.votes.contains(o.toIso8601String())).length;
-  final sorted = [...options]..sort((a, b) {
+  final sorted = [...options]
+    ..sort((a, b) {
       final byVotes = votes(b).compareTo(votes(a));
       return byVotes != 0 ? byVotes : a.compareTo(b);
     });
   return votes(sorted.first) == 0 ? null : sorted.first;
 }
 
-/// A közös funkciók (meghívás, visszajelzés, szavazás, üzenőfal) a Firebase-en keresztül.
-/// Csak akkor kapcsolódik, amikor először kell, így az app internet nélkül is működik.
+/// Közös programok (meghívás, visszajelzés, létszám, szavazás, hozzászólások, reakciók) a Firebase-en.
+/// Csak akkor kapcsolódik, amikor először kell.
 class Social {
   Social({this._db, this._auth});
 
@@ -180,11 +202,11 @@ class Social {
 
   String linkFor(String eventId) => '$baseUrl?e=$eventId';
 
-  /// Firebase indítása és névtelen bejelentkezés (a barátoknak nem kell regisztrálniuk).
+  /// Firebase indítása és (ha a meghívólinket bejelentkezés nélkül nyitották meg) névtelen bejelentkezés.
   Future<void> ready() => _ready ??= _connect().catchError((Object e) {
-        _ready = null; // legközelebb újrapróbáljuk
-        throw e;
-      });
+    _ready = null; // legközelebb újrapróbáljuk
+    throw e;
+  });
 
   Future<void> _connect() async {
     if (_db == null) {
@@ -198,23 +220,31 @@ class Social {
   DocumentReference<Map<String, dynamic>> _event(String id) => _firestore.collection('events').doc(id);
 
   /// Kiteszi (vagy frissíti) a programot, és visszaadja a megosztási azonosítóját.
+  /// A szervező automatikusan „Megyek”.
   Future<String> publish(Event e, {required String ownerName}) async {
     await ready();
     final ref = e.shareId == null ? _firestore.collection('events').doc() : _event(e.shareId!);
+    final first = e.shareId == null;
     await ref.set({
       'title': e.title,
-      'date': e.date.toIso8601String(),
+      'date': e.start.toIso8601String(),
+      'durationMin': e.durationMin,
+      'allDay': e.allDay,
+      'category': e.category.name,
       'place': e.place,
+      'notes': e.notes,
       'lat': e.lat,
       'lng': e.lng,
       'repeat': e.repeat.name,
-      'bgTheme': e.bgTheme,
-      'bgImage': e.bgImage,
+      'limit': e.limit,
+      'inviteOnly': e.inviteOnly,
       'ownerUid': uid,
       'ownerName': ownerName,
+      if (first) 'going': [uid],
+      if (first) 'invitedUids': <String>[],
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
-    if (e.shareId == null) await respond(ref.id, name: ownerName, status: RsvpStatus.yes);
+    if (first) await respond(ref.id, name: ownerName, status: RsvpStatus.yes);
     return ref.id;
   }
 
@@ -223,7 +253,13 @@ class Social {
     await _event(id).delete();
   }
 
-  /// Időpont-szavazás indítása 2–3 lehetőséggel (vagy lezárása üres listával).
+  /// A meghívott barátok felkerülnek a listára (csak meghívottaknak szóló programot ők láthatnak).
+  Future<void> addInvited(String id, List<String> uids) async {
+    await ready();
+    await _event(id).update({'invitedUids': FieldValue.arrayUnion(uids)});
+  }
+
+  /// Időpont-szavazás indítása 2–3 lehetőséggel.
   Future<void> setPoll(String id, List<DateTime> options) async {
     await ready();
     await _event(id).update({
@@ -243,16 +279,37 @@ class Social {
     yield* _event(id).snapshots().map((s) => s.exists ? SharedEvent.fromDoc(s) : null);
   }
 
+  Future<SharedEvent?> fetchEvent(String id) async {
+    await ready();
+    final s = await _event(id).get();
+    return s.exists ? SharedEvent.fromDoc(s) : null;
+  }
+
   Stream<List<Rsvp>> watchRsvps(String id) async* {
     await ready();
     yield* _event(id).collection('rsvps').snapshots().map((q) => [for (final d in q.docs) Rsvp.fromDoc(d)]);
   }
 
+  /// Visszajelzés (és/vagy szavazat). „Megyek”-nél előbb a létszámlistára kerülsz; ha betelt,
+  /// a szabály elutasítja, és [SocialException]-t kapsz.
   Future<void> respond(String id, {required String name, RsvpStatus? status, Set<String>? votes}) async {
     await ready();
-    final ref = _event(id).collection('rsvps').doc(uid);
+    final me = uid!;
+    final ref = _event(id).collection('rsvps').doc(me);
     final current = await ref.get();
     final old = current.exists ? Rsvp.fromDoc(current) : null;
+    if (status != null && status != old?.status) {
+      try {
+        await _event(id).update({
+          'going': status == RsvpStatus.yes ? FieldValue.arrayUnion([me]) : FieldValue.arrayRemove([me]),
+        });
+      } on FirebaseException catch (e) {
+        if (e.code == 'permission-denied' && status == RsvpStatus.yes) {
+          throw const SocialException('Betelt a létszám, most nem tudsz jelentkezni.');
+        }
+        rethrow;
+      }
+    }
     await ref.set({
       'name': name,
       'status': (status ?? old?.status ?? RsvpStatus.none).name,
@@ -260,6 +317,8 @@ class Social {
       'updatedAt': FieldValue.serverTimestamp(),
     });
   }
+
+  // Hozzászólások
 
   Stream<List<ChatMessage>> watchMessages(String id) async* {
     await ready();
@@ -273,47 +332,40 @@ class Social {
 
   Future<void> send(String id, {required String name, required String text}) async {
     await ready();
+    final clean = text.trim();
     await _event(id).collection('messages').add({
       'uid': uid,
       'name': name,
-      'text': text.trim(),
+      'text': clean.length > 500 ? clean.substring(0, 500) : clean,
       'at': FieldValue.serverTimestamp(),
     });
-  }
-
-  // „Ki mit hoz?”
-
-  Stream<List<BringItem>> watchItems(String id) async* {
-    await ready();
-    yield* _event(id).collection('items').orderBy('at').snapshots().map((q) => [for (final d in q.docs) BringItem.fromDoc(d)]);
-  }
-
-  Future<void> addItem(String id, {required String title, required String name}) async {
-    await ready();
-    await _event(id).collection('items').add({
-      'title': title.trim().length > 60 ? title.trim().substring(0, 60) : title.trim(),
-      'addedBy': uid,
-      'addedName': name,
-      'who': null,
-      'whoName': null,
-      'at': FieldValue.serverTimestamp(),
-    });
-  }
-
-  /// Elvállalom (név megadásával), vagy null névvel lemondom.
-  Future<void> claimItem(String id, String itemId, {String? name}) async {
-    await ready();
-    await _event(id).collection('items').doc(itemId).update({'who': name == null ? null : uid, 'whoName': name});
-  }
-
-  Future<void> deleteItem(String id, String itemId) async {
-    await ready();
-    await _event(id).collection('items').doc(itemId).delete();
   }
 
   Future<void> deleteMessage(String id, String messageId) async {
     await ready();
     await _event(id).collection('messages').doc(messageId).delete();
+  }
+
+  // Reakciók
+
+  /// Emoji → kik reagáltak vele.
+  Stream<Map<String, List<String>>> watchReactions(String id) async* {
+    await ready();
+    yield* _event(id).collection('reactions').snapshots().map((q) {
+      final out = <String, List<String>>{};
+      for (final d in q.docs) {
+        final e = d.data()['emoji'] as String?;
+        if (e != null) out.putIfAbsent(e, () => []).add(d.id);
+      }
+      return out;
+    });
+  }
+
+  /// Reakció beállítása vagy (null-lal) visszavonása.
+  Future<void> react(String id, String? emoji) async {
+    await ready();
+    final ref = _event(id).collection('reactions').doc(uid);
+    emoji == null ? await ref.delete() : await ref.set({'emoji': emoji});
   }
 
   @visibleForTesting

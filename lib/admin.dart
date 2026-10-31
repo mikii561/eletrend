@@ -11,7 +11,7 @@ const appVersion = '1.0.0';
 String get platformName => kIsWeb ? 'web' : defaultTargetPlatform.name;
 
 /// Egy felhasználó adatlapja az adminnak: ki ő, mikor volt aktív, mennyi adata van.
-/// A napló tartalmát szándékosan nem tartalmazza.
+/// A bejegyzések, feladatok tartalmát szándékosan nem tartalmazza, csak darabszámokat.
 class UserProfile {
   const UserProfile({
     required this.uid,
@@ -33,7 +33,7 @@ class UserProfile {
   final String platform;
   final String version;
 
-  /// Hány naplóbejegyzése, célja, programja van.
+  /// Hány bejegyzése, feladata, célja van.
   final Map<String, int> counts;
   final bool banned;
 
@@ -54,7 +54,15 @@ class UserProfile {
 }
 
 class ErrorReport {
-  const ErrorReport({required this.id, required this.message, this.stack = '', this.uid, this.platform = '', this.version = '', this.at});
+  const ErrorReport({
+    required this.id,
+    required this.message,
+    this.stack = '',
+    this.uid,
+    this.platform = '',
+    this.version = '',
+    this.at,
+  });
 
   final String id;
   final String message;
@@ -79,7 +87,15 @@ class ErrorReport {
 }
 
 class UserFeedback {
-  const UserFeedback({required this.id, required this.text, this.name = '', this.email = '', this.uid, this.done = false, this.at});
+  const UserFeedback({
+    required this.id,
+    required this.text,
+    this.name = '',
+    this.email = '',
+    this.uid,
+    this.done = false,
+    this.at,
+  });
 
   final String id;
   final String text;
@@ -103,18 +119,59 @@ class UserFeedback {
   }
 }
 
+/// Egy jelentés: ki, kit/mit, miért.
+class UserReport {
+  const UserReport({
+    required this.id,
+    required this.reporterUid,
+    this.userUid,
+    this.eventId,
+    required this.reason,
+    this.at,
+  });
+
+  final String id;
+  final String reporterUid;
+  final String? userUid;
+  final String? eventId;
+  final String reason;
+  final DateTime? at;
+
+  factory UserReport.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data()!;
+    return UserReport(
+      id: doc.id,
+      reporterUid: d['reporterUid'] as String? ?? '',
+      userUid: d['userUid'] as String?,
+      eventId: d['eventId'] as String?,
+      reason: d['reason'] as String? ?? '',
+      at: (d['at'] as Timestamp?)?.toDate(),
+    );
+  }
+}
+
 /// Összesítés az áttekintéshez.
 class AdminStats {
-  AdminStats(List<UserProfile> users, {required this.sharedEvents, required this.openFeedback, required this.errors24h, DateTime? now})
-      : total = users.length,
-        active7 = users.where((u) => u.lastSeen != null && (now ?? DateTime.now()).difference(u.lastSeen!).inDays < 7).length,
-        active30 = users.where((u) => u.lastSeen != null && (now ?? DateTime.now()).difference(u.lastSeen!).inDays < 30).length,
-        newThisWeek = users.where((u) => u.createdAt != null && (now ?? DateTime.now()).difference(u.createdAt!).inDays < 7).length,
-        platforms = _countBy(users.map((u) => u.platform.isEmpty ? '?' : u.platform)),
-        totals = {
-          for (final k in ['journal', 'habits', 'events'])
-            k: users.fold(0, (acc, u) => acc + (u.counts[k] ?? 0)),
-        };
+  AdminStats(
+    List<UserProfile> users, {
+    required this.sharedEvents,
+    required this.openFeedback,
+    required this.errors24h,
+    DateTime? now,
+  }) : total = users.length,
+       active7 = users
+           .where((u) => u.lastSeen != null && (now ?? DateTime.now()).difference(u.lastSeen!).inDays < 7)
+           .length,
+       active30 = users
+           .where((u) => u.lastSeen != null && (now ?? DateTime.now()).difference(u.lastSeen!).inDays < 30)
+           .length,
+       newThisWeek = users
+           .where((u) => u.createdAt != null && (now ?? DateTime.now()).difference(u.createdAt!).inDays < 7)
+           .length,
+       platforms = _countBy(users.map((u) => u.platform.isEmpty ? '?' : u.platform)),
+       totals = {
+         for (final k in ['events', 'tasks', 'habits']) k: users.fold(0, (acc, u) => acc + (u.counts[k] ?? 0)),
+       };
 
   final int total;
   final int active7;
@@ -182,7 +239,7 @@ class Admin {
       'lastSeen': FieldValue.serverTimestamp(),
       'platform': platformName,
       'version': appVersion,
-      'counts': {'journal': store.journal.length, 'habits': store.habits.length, 'events': store.events.length},
+      'counts': {'events': store.events.length, 'tasks': store.tasks.length, 'habits': store.habits.length},
     }, SetOptions(merge: true));
   }
 
@@ -248,7 +305,9 @@ class Admin {
   /// Megosztott programok (moderáláshoz).
   Future<List<Map<String, dynamic>>> sharedEvents() async {
     final q = await _db.collection('events').limit(300).get();
-    return [for (final d in q.docs) {...d.data(), 'id': d.id}];
+    return [
+      for (final d in q.docs) {...d.data(), 'id': d.id},
+    ];
   }
 
   Future<AdminStats> stats() async {
@@ -267,7 +326,7 @@ class Admin {
 
   /// Egy felhasználó összes felhőbeli adatának törlése (a fiókját a Firebase konzolban lehet törölni).
   Future<void> deleteUserData(String uid) async {
-    for (final kind in ['events', 'habits', 'journal', 'moodTags', 'moodFaces', 'meta']) {
+    for (final kind in ['events', 'tasks', 'habits', 'groups', 'journal', 'moodTags', 'moodFaces', 'meta', 'push']) {
       final q = await _db.collection('users').doc(uid).collection(kind).get();
       for (var i = 0; i < q.docs.length; i += 400) {
         final batch = _db.batch();
@@ -292,6 +351,14 @@ class Admin {
     await batch.commit();
   }
 
+  /// Felhasználói jelentések (felhasználóról vagy közös programról), a legújabb elöl.
+  Future<List<UserReport>> reports() async {
+    final q = await _db.collection('reports').orderBy('at', descending: true).limit(200).get();
+    return [for (final d in q.docs) UserReport.fromDoc(d)];
+  }
+
+  Future<void> deleteReport(String id) => _db.collection('reports').doc(id).delete();
+
   Future<void> setFeedbackDone(String id, bool done) => _db.collection('feedback').doc(id).update({'done': done});
 
   Future<void> deleteFeedback(String id) => _db.collection('feedback').doc(id).delete();
@@ -299,7 +366,7 @@ class Admin {
   /// Egy megosztott program és az üzenőfala törlése (moderálás).
   Future<void> deleteSharedEvent(String id) async {
     final ref = _db.collection('events').doc(id);
-    for (final sub in ['messages', 'rsvps', 'items']) {
+    for (final sub in ['messages', 'rsvps', 'reactions']) {
       final q = await ref.collection(sub).get();
       final batch = _db.batch();
       for (final d in q.docs) {

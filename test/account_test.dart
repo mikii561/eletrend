@@ -32,17 +32,20 @@ void main() {
     // 1. eszköz: már van adat, most regisztrál
     final phone = await freshDevice();
     phone.addHabit('Séta');
-    phone.saveEntry(JournalEntry(id: 'j1', date: DateTime(2026, 10, 27), mood: 5, gratitude: 'napsütés')
-      ..moodImage = 'AAEC');
-    phone.saveEvent(Event(id: 'e1', title: 'Foci', date: DateTime(2026, 10, 29, 18), repeat: Repeat.weekly));
+    phone.saveTask(TaskItem(id: 't1', title: 'Számla befizetése', due: DateTime(2026, 10, 27)));
+    phone.saveEvent(Event(id: 'e1', title: 'Foci', start: DateTime(2026, 10, 29, 18), repeat: Repeat.weekly));
+    phone.saveGroup(FriendGroup(id: 'g1', name: 'Foci csapat', members: ['x']));
     phone.setMyName('Gabi');
-    final account = Account(auth: MockFirebaseAuth(mockUser: user), db: db);
+    final account = Account(
+      auth: MockFirebaseAuth(mockUser: user),
+      db: db,
+    );
     final u = await account.register(name: 'Gabi', email: 'gabi@pelda.hu', password: 'titok123');
     final phoneSync = CloudSync(store: phone, uid: u.uid, db: db);
     await phoneSync.start();
     expect(await count(db, u.uid, 'habits'), 1);
-    expect(await count(db, u.uid, 'journal'), 1);
-    expect(await count(db, u.uid, 'moodTags'), defaultMoodTags.length);
+    expect(await count(db, u.uid, 'tasks'), 1);
+    expect(await count(db, u.uid, 'groups'), 1);
 
     // Módosítás és törlés is felkerül, de csak ami változott
     phone.addHabit('Olvasás');
@@ -55,18 +58,17 @@ void main() {
     final web = await freshDevice();
     await CloudSync(store: web, uid: u.uid, db: db).start();
     expect(web.habits.map((h) => h.name), ['Séta', 'Olvasás']);
-    expect(web.entryFor(DateTime(2026, 10, 27))!.gratitude, 'napsütés');
-    expect(web.entryFor(DateTime(2026, 10, 27))!.moodImage, 'AAEC');
+    expect(web.tasks.single.title, 'Számla befizetése');
+    expect(web.groups.single.name, 'Foci csapat');
     expect(web.myName, 'Gabi');
     expect(web.events, isEmpty);
-    expect(web.moodTags.first.name, 'boldog'); // a sorrend is megmarad
 
     // A weboldalon írt bejegyzés a telefonon is megjelenik visszatéréskor
     final webSync = CloudSync(store: web, uid: u.uid, db: db);
-    web.saveEntry(JournalEntry(id: 'j2', date: DateTime(2026, 10, 28), mood: 4));
+    web.toggleTask(web.tasks.single);
     await webSync.push();
     await phoneSync.refresh();
-    expect(phone.entryFor(DateTime(2026, 10, 28))?.mood, 4);
+    expect(phone.tasks.single.done, isTrue);
   });
 
   test('ismert eszköz offline módosítása is felkerül; kijelentkezéskor minden lekerül', () async {
@@ -94,13 +96,18 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final db = FakeFirebaseFirestore();
-    Account.instance = Account(auth: MockFirebaseAuth(mockUser: MockUser(uid: 'u9', email: 'anna@pelda.hu')), db: db);
+    Account.instance = Account(
+      auth: MockFirebaseAuth(
+        mockUser: MockUser(uid: 'u9', email: 'anna@pelda.hu'),
+      ),
+      db: db,
+    );
     Admin.instance = Admin(db: db);
     Friends.instance = Friends(db: db);
     Challenges.instance = Challenges(db: db);
     final store = (await tester.runAsync(() => freshDevice()))!;
 
-    await tester.pumpWidget(EletrendApp(store: store));
+    await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
     expect(find.text('Fiók létrehozása'), findsOneWidget);
 
@@ -115,7 +122,7 @@ void main() {
     await tester.tap(find.text('Fiók létrehozása'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Üdv az Életrendben!'), findsOneWidget); // új, üres fiók: a bemutató jön
+    expect(find.text('Üdv a LIFEUP-ban!'), findsOneWidget); // új, üres fiók: a bevezető jön
     expect(store.myName, 'Anna');
     final uid = Account.instance.user!.uid;
     expect((await tester.runAsync(() => count(db, uid, 'meta')))!, 1);
@@ -127,7 +134,10 @@ void main() {
   test('Google-belépés: új fiók, és névtelen vendégből is fiók lesz', () async {
     final db = FakeFirebaseFirestore();
     final google = MockUser(uid: 'g1', email: 'anna@gmail.com', displayName: 'Anna');
-    final account = Account(auth: MockFirebaseAuth(mockUser: google), db: db);
+    final account = Account(
+      auth: MockFirebaseAuth(mockUser: google),
+      db: db,
+    );
     final u = await account.signInWithGoogle();
     expect(u.email, 'anna@gmail.com');
     expect(account.user, isNotNull);

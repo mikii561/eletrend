@@ -1,8 +1,8 @@
 {
     "id": "./",
-    "name": "Életrend",
-    "short_name": "Életrend",
-    "description": "Programok barátokkal, célkövető, hangulat- és hálanapló.",
+    "name": "LIFEUP",
+    "short_name": "LIFEUP",
+    "description": "Az életed. Az embereid. Az időd. Naptár, teendők, célok és közös programok a barátaiddal.",
     "lang": "hu",
     "start_url": "./",
     "scope": "./",

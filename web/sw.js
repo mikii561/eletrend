@@ -1,9 +1,9 @@
-// Az Életrend service workere: offline működés (gyorsítótár) és push értesítések fogadása.
+// A LIFEUP service workere: offline működés (gyorsítótár) és push értesítések fogadása.
 //
 // Gyorsítótár: „előbb a hálózat”. Interneten mindig a friss változat jön, közben eltesszük;
 // internet nélkül az eltett változatból indul az app. Így frissítés után sem ragad be régi verzió.
 
-const CACHE = 'eletrend-v1';
+const CACHE = 'lifeup-v2';
 
 // Csak az app saját fájljait és a futtatáshoz kellő Google-fájlokat (CanvasKit, Firebase, betűk) tesszük el.
 // A Firestore és a bejelentkezés kérései sosem kerülnek a gyorsítótárba.

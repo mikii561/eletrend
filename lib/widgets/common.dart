@@ -23,14 +23,19 @@ class SectionTitle extends StatelessWidget {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Flexible(
-                  child: Text(title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+                  ),
                 ),
                 if (trailing != null) ...[
                   const SizedBox(width: 8),
-                  Text(trailing!, style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w500, fontSize: 14)),
+                  Text(
+                    trailing!,
+                    style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w500, fontSize: 14),
+                  ),
                 ],
               ],
             ),
@@ -66,7 +71,11 @@ class EmptyState extends StatelessWidget {
               child: Text(emoji, style: const TextStyle(fontSize: 26)),
             ),
             const SizedBox(height: 12),
-            Text(text, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textMuted),
+            ),
             if (action != null) ...[
               const SizedBox(height: 12),
               FilledButton.tonal(onPressed: onAction, child: Text(action!)),
@@ -99,9 +108,17 @@ class DateBadge extends StatelessWidget {
         children: [
           Text(
             DateFormat.MMM('hu').format(date).replaceAll('.', '').toUpperCase(),
-            style: TextStyle(color: AppColors.primary, fontSize: size * 0.18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
+            style: TextStyle(
+              color: AppColors.primary,
+              fontSize: size * 0.18,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5,
+            ),
           ),
-          Text('${date.day}', style: TextStyle(color: AppColors.text, fontSize: size * 0.38, fontWeight: FontWeight.w700, height: 1.1)),
+          Text(
+            '${date.day}',
+            style: TextStyle(color: AppColors.text, fontSize: size * 0.38, fontWeight: FontWeight.w700, height: 1.1),
+          ),
         ],
       ),
     );
@@ -116,8 +133,12 @@ class NameAvatar extends StatelessWidget {
   final double radius;
 
   static const _colors = [
-    Color(0xFF590907), Color(0xFF6B6E5D), Color(0xFF8C5A3C),
-    Color(0xFF7A4E6E), Color(0xFF3F5E5A), Color(0xFFA0672A),
+    Color(0xFF590907),
+    Color(0xFF6B6E5D),
+    Color(0xFF8C5A3C),
+    Color(0xFF7A4E6E),
+    Color(0xFF3F5E5A),
+    Color(0xFFA0672A),
   ];
 
   @override
@@ -162,7 +183,11 @@ class AvatarStack extends StatelessWidget {
           if (extra > 0)
             Positioned(
               left: shown.length * 20.0,
-              child: CircleAvatar(radius: 16, backgroundColor: AppColors.card, child: Text('+$extra', style: const TextStyle(fontSize: 11))),
+              child: CircleAvatar(
+                radius: 16,
+                backgroundColor: AppColors.card,
+                child: Text('+$extra', style: const TextStyle(fontSize: 11)),
+              ),
             ),
         ],
       ),
@@ -216,8 +241,149 @@ class IconTile extends StatelessWidget {
     return Container(
       width: 36,
       height: 36,
-      decoration: BoxDecoration(color: c.withValues(alpha: AppColors.dark ? 0.18 : 0.09), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: AppColors.dark ? 0.18 : 0.09),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Icon(icon, size: 20, color: c),
     );
   }
+}
+
+/// Kis, színes címke (pl. „Legjobb”, „Közös”, „Lejárt”).
+class Pill extends StatelessWidget {
+  const Pill(this.text, {super.key, this.color, this.icon});
+
+  final String text;
+  final Color? color;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? AppColors.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: AppColors.dark ? 0.22 : 0.10),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[Icon(icon, size: 13, color: c), const SizedBox(width: 3)],
+          Text(
+            text,
+            style: TextStyle(color: c, fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Megerősítő ablak („Biztosan törlöd?”). Igazat ad, ha a felhasználó megerősítette.
+Future<bool> confirm(
+  BuildContext context, {
+  required String title,
+  String? text,
+  String action = 'Igen',
+  bool danger = false,
+}) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: text == null ? null : Text(text),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Mégse')),
+        FilledButton(
+          style: danger
+              ? FilledButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white)
+              : null,
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(action),
+        ),
+      ],
+    ),
+  );
+  return ok == true;
+}
+
+/// Betöltés közben.
+class LoadingState extends StatelessWidget {
+  const LoadingState({super.key, this.text});
+
+  final String? text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3)),
+        if (text != null) ...[const SizedBox(height: 12), Text(text!, style: TextStyle(color: AppColors.textMuted))],
+      ],
+    ),
+  );
+}
+
+/// Hiba (pl. nincs internet), opcionális újrapróbálással.
+class ErrorState extends StatelessWidget {
+  const ErrorState({super.key, required this.text, this.onRetry});
+
+  final String text;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_outlined, color: AppColors.textMuted),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(text, style: TextStyle(color: AppColors.textMuted)),
+          ),
+          if (onRetry != null) TextButton(onPressed: onRetry, child: const Text('Újra')),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Kategória színes jelölője (kis kör vagy függőleges csík).
+class CategoryDot extends StatelessWidget {
+  const CategoryDot(this.color, {super.key, this.size = 10});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+  );
+}
+
+/// Egy beállítás-sor ikonnal (Profil és aloldalai).
+class SettingsTile extends StatelessWidget {
+  const SettingsTile({super.key, required this.icon, required this.title, this.subtitle, this.onTap, this.trailing});
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback? onTap;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: IconTile(icon),
+    title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+    subtitle: subtitle == null ? null : Text(subtitle!),
+    trailing: trailing ?? (onTap == null ? null : const Icon(Icons.chevron_right)),
+    onTap: onTap,
+  );
 }

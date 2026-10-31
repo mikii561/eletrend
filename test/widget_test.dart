@@ -1,11 +1,13 @@
 import 'package:eletrend/account.dart';
+import 'package:eletrend/availability_service.dart';
 import 'package:eletrend/challenges.dart';
 import 'package:eletrend/friends.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
-import 'package:eletrend/screens/today_screen.dart';
+import 'package:eletrend/nudges.dart';
+import 'package:eletrend/screens/calendar_screen.dart';
 import 'package:eletrend/store.dart';
-import 'package:eletrend/theme.dart';
+import 'package:eletrend/widgets/goal_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -13,151 +15,182 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'helpers.dart';
 
+/// Egy már bevezetőn átesett felhasználó.
+Future<AppStore> readyStore() async {
+  SharedPreferences.resetStatic();
+  SharedPreferences.setMockInitialValues({});
+  final store = await AppStore.load();
+  store.finishOnboarding(name: 'Gabi');
+  return store;
+}
+
+void stopServices() {
+  Account.instance.sync?.stop();
+  Friends.instance.stop();
+  Challenges.instance.stop();
+  Nudges.instance.stop();
+  AvailabilityService.instance.stop();
+}
+
+void phone(WidgetTester tester) {
+  tester.view.physicalSize = const Size(400, 860);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
+
 void main() {
   setUp(signInFakeAccount);
-
   setUpAll(() => initializeDateFormatting('hu'));
 
-  test('sorozat számolása tegnaptól, ha ma még nincs kész', () {
-    final now = DateTime(2026, 10, 27);
-    final h = Habit(id: '1', name: 'Víz', doneDays: {'2026-10-25', '2026-10-26'});
-    expect(h.streak(now), 2);
-    h.doneDays.add('2026-10-27');
-    expect(h.streak(now), 3);
-  });
-
-  test('emlékeztető beállítások megmaradnak újraindítás után', () async {
+  testWidgets('bevezető: név, mire használnád, mikor érsz rá; a megosztás alapból ki', (tester) async {
+    phone(tester);
     SharedPreferences.setMockInitialValues({});
-    final store = await AppStore.load();
-    expect(store.dailyReminder, isTrue);
-    expect(store.reminderTime, const TimeOfDay(hour: 20, minute: 0));
-
-    store.setReminders(daily: false, time: const TimeOfDay(hour: 21, minute: 30), events: false);
-    final reloaded = await AppStore.load();
-    expect(reloaded.dailyReminder, isFalse);
-    expect(reloaded.reminderTime, const TimeOfDay(hour: 21, minute: 30));
-    expect(reloaded.eventReminders, isFalse);
-  });
-
-  testWidgets('a főoldal betölt és a cél kipipálható', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final store = await AppStore.load();
-    store.addHabit('Olvasás');
-
-    await tester.pumpWidget(EletrendApp(store: store));
-    await tester.pumpAndSettle(); // a fiók adatainak betöltése
-    expect(find.text('Mai célok'), findsOneWidget);
-    expect(find.text('Olvasás'), findsOneWidget);
-
-    await tester.ensureVisible(find.byType(CheckCircle));
+    final store = (await tester.runAsync(AppStore.load))!;
+    await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(CheckCircle));
+    expect(find.text('Üdv a LIFEUP-ban!'), findsOneWidget);
+
+    await tester.tap(find.text('Kezdjük'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '');
+    await tester.tap(find.text('Tovább'));
     await tester.pump();
-    expect(store.habits.first.isDoneOn(DateTime.now()), isTrue);
-
-    // Gyors hangulat a főoldalon
-    // (a „Hogy vagy most?” kártyán is vannak arcok, ezért a napi hangulat gombjait keressük)
-    await tester.ensureVisible(find.byType(MoodButton).at(3));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(MoodButton).at(3));
-    await tester.pump();
-    expect(store.entryFor(DateTime.now())?.mood, 4);
-
-    await tester.tap(find.text('Napló'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Bejegyzések'), findsOneWidget);
-    Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
-    Friends.instance.stop();
-    Challenges.instance.stop();
-  });
-
-  testWidgets('első indításkor bemutató, a kiválasztott célok felkerülnek', (tester) async {
-    tester.view.physicalSize = const Size(400, 860);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    SharedPreferences.setMockInitialValues({});
-    final store = await AppStore.load();
-    await tester.pumpWidget(EletrendApp(store: store));
-    await tester.pumpAndSettle(); // a fiók adatainak betöltése
-    expect(find.text('Üdv az Életrendben!'), findsOneWidget);
-
-    await tester.tap(find.text('📖 10 perc olvasás'));
-    await tester.pump();
-    await tester.tap(find.text('Tovább 3 céllal'));
-    await tester.pumpAndSettle();
-    expect(find.text('Egy perc este'), findsOneWidget);
+    expect(find.textContaining('Hogy szólíthatunk?'), findsOneWidget); // név nélkül nem megy tovább
+    await tester.enterText(find.byType(TextField), 'Anna');
     await tester.tap(find.text('Tovább'));
     await tester.pumpAndSettle();
-    // A harmadik lépésben kikapcsolt funkció eltűnik az appból.
-    await tester.tap(find.text('Időjárás'));
+
+    expect(find.text('Mire használnád?'), findsOneWidget);
+    await tester.tap(find.text('Kihívások a barátaimmal'));
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mikor szoktál ráérni?'), findsOneWidget);
+    await tester.tap(find.text('Hétköznap este'));
     await tester.pump();
-    expect(store.shows(Feature.weather), isFalse);
-    await tester.tap(find.text('Kezdjük!'));
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    expect(find.text('Emlékeztetők'), findsOneWidget); // Androidon: engedélykérés magyarázattal
+    await tester.tap(find.text('Kész'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Mai célok'), findsOneWidget);
-    expect(store.habits.map((h) => h.name), ['💧 2 liter víz', '🚶 10 perc séta', '📖 10 perc olvasás']);
-    expect((await AppStore.load()).onboarded, isTrue);
-    Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
-    Friends.instance.stop();
-    Challenges.instance.stop();
+    expect(store.onboarded, isTrue);
+    expect(store.myName, 'Anna');
+    expect(store.freeWindows, hasLength(1));
+    expect(store.shareAvailability, AvailabilityShare.nobody);
+    expect(store.showsCard(HomeCard.challenges), isFalse);
+    expect(find.text('Főoldal'), findsOneWidget); // az alsó menü
+    stopServices();
   });
 
-  testWidgets('sötét mód bekapcsolása azonnal átszínezi az appot', (tester) async {
-    SharedPreferences.setMockInitialValues({'onboarded': true});
-    final store = await AppStore.load();
-    await tester.pumpWidget(EletrendApp(store: store));
-    await tester.pumpAndSettle(); // a fiók adatainak betöltése
-    expect(AppColors.dark, isFalse);
+  testWidgets('főoldal: összefoglaló, következő program, feladat és cél kipipálása', (tester) async {
+    phone(tester);
+    final store = (await tester.runAsync(readyStore))!;
+    final now = DateTime.now();
+    store
+      ..saveEvent(Event(id: 'e', title: 'Mozi', start: now.add(const Duration(minutes: 40)), durationMin: 120))
+      ..saveTask(TaskItem(id: 't', title: 'Számla befizetése', due: now))
+      ..addHabit('Olvasás');
 
-    store.setThemeMode(ThemeMode.dark);
+    await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
-    expect(AppColors.dark, isTrue);
-    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).last);
-    expect(Theme.of(tester.element(find.byWidget(scaffold))).brightness, Brightness.dark);
+    expect(find.textContaining(', Gabi'), findsOneWidget);
+    expect(find.text('Következő'), findsOneWidget);
+    expect(find.text('Mozi'), findsWidgets);
+    expect(find.textContaining('1 teendőd'), findsOneWidget);
 
-    store.setThemeMode(ThemeMode.light);
+    await tester.ensureVisible(find.text('Számla befizetése'));
     await tester.pumpAndSettle();
-    expect(AppColors.dark, isFalse);
-    Account.instance.sync?.stop(); // a késleltetett mentés ne maradjon függőben
-    Friends.instance.stop();
-    Challenges.instance.stop();
+    await tester.tap(find.byTooltip('Kész').first);
+    await tester.pump();
+    expect(store.tasks.single.done, isTrue);
+
+    await tester.ensureVisible(find.byType(CheckCircle).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(CheckCircle).first);
+    await tester.pump();
+    expect(store.habits.single.isDoneOn(DateTime.now()), isTrue);
+    stopServices();
   });
 
-  testWidgets('alsó sáv: a Barátok külön fül', (tester) async {
-    tester.view.physicalSize = const Size(400, 860);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    SharedPreferences.setMockInitialValues({'onboarded': true});
-    final store = await AppStore.load();
-    await tester.pumpWidget(EletrendApp(store: store));
+  testWidgets('létrehozás: a középső gombból új bejegyzés, ami a naptárban is megjelenik', (tester) async {
+    phone(tester);
+    final store = (await tester.runAsync(readyStore))!;
+    await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Barátok'));
+
+    await tester.tap(find.text('Létrehozás'));
     await tester.pumpAndSettle();
-    expect(find.text('Kapott bumpok'), findsOneWidget);
-    await tester.dragUntilVisible(find.text('Csak név szerint'), find.byType(ListView).first, const Offset(0, -300));
-    expect(find.text('Csak név szerint'), findsOneWidget);
-    Account.instance.sync?.stop();
-    Friends.instance.stop();
-    Challenges.instance.stop();
+    expect(find.text('Közös időpont keresése'), findsOneWidget);
+    await tester.tap(find.text('Bejegyzés').last); // a menüben (a Főoldalon is van ilyen gomb)
+    await tester.pumpAndSettle();
+
+    // Cím nélkül nem ment
+    await tester.tap(find.text('Mentés'));
+    await tester.pump();
+    expect(find.text('Adj neki címet.'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, 'Edzés');
+    await tester.tap(find.text('Egészség, sport'));
+    await tester.tap(find.text('Mentés'));
+    await tester.pumpAndSettle();
+    expect(store.events.single.title, 'Edzés');
+    expect(store.events.single.category, EventCategory.health);
+    expect(store.events.single.reminderMin, 30);
+
+    await tester.tap(find.text('Naptár'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lista'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edzés'), findsOneWidget);
+    for (final view in ['Nap', 'Hét', 'Hónap']) {
+      await tester.tap(find.text(view));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+    CalendarScreen.lastView = CalendarView.week;
+    stopServices();
   });
 
-  testWidgets('jelvények: a már meglévők miatt nincs ünneplés az első indításkor', (tester) async {
-    tester.view.physicalSize = const Size(400, 860);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    SharedPreferences.setMockInitialValues({'onboarded': true});
-    final store = await AppStore.load();
-    store.addHabit('Olvasás');
-    store.saveEntry(JournalEntry(id: '1', date: DateTime(2026, 10, 1), mood: 4));
-    await tester.pumpWidget(EletrendApp(store: store));
+  testWidgets('feladat felvétele a Létrehozás menüből, határidővel', (tester) async {
+    phone(tester);
+    final store = (await tester.runAsync(readyStore))!;
+    await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
-    await tester.pump(const Duration(seconds: 2));
+    await tester.tap(find.text('Létrehozás'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Új jelvény'), findsNothing);
-    expect(store.seenBadges, containsAll(['first_entry', 'first_habit']));
-    Account.instance.sync?.stop();
-    Friends.instance.stop();
-    Challenges.instance.stop();
+    await tester.tap(find.text('Feladat').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Bevásárlás');
+    await tester.tap(find.text('Mentés'));
+    await tester.pumpAndSettle();
+    expect(store.tasks.single.title, 'Bevásárlás');
+    expect(sameDay(store.tasks.single.due!, DateTime.now()), isTrue);
+    stopServices();
+  });
+
+  testWidgets('profil: adatvédelem, főoldal testreszabása, téma', (tester) async {
+    phone(tester);
+    final store = (await tester.runAsync(readyStore))!;
+    await tester.pumpWidget(LifeupApp(store: store));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Profil'));
+    await tester.pumpAndSettle();
+    expect(find.text('Gabi'), findsWidgets);
+
+    await tester.tap(find.text('Adatvédelem'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mit látnak a barátaid?'), findsOneWidget);
+    await tester.tap(find.text('Minden barátom'));
+    await tester.pumpAndSettle();
+    expect(store.shareAvailability, AvailabilityShare.friends);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Főoldal testreszabása'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(SwitchListTile, 'A heted'));
+    await tester.pumpAndSettle();
+    expect(store.showsCard(HomeCard.week), isFalse);
+    stopServices();
   });
 }

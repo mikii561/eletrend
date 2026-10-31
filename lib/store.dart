@@ -1,93 +1,97 @@
 import 'dart:convert';
-import 'dart:math';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'community.dart';
-import 'features.dart';
-export 'features.dart';
+import 'availability.dart';
 import 'models.dart';
 
-/// Az app teljes állapota, a telefonon helyben tárolva.
+export 'availability.dart' show AvailabilityShare, AvailabilityStatus, FreeWindow;
+
+/// A Főoldal kártyái; a sorrendjük és a láthatóságuk állítható.
+enum HomeCard {
+  schedule('Mai beosztás', Icons.view_agenda_outlined),
+  tasks('Teendők', Icons.task_alt),
+  goals('Célok', Icons.flag_outlined),
+  friends('Ki ér rá?', Icons.people_alt_outlined),
+  birthdays('Születésnapok', Icons.cake_outlined),
+  challenges('Kihívások', Icons.emoji_events_outlined),
+  week('A heted', Icons.insights_outlined);
+
+  const HomeCard(this.label, this.icon);
+
+  final String label;
+  final IconData icon;
+}
+
+/// Az app teljes állapota, a telefonon helyben tárolva (és a fiókkal szinkronizálva).
 class AppStore extends ChangeNotifier {
   AppStore._(this._prefs);
 
   final SharedPreferences _prefs;
 
   List<Event> events = [];
+  List<TaskItem> tasks = [];
   List<Habit> habits = [];
-  List<JournalEntry> journal = [];
-  List<String> friends = [];
-
-  /// A neved, ahogy a barátaid látják a meghívásoknál és az üzenőfalon.
-  String myName = '';
+  List<FriendGroup> groups = [];
 
   /// Programok, ahová meghívtak.
   List<Invite> invites = [];
 
-  /// Hangulatcímkék a felhasználó sorrendjében.
-  List<MoodTag> moodTags = [];
+  /// A barátaim, ahogy legutóbb láttuk őket (offline is kell, és a születésnap-emlékeztetőhöz).
+  List<FriendInfo> friendsCache = [];
 
-  /// Az 1–5 hangulat arca és felirata (emoji vagy saját kép).
-  List<MoodTag> moodFaces = [];
+  /// A neved, ahogy a barátaid látják.
+  String myName = '';
 
-  // Emlékeztetők beállításai
-  bool dailyReminder = true;
-  TimeOfDay reminderTime = const TimeOfDay(hour: 20, minute: 0);
-  bool eventReminders = true;
+  /// Születésnap „ÉÉÉÉ-HH-NN” (null, ha nem adtad meg).
+  String? birthday;
 
-  /// Megjelenés: a telefon beállítása szerint, mindig világos vagy mindig sötét.
-  ThemeMode themeMode = ThemeMode.system;
+  // Adatvédelem
 
-  /// Végigment-e már a bemutatón.
-  bool onboarded = false;
+  /// Láthatják-e a barátaim a születésnapomat (csak hónap és nap).
+  bool shareBirthday = false;
 
   /// Láthatják-e a barátaim a cél-sorozataimat (alapból nem).
   bool shareStreaks = false;
 
-  /// A jelvények, amelyekről már szóltunk (null: még sosem néztük meg).
-  Set<String>? seenBadges;
+  /// Kik látják, mikor vagyok szabad (alapból senki: a megosztás önkéntes).
+  AvailabilityShare shareAvailability = AvailabilityShare.nobody;
+
+  /// [AvailabilityShare.groups] esetén mely csoportjaim.
+  Set<String> shareGroups = {};
+
+  /// Meghívhatnak-e a barátaim programokra egy gombnyomással.
+  bool allowInvites = true;
+
+  /// Mikor szoktam ráérni (a közös időpont kereséséhez).
+  List<FreeWindow> freeWindows = [];
+
+  /// Kézzel beállított állapot és meddig érvényes (null = a naptárból számoljuk).
+  AvailabilityStatus? manualStatus;
+  DateTime? manualStatusUntil;
+
+  // Értesítések
+
+  bool eventReminders = true;
+  bool taskReminders = true;
+  bool birthdayReminders = true;
+
+  /// Új bejegyzés alapértelmezett emlékeztetője (perc; null = nincs).
+  int? defaultReminderMin = 30;
+
+  /// Megjelenés: a telefon beállítása szerint, mindig világos vagy mindig sötét.
+  ThemeMode themeMode = ThemeMode.system;
+
+  /// Végigment-e már a bevezetőn.
+  bool onboarded = false;
+
+  /// A Főoldal kártyái sorrendben, és amiket elrejtett.
+  List<HomeCard> homeCards = [...HomeCard.values];
+  Set<HomeCard> hiddenCards = {};
 
   /// Kihívás → hozzá kötött cél (a cél kipipálása a kihívásban is teljesít).
   Map<String, String> challengeHabits = {};
-
-  /// Lejátssza-e az app a bumpok animációit (konfetti, felugró képek…).
-  bool effectsOn = true;
-
-  /// A lakóhelyem a „közelben” szűréshez (null, ha még nem adtam meg).
-  IdeaPlace? homePlace;
-
-  /// Napközbeni gyors hangulatok (az utolsó egy év).
-  List<CheckIn> checkIns = [];
-
-  /// Kérdezzen-e rá az app napközben (11:00 és 15:00, telefonon értesítéssel).
-  bool checkInReminders = false;
-
-  /// A kikapcsolt funkciók (lásd [Feature]).
-  Set<Feature> hiddenFeatures = {};
-
-  /// Vasárnap esti heti összefoglaló értesítés.
-  bool weeklySummary = true;
-
-  bool shows(Feature f) => !hiddenFeatures.contains(f);
-
-  /// Melyik hét összefoglaló-kártyáját zárta be (csak ezen az eszközön).
-  String? get weekCardClosed => _prefs.getString('weekCardClosed');
-
-  /// Egy-egy tipp-kártya, amit ezen az eszközön bezárt.
-  bool hintClosed(String id) => _prefs.getBool('hint_$id') ?? false;
-
-  void closeHint(String id) {
-    _prefs.setBool('hint_$id', true);
-    notifyListeners();
-  }
-
-  void closeWeekCard(String mondayKey) {
-    _prefs.setString('weekCardClosed', mondayKey);
-    notifyListeners();
-  }
 
   static Future<AppStore> load() async {
     final store = AppStore._(await SharedPreferences.getInstance());
@@ -95,42 +99,35 @@ class AppStore extends ChangeNotifier {
     return store;
   }
 
-  void _read() {
-    List<Map<String, dynamic>> list(String key) {
-      final raw = _prefs.getString(key);
-      if (raw == null) return [];
-      return List<Map<String, dynamic>>.from(jsonDecode(raw) as List);
-    }
-
-    events = list('events').map(Event.fromJson).toList();
-    habits = list('habits').map(Habit.fromJson).toList();
-    journal = list('journal').map(JournalEntry.fromJson).toList();
-    friends = _prefs.getStringList('friends') ?? [];
-    myName = _prefs.getString('myName') ?? '';
-    invites = list('invites').map(Invite.fromJson).toList();
-    moodTags = _prefs.containsKey('moodTags')
-        ? list('moodTags').map(MoodTag.fromJson).toList()
-        : [for (final t in defaultMoodTags.entries) MoodTag(id: t.key, name: t.key, emoji: t.value)];
-    final faces = list('moodFaces').map(MoodTag.fromJson).toList();
-    moodFaces = faces.length == 5 ? faces : [for (var i = 1; i <= 5; i++) defaultMoodFace(i)];
-    dailyReminder = _prefs.getBool('dailyReminder') ?? true;
-    reminderTime = TimeOfDay(hour: _prefs.getInt('reminderHour') ?? 20, minute: _prefs.getInt('reminderMinute') ?? 0);
-    eventReminders = _prefs.getBool('eventReminders') ?? true;
-    themeMode = ThemeMode.values.asNameMap()[_prefs.getString('themeMode')] ?? ThemeMode.system;
-    onboarded = _prefs.getBool('onboarded') ?? false;
-    shareStreaks = _prefs.getBool('shareStreaks') ?? false;
-    seenBadges = _prefs.getStringList('seenBadges')?.toSet();
-    challengeHabits = Map<String, String>.from(jsonDecode(_prefs.getString('challengeHabits') ?? '{}') as Map);
-    checkIns = list('checkIns').map(CheckIn.fromJson).toList();
-    checkInReminders = _prefs.getBool('checkInReminders') ?? false;
-    effectsOn = _prefs.getBool('effectsOn') ?? true;
-    hiddenFeatures = _features(_prefs.getStringList('hiddenFeatures'));
-    weeklySummary = _prefs.getBool('weeklySummary') ?? true;
-    final home = _prefs.getString('homePlace');
-    homePlace = home == null ? null : IdeaPlace.fromJson(jsonDecode(home) as Map<String, dynamic>);
+  List<Map<String, dynamic>> _list(String key) {
+    final raw = _prefs.getString(key);
+    if (raw == null) return [];
+    return List<Map<String, dynamic>>.from(jsonDecode(raw) as List);
   }
 
-  /// Újraolvas mindent a tárhelyről (pl. ha a widget közben módosított).
+  void _read() {
+    events = _list('events').map(Event.fromJson).toList();
+    tasks = _list('tasks').map(TaskItem.fromJson).toList();
+    habits = _list('habits').map(Habit.fromJson).toList();
+    groups = _list('groups').map(FriendGroup.fromJson).toList();
+    invites = _list('invites').map(Invite.fromJson).toList();
+    friendsCache = _list('friendsCache').map(FriendInfo.fromJson).toList();
+    final raw = _prefs.getString('settings');
+    _applySettings(raw == null ? _legacySettings() : jsonDecode(raw) as Map<String, dynamic>, local: true);
+  }
+
+  /// A régi (Életrend) változat külön kulcsokban tárolta a beállításokat; ezeket átvesszük,
+  /// hogy frissítés után ne vesszen el a név, a téma és a többi.
+  Map<String, dynamic> _legacySettings() => {
+    'myName': ?_prefs.getString('myName'),
+    'themeMode': ?_prefs.getString('themeMode'),
+    'onboarded': ?_prefs.getBool('onboarded'),
+    'shareStreaks': ?_prefs.getBool('shareStreaks'),
+    'eventReminders': ?_prefs.getBool('eventReminders'),
+    if (_prefs.getString('challengeHabits') case final links?) 'challengeHabits': jsonDecode(links),
+  };
+
+  /// Újraolvas mindent a tárhelyről.
   Future<void> reload() async {
     await _prefs.reload();
     _read();
@@ -139,103 +136,95 @@ class AppStore extends ChangeNotifier {
 
   void _save() {
     _prefs.setString('events', jsonEncode(events.map((e) => e.toJson()).toList()));
+    _prefs.setString('tasks', jsonEncode(tasks.map((t) => t.toJson()).toList()));
     _prefs.setString('habits', jsonEncode(habits.map((h) => h.toJson()).toList()));
-    _prefs.setString('journal', jsonEncode(journal.map((j) => j.toJson()).toList()));
-    _prefs.setStringList('friends', friends);
-    _prefs.setString('myName', myName);
+    _prefs.setString('groups', jsonEncode(groups.map((g) => g.toJson()).toList()));
     _prefs.setString('invites', jsonEncode(invites.map((i) => i.toJson()).toList()));
-    _prefs.setString('moodTags', jsonEncode(moodTags.map((t) => t.toJson()).toList()));
-    _prefs.setString('moodFaces', jsonEncode(moodFaces.map((t) => t.toJson()).toList()));
-    _prefs.setBool('dailyReminder', dailyReminder);
-    _prefs.setInt('reminderHour', reminderTime.hour);
-    _prefs.setInt('reminderMinute', reminderTime.minute);
-    _prefs.setBool('eventReminders', eventReminders);
-    _prefs.setString('themeMode', themeMode.name);
-    _prefs.setBool('onboarded', onboarded);
-    _prefs.setBool('shareStreaks', shareStreaks);
-    if (seenBadges != null) _prefs.setStringList('seenBadges', seenBadges!.toList());
-    _prefs.setString('challengeHabits', jsonEncode(challengeHabits));
-    _prefs.setString('checkIns', jsonEncode(checkIns.map((c) => c.toJson()).toList()));
-    _prefs.setBool('checkInReminders', checkInReminders);
-    _prefs.setBool('effectsOn', effectsOn);
-    _prefs.setStringList('hiddenFeatures', [for (final f in hiddenFeatures) f.name]);
-    _prefs.setBool('weeklySummary', weeklySummary);
-    homePlace == null ? _prefs.remove('homePlace') : _prefs.setString('homePlace', jsonEncode(homePlace!.toJson()));
+    _prefs.setString('friendsCache', jsonEncode(friendsCache.map((f) => f.toJson()).toList()));
+    _prefs.setString('settings', jsonEncode({...cloudSettings(), ..._deviceSettings()}));
     notifyListeners();
   }
 
-  // Emlékeztetők
+  /// Ami csak ezen az eszközön számít (nem megy a felhőbe).
+  Map<String, dynamic> _deviceSettings() => {
+    if (manualStatus != null) 'manualStatus': manualStatus!.name,
+    if (manualStatusUntil != null) 'manualStatusUntil': manualStatusUntil!.toIso8601String(),
+  };
 
-  void setReminders({bool? daily, TimeOfDay? time, bool? events}) {
-    dailyReminder = daily ?? dailyReminder;
-    reminderTime = time ?? reminderTime;
-    eventReminders = events ?? eventReminders;
-    _save();
-  }
-
-  // Felhő (fiók)
-
-  /// A fiókhoz mentett beállítások és kisebb listák egy dokumentumban.
+  /// A fiókhoz mentett beállítások egy dokumentumban.
   Map<String, dynamic> cloudSettings() => {
-    'friends': friends,
     'myName': myName,
-    'invites': invites.map((i) => i.toJson()).toList(),
-    'dailyReminder': dailyReminder,
-    'reminderHour': reminderTime.hour,
-    'reminderMinute': reminderTime.minute,
+    'birthday': birthday,
+    'shareBirthday': shareBirthday,
+    'shareStreaks': shareStreaks,
+    'shareAvailability': shareAvailability.name,
+    'shareGroups': shareGroups.toList()..sort(),
+    'allowInvites': allowInvites,
+    'freeWindows': [for (final w in freeWindows) w.toJson()],
     'eventReminders': eventReminders,
+    'taskReminders': taskReminders,
+    'birthdayReminders': birthdayReminders,
+    'defaultReminderMin': defaultReminderMin,
     'themeMode': themeMode.name,
     'onboarded': onboarded,
-    'shareStreaks': shareStreaks,
-    if (seenBadges != null) 'seenBadges': seenBadges!.toList(),
+    'homeCards': [for (final c in homeCards) c.name],
+    'hiddenCards': [for (final c in hiddenCards) c.name]..sort(),
     'challengeHabits': challengeHabits,
-    'checkIns': checkIns.map((c) => c.toJson()).toList(),
-    'checkInReminders': checkInReminders,
-    'effectsOn': effectsOn,
-    'hiddenFeatures': [for (final f in hiddenFeatures) f.name],
-    'weeklySummary': weeklySummary,
-    if (homePlace != null) 'homePlace': homePlace!.toJson(),
+    'invites': invites.map((i) => i.toJson()).toList(),
   };
+
+  void _applySettings(Map<String, dynamic> s, {bool local = false}) {
+    myName = s['myName'] as String? ?? myName;
+    birthday = s.containsKey('birthday') ? s['birthday'] as String? : birthday;
+    shareBirthday = s['shareBirthday'] as bool? ?? shareBirthday;
+    shareStreaks = s['shareStreaks'] as bool? ?? shareStreaks;
+    shareAvailability = AvailabilityShare.values.asNameMap()[s['shareAvailability']] ?? shareAvailability;
+    shareGroups = {for (final g in s['shareGroups'] as List? ?? shareGroups) g as String};
+    allowInvites = s['allowInvites'] as bool? ?? allowInvites;
+    if (s['freeWindows'] case final List w) {
+      freeWindows = [for (final x in w) FreeWindow.fromJson(Map<String, dynamic>.from(x as Map))];
+    }
+    eventReminders = s['eventReminders'] as bool? ?? eventReminders;
+    taskReminders = s['taskReminders'] as bool? ?? taskReminders;
+    birthdayReminders = s['birthdayReminders'] as bool? ?? birthdayReminders;
+    if (s.containsKey('defaultReminderMin')) defaultReminderMin = (s['defaultReminderMin'] as num?)?.toInt();
+    themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
+    onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
+    if (s['homeCards'] case final List cards) {
+      final order = [for (final c in cards) ?HomeCard.values.asNameMap()[c]];
+      // Ha később új kártya jön, a végére kerül.
+      homeCards = [
+        ...order,
+        for (final c in HomeCard.values)
+          if (!order.contains(c)) c,
+      ];
+    }
+    if (s['hiddenCards'] case final List hidden) {
+      hiddenCards = {for (final c in hidden) ?HomeCard.values.asNameMap()[c]};
+    }
+    if (s['challengeHabits'] case final Map m) challengeHabits = Map<String, String>.from(m);
+    if (s['invites'] case final List list) {
+      invites = [for (final i in list) Invite.fromJson(Map<String, dynamic>.from(i as Map))];
+    }
+    if (local) {
+      manualStatus = AvailabilityStatus.values.asNameMap()[s['manualStatus']];
+      manualStatusUntil = DateTime.tryParse(s['manualStatusUntil'] as String? ?? '');
+    }
+  }
 
   /// A fiókból letöltött adatok kerülnek az eszközön lévők helyére.
   void applyCloud({
     required List<Event> events,
+    required List<TaskItem> tasks,
     required List<Habit> habits,
-    required List<JournalEntry> journal,
-    required List<MoodTag> moodTags,
-    required List<MoodTag> moodFaces,
+    required List<FriendGroup> groups,
     Map<String, dynamic>? settings,
   }) {
     this.events = events;
+    this.tasks = tasks;
     this.habits = habits;
-    this.journal = journal..sort((a, b) => b.date.compareTo(a.date));
-    if (moodTags.isNotEmpty) this.moodTags = moodTags;
-    if (moodFaces.length == 5) {
-      this.moodFaces = moodFaces..sort((a, b) => a.id.compareTo(b.id));
-    }
-    if (settings != null) {
-      friends = List<String>.from(settings['friends'] as List? ?? []);
-      myName = settings['myName'] as String? ?? myName;
-      invites = [for (final i in settings['invites'] as List? ?? []) Invite.fromJson(i as Map<String, dynamic>)];
-      dailyReminder = settings['dailyReminder'] as bool? ?? dailyReminder;
-      reminderTime = TimeOfDay(
-        hour: settings['reminderHour'] as int? ?? reminderTime.hour,
-        minute: settings['reminderMinute'] as int? ?? reminderTime.minute,
-      );
-      eventReminders = settings['eventReminders'] as bool? ?? eventReminders;
-      themeMode = ThemeMode.values.asNameMap()[settings['themeMode']] ?? themeMode;
-      onboarded = settings['onboarded'] as bool? ?? true;
-      shareStreaks = settings['shareStreaks'] as bool? ?? false;
-      if (settings['seenBadges'] != null) seenBadges = Set<String>.from(settings['seenBadges'] as List);
-      challengeHabits = Map<String, String>.from(settings['challengeHabits'] as Map? ?? {});
-      checkIns = [for (final c in settings['checkIns'] as List? ?? []) CheckIn.fromJson(c as Map<String, dynamic>)];
-      checkInReminders = settings['checkInReminders'] as bool? ?? false;
-      effectsOn = settings['effectsOn'] as bool? ?? true;
-      hiddenFeatures = _features((settings['hiddenFeatures'] as List?)?.cast<String>());
-      weeklySummary = settings['weeklySummary'] as bool? ?? true;
-      final home = settings['homePlace'] as Map<String, dynamic>?;
-      if (home != null) homePlace = IdeaPlace.fromJson(home);
-    }
+    this.groups = groups;
+    if (settings != null) _applySettings(settings);
     _save();
   }
 
@@ -254,229 +243,176 @@ class AppStore extends ChangeNotifier {
     _prefs.setString('syncHashes', jsonEncode(hashes));
   }
 
+  /// Egy-egy tipp-kártya, amit ezen az eszközön bezárt.
+  bool hintClosed(String id) => _prefs.getBool('hint_$id') ?? false;
+
+  void closeHint(String id) {
+    _prefs.setBool('hint_$id', true);
+    notifyListeners();
+  }
+
+  static const _dataKeys = ['events', 'tasks', 'habits', 'groups', 'invites', 'friendsCache', 'settings'];
+
   /// Kijelentkezéskor minden adat lekerül erről az eszközről (a fiókban megmaradnak).
   Future<void> clearAll() async {
-    for (final k in [..._backupKeys, 'pinHash', 'pinSalt', 'useBiometrics', 'syncUid', 'syncHashes']) {
+    for (final k in [..._dataKeys, 'syncUid', 'syncHashes']) {
       await _prefs.remove(k);
     }
-    journalUnlocked = false;
+    _reset();
     _read();
     notifyListeners();
   }
 
-  // Napló zárolása
-
-  /// Be van-e kapcsolva a napló PIN-kódos zárolása.
-  bool get journalLocked => _prefs.getString('pinHash') != null;
-
-  /// Ujjlenyomattal is feloldható-e (csak telefonon).
-  bool get useBiometrics => _prefs.getBool('useBiometrics') ?? false;
-
-  /// Ebben a munkamenetben fel van-e oldva; nem mentjük, újraindításkor zárt.
-  bool journalUnlocked = false;
-
-  bool get journalVisible => !journalLocked || journalUnlocked;
-
-  static String _hash(String salt, String pin) => sha256.convert(utf8.encode('$salt:$pin')).toString();
-
-  /// A PIN-t csak sózott hash-ként tároljuk.
-  void setPin(String pin) {
-    final random = Random.secure();
-    final salt = base64Encode([for (var i = 0; i < 16; i++) random.nextInt(256)]);
-    _prefs.setString('pinSalt', salt);
-    _prefs.setString('pinHash', _hash(salt, pin));
-    journalUnlocked = true;
-    notifyListeners();
+  void _reset() {
+    myName = '';
+    birthday = null;
+    shareBirthday = false;
+    shareStreaks = false;
+    shareAvailability = AvailabilityShare.nobody;
+    shareGroups = {};
+    allowInvites = true;
+    freeWindows = [];
+    manualStatus = null;
+    manualStatusUntil = null;
+    eventReminders = true;
+    taskReminders = true;
+    birthdayReminders = true;
+    defaultReminderMin = 30;
+    themeMode = ThemeMode.system;
+    onboarded = false;
+    homeCards = [...HomeCard.values];
+    hiddenCards = {};
+    challengeHabits = {};
   }
 
-  bool checkPin(String pin) {
-    final salt = _prefs.getString('pinSalt');
-    return salt != null && _prefs.getString('pinHash') == _hash(salt, pin);
-  }
+  // Adatok exportálása
 
-  void setUseBiometrics(bool on) {
-    _prefs.setBool('useBiometrics', on);
-    notifyListeners();
-  }
-
-  void clearPin() {
-    _prefs.remove('pinHash');
-    _prefs.remove('pinSalt');
-    _prefs.remove('useBiometrics');
-    notifyListeners();
-  }
-
-  void unlockJournal() {
-    journalUnlocked = true;
-    notifyListeners();
-  }
-
-  /// Az app háttérbe kerülésekor újra zárunk.
-  void lockJournal() {
-    if (!journalUnlocked) return;
-    journalUnlocked = false;
-    notifyListeners();
-  }
-
-  /// Elfelejtett PIN: a zár csak a naplóbejegyzésekkel együtt törölhető.
-  void resetLockAndJournal() {
-    journal.clear();
-    clearPin();
-    _save();
-  }
-
-  // Biztonsági mentés
-
-  /// Ezek a beállítások kerülnek a mentésbe (a zárolás PIN-kódja szándékosan nem).
-  static const _backupKeys = [
-    'events',
-    'habits',
-    'journal',
-    'friends',
-    'moodTags',
-    'moodFaces',
-    'dailyReminder',
-    'reminderHour',
-    'reminderMinute',
-    'eventReminders',
-    'themeMode',
-    'onboarded',
-    'myName',
-    'invites',
-    'shareStreaks',
-    'seenBadges',
-    'challengeHabits',
-    'checkIns',
-    'checkInReminders',
-    'homePlace',
-    'effectsOn',
-    'hiddenFeatures',
-    'weeklySummary',
-  ];
-
-  /// Minden adat egy JSON-szövegben, fájlba mentéshez.
-  String exportBackup() {
-    _save();
+  /// Minden saját adat egy olvasható JSON-szövegben (a GDPR szerinti adathordozhatósághoz is).
+  String exportData() {
     return const JsonEncoder.withIndent(' ').convert({
-      'app': 'eletrend',
-      'version': 1,
+      'app': 'lifeup',
+      'version': 2,
       'exportedAt': DateTime.now().toIso8601String(),
-      'data': {
-        for (final k in _backupKeys)
-          if (_prefs.containsKey(k)) k: _prefs.get(k),
-      },
+      'events': events.map((e) => e.toJson()).toList(),
+      'tasks': tasks.map((t) => t.toJson()).toList(),
+      'goals': habits.map((h) => h.toJson()).toList(),
+      'groups': groups.map((g) => g.toJson()).toList(),
+      'settings': cloudSettings(),
     });
   }
 
-  /// Visszatölt egy mentést, a mostani adatok helyére.
-  /// [FormatException]-t dob, ha a fájl nem Életrend-mentés vagy sérült.
-  Future<void> importBackup(String text) async {
-    final Map<String, dynamic> data;
+  /// Visszatölt egy exportot a mostani adatok helyére.
+  /// [FormatException]-t dob, ha a fájl nem LIFEUP-export vagy sérült.
+  void importData(String text) {
     try {
       final root = jsonDecode(text) as Map<String, dynamic>;
-      if (root['app'] != 'eletrend') throw const FormatException();
-      data = root['data'] as Map<String, dynamic>;
-      // Először csak ellenőrizzük, hogy minden beolvasható, és csak utána írunk.
-      for (final k in ['events', 'habits', 'journal', 'moodTags', 'moodFaces']) {
-        final raw = data[k];
-        if (raw == null) continue;
-        final list = jsonDecode(raw as String) as List;
-        final parse = switch (k) {
-          'events' => Event.fromJson,
-          'habits' => Habit.fromJson,
-          'journal' => JournalEntry.fromJson,
-          _ => MoodTag.fromJson,
-        };
-        for (final item in list) {
-          parse(item as Map<String, dynamic>);
-        }
-      }
+      if (root['app'] != 'lifeup') throw const FormatException();
+      List<Map<String, dynamic>> list(String k) => [
+        for (final x in root[k] as List? ?? []) Map<String, dynamic>.from(x as Map),
+      ];
+      final e = list('events').map(Event.fromJson).toList();
+      final t = list('tasks').map(TaskItem.fromJson).toList();
+      final h = list('goals').map(Habit.fromJson).toList();
+      final g = list('groups').map(FriendGroup.fromJson).toList();
+      applyCloud(events: e, tasks: t, habits: h, groups: g, settings: root['settings'] as Map<String, dynamic>?);
     } catch (_) {
-      throw const FormatException('Ez nem Életrend-mentés, vagy a fájl sérült.');
+      throw const FormatException('Ez nem LIFEUP-export, vagy a fájl sérült.');
     }
-    for (final k in _backupKeys) {
-      await _prefs.remove(k);
-      final v = data[k];
-      switch (v) {
-        case String():
-          await _prefs.setString(k, v);
-        case bool():
-          await _prefs.setBool(k, v);
-        case int():
-          await _prefs.setInt(k, v);
-        case List():
-          await _prefs.setStringList(k, v.cast<String>());
-      }
-    }
-    _read();
-    notifyListeners();
   }
 
-  /// A bemutató csak egy teljesen új, üres appnál jelenik meg.
-  bool get needsOnboarding => !onboarded && habits.isEmpty && journal.isEmpty && events.isEmpty;
+  // Bevezető
 
-  /// A bemutató vége: a kiválasztott ajánlott célok felvétele.
-  void finishOnboarding({List<String> habits = const []}) {
-    for (final name in habits) {
-      this.habits.add(Habit(id: '${newId()}-${this.habits.length}', name: name));
-    }
+  bool get needsOnboarding => !onboarded && habits.isEmpty && events.isEmpty && tasks.isEmpty;
+
+  void finishOnboarding({
+    String? name,
+    String? birthday,
+    List<FreeWindow> windows = const [],
+    AvailabilityShare share = AvailabilityShare.nobody,
+    Set<HomeCard> hidden = const {},
+  }) {
+    if (name != null && name.trim().isNotEmpty) myName = _cut(name.trim(), 40);
+    if (birthday != null) this.birthday = birthday;
+    freeWindows = [...windows];
+    shareAvailability = share;
+    hiddenCards = {...hidden};
     onboarded = true;
     _save();
   }
 
-  /// „Hogy vagy most?” válasz. Egy évnél régebbieket nem tartunk meg.
-  void addCheckIn(int mood, [DateTime? at]) {
-    final now = at ?? DateTime.now();
-    checkIns
-      ..add(CheckIn(at: now, mood: mood))
-      ..removeWhere((c) => now.difference(c.at).inDays > 366);
+  static String _cut(String s, int n) => s.length > n ? s.substring(0, n) : s;
+
+  // Profil és adatvédelem
+
+  void setMyName(String name) {
+    myName = _cut(name.trim(), 40);
     _save();
   }
 
-  /// Az utolsó gyors hangulat óta eltelt idő (null, ha még nem volt).
-  CheckIn? get lastCheckIn => checkIns.isEmpty ? null : checkIns.last;
-
-  void setHomePlace(IdeaPlace? place) {
-    homePlace = place;
+  void setBirthday(String? value) {
+    birthday = value;
     _save();
   }
 
-  void setEffectsOn(bool on) {
-    effectsOn = on;
+  void setPrivacy({
+    bool? shareBirthday,
+    bool? shareStreaks,
+    AvailabilityShare? shareAvailability,
+    Set<String>? shareGroups,
+    bool? allowInvites,
+  }) {
+    this.shareBirthday = shareBirthday ?? this.shareBirthday;
+    this.shareStreaks = shareStreaks ?? this.shareStreaks;
+    this.shareAvailability = shareAvailability ?? this.shareAvailability;
+    this.shareGroups = shareGroups ?? this.shareGroups;
+    this.allowInvites = allowInvites ?? this.allowInvites;
     _save();
   }
 
-  static Set<Feature> _features(List<String>? names) => {
-    for (final n in names ?? const <String>[]) ?Feature.values.asNameMap()[n],
-  };
-
-  void setFeature(Feature f, bool on) {
-    on ? hiddenFeatures.remove(f) : hiddenFeatures.add(f);
+  void setFreeWindows(List<FreeWindow> windows) {
+    freeWindows = [...windows];
     _save();
   }
 
-  void setWeeklySummary(bool on) {
-    weeklySummary = on;
+  /// Kézi állapot; alapból a nap végéig érvényes, utána újra a naptár dönt.
+  void setManualStatus(AvailabilityStatus? status, {DateTime? until}) {
+    manualStatus = status;
+    final now = DateTime.now();
+    manualStatusUntil = status == null ? null : (until ?? DateTime(now.year, now.month, now.day + 1));
     _save();
   }
 
-  void setCheckInReminders(bool on) {
-    checkInReminders = on;
-    _save();
+  /// A mostani állapotom: a kézi, ha még érvényes; különben a naptárból (foglalt, ha épp tart valami).
+  AvailabilityStatus statusAt(DateTime now) {
+    final manual = manualStatus;
+    final until = manualStatusUntil;
+    if (manual != null && (until == null || now.isBefore(until))) return manual;
+    final busyNow = busyIntervals(now, now.add(const Duration(minutes: 1))).isNotEmpty;
+    return busyNow ? AvailabilityStatus.busy : AvailabilityStatus.available;
   }
 
-  void linkChallengeHabit(String challengeId, String? habitId) {
-    habitId == null ? challengeHabits.remove(challengeId) : challengeHabits[challengeId] = habitId;
-    _save();
+  bool get statusIsManual {
+    final until = manualStatusUntil;
+    return manualStatus != null && (until == null || DateTime.now().isBefore(until));
   }
 
-  void markBadgesSeen(Iterable<String> ids) {
-    seenBadges = {...?seenBadges, ...ids};
-    _save();
-  }
+  /// A foglalt időszakaim (a „foglaltnak számító” bejegyzések és a beosztott feladatok).
+  List<TimeSpan> busyIntervals(DateTime from, DateTime to) => [
+    for (final o in occurrencesBetween(from, to))
+      if (o.event.busy) TimeSpan(o.start, o.end),
+    for (final t in tasks)
+      if (!t.done && t.scheduled != null)
+        if (t.scheduled!.isBefore(to) && t.scheduled!.add(Duration(minutes: t.durationMin)).isAfter(from))
+          TimeSpan(t.scheduled!, t.scheduled!.add(Duration(minutes: t.durationMin))),
+  ];
 
-  void setShareStreaks(bool on) {
-    shareStreaks = on;
+  // Értesítések, megjelenés, Főoldal
+
+  void setReminders({bool? events, bool? tasks, bool? birthdays, int? defaultMin, bool clearDefault = false}) {
+    eventReminders = events ?? eventReminders;
+    taskReminders = tasks ?? taskReminders;
+    birthdayReminders = birthdays ?? birthdayReminders;
+    defaultReminderMin = clearDefault ? null : (defaultMin ?? defaultReminderMin);
     _save();
   }
 
@@ -485,46 +421,131 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  /// Ma még hány cél nincs kipipálva.
-  int get habitsLeftToday => habits.where((h) => !h.isSatisfiedOn(DateTime.now())).length;
+  bool showsCard(HomeCard c) => !hiddenCards.contains(c);
 
-  bool get journalDoneToday => entryFor(DateTime.now()) != null;
-
-  // Programok
-
-  /// A mai és későbbi programok a következő alkalmuk szerint; az ismétlődők mindig benne vannak.
-  List<Event> get upcomingEvents {
-    final today = DateTime.now();
-    final start = DateTime(today.year, today.month, today.day);
-    return events.where((e) => !e.nextDate(today).isBefore(start)).toList()
-      ..sort((a, b) => a.nextDate(today).compareTo(b.nextDate(today)));
+  void setCardVisible(HomeCard c, bool visible) {
+    visible ? hiddenCards.remove(c) : hiddenCards.add(c);
+    _save();
   }
 
-  /// Új programot felvesz, meglévőt (ugyanaz az objektum) csak elment.
+  /// Áthelyezés: a [to] már az elem kivétele utáni helyet jelenti.
+  void moveCardTo(int from, int to) {
+    homeCards.insert(to, homeCards.removeAt(from));
+    _save();
+  }
+
+  // Naptár
+
+  /// Minden alkalom a [from, to) időszakban, kezdés szerint rendezve.
+  List<Occurrence> occurrencesBetween(DateTime from, DateTime to) =>
+      [for (final e in events) ...e.occurrencesBetween(from, to)]..sort((a, b) => a.start.compareTo(b.start));
+
+  /// Egy nap alkalmai (az egész naposak elöl).
+  List<Occurrence> occurrencesOn(DateTime day) {
+    final s = startOfDay(day);
+    final list = occurrencesBetween(s, DateTime(s.year, s.month, s.day + 1));
+    list.sort((a, b) {
+      if (a.event.allDay != b.event.allDay) return a.event.allDay ? -1 : 1;
+      return a.start.compareTo(b.start);
+    });
+    return list;
+  }
+
+  /// A következő, még nem véget ért alkalmak.
+  List<Occurrence> upcoming({int days = 30, DateTime? now}) {
+    final t = now ?? DateTime.now();
+    return occurrencesBetween(t, t.add(Duration(days: days)));
+  }
+
+  Event? eventById(String id) => events.where((e) => e.id == id).firstOrNull;
+
+  /// Új bejegyzést felvesz, meglévőt (azonosító szerint) lecserél.
   void saveEvent(Event e) {
-    // Azonosító szerint, mert a felhőből frissítés után ugyanaz a program új példány lehet.
     final i = events.indexWhere((x) => x.id == e.id);
     i < 0 ? events.add(e) : events[i] = e;
     _save();
   }
 
   void removeEvent(Event e) {
-    events.remove(e);
+    events.removeWhere((x) => x.id == e.id);
     _save();
   }
 
-  // Barátok
+  /// Ismétlődő bejegyzésnél csak egy alkalom törlése.
+  void skipOccurrence(Event e, DateTime start) {
+    e.skipped.add(dayKey(start));
+    saveEvent(e);
+  }
 
-  void addFriend(String name) {
-    name = name.trim();
-    if (name.isEmpty || friends.contains(name)) return;
-    friends.add(name);
-    friends.sort();
+  // Feladatok
+
+  /// Egy nap feladatai: amit erre a napra osztottál be, vagy aminek ma van a határideje.
+  /// A mai napon a lejárt, még nyitott feladatok is.
+  List<TaskItem> tasksOn(DateTime day, {DateTime? now}) {
+    final today = sameDay(day, now ?? DateTime.now());
+    return tasks.where((t) {
+      final d = t.day;
+      if (d != null && sameDay(d, day)) return true;
+      return today && t.isOverdue(now);
+    }).toList()..sort(_taskOrder);
+  }
+
+  /// Nyitott feladatok: előbb a lejártak és a határidősök, aztán a többi.
+  List<TaskItem> get openTasks => tasks.where((t) => !t.done).toList()..sort(_taskOrder);
+
+  static int _taskOrder(TaskItem a, TaskItem b) {
+    if (a.done != b.done) return a.done ? 1 : -1;
+    final da = a.scheduled ?? a.due, db = b.scheduled ?? b.due;
+    if (da == null && db == null) return a.createdAt.compareTo(b.createdAt);
+    if (da == null) return 1;
+    if (db == null) return -1;
+    return da.compareTo(db);
+  }
+
+  void saveTask(TaskItem t) {
+    t.title = _cut(t.title.trim(), 200);
+    final i = tasks.indexWhere((x) => x.id == t.id);
+    i < 0 ? tasks.add(t) : tasks[i] = t;
     _save();
   }
 
-  void setMyName(String name) {
-    myName = name.trim();
+  void toggleTask(TaskItem t) {
+    t.done = !t.done;
+    t.doneAt = t.done ? DateTime.now() : null;
+    _save();
+  }
+
+  void removeTask(TaskItem t) {
+    tasks.removeWhere((x) => x.id == t.id);
+    _save();
+  }
+
+  // Barátok, csoportok, meghívások
+
+  void setFriendsCache(List<FriendInfo> friends) {
+    final now = jsonEncode(friends.map((f) => f.toJson()).toList());
+    if (now == jsonEncode(friendsCache.map((f) => f.toJson()).toList())) return;
+    friendsCache = friends;
+    // A csoportokból kikerülnek, akik már nem barátok.
+    final uids = {for (final f in friends) f.uid};
+    for (final g in groups) {
+      g.members.removeWhere((m) => !uids.contains(m));
+    }
+    _save();
+  }
+
+  String nameOf(String uid) => friendsCache.where((f) => f.uid == uid).firstOrNull?.name ?? '?';
+
+  void saveGroup(FriendGroup g) {
+    g.name = _cut(g.name.trim(), 40);
+    final i = groups.indexWhere((x) => x.id == g.id);
+    i < 0 ? groups.add(g) : groups[i] = g;
+    _save();
+  }
+
+  void removeGroup(FriendGroup g) {
+    groups.removeWhere((x) => x.id == g.id);
+    shareGroups.remove(g.id);
     _save();
   }
 
@@ -538,11 +559,6 @@ class AppStore extends ChangeNotifier {
 
   void removeInvite(String id) {
     invites.removeWhere((i) => i.id == id);
-    _save();
-  }
-
-  void removeFriend(String name) {
-    friends.remove(name);
     _save();
   }
 
@@ -593,85 +609,11 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  // Napló
+  /// Ma még hány cél nincs kipipálva.
+  int get habitsLeftToday => habits.where((h) => !h.isSatisfiedOn(DateTime.now())).length;
 
-  JournalEntry? entryFor(DateTime day) {
-    final key = dayKey(day);
-    for (final j in journal) {
-      if (dayKey(j.date) == key) return j;
-    }
-    return null;
-  }
-
-  /// Naponta egy bejegyzés: ha az adott napra már van, felülírja.
-  void saveEntry(JournalEntry entry) {
-    journal.removeWhere((j) => dayKey(j.date) == dayKey(entry.date));
-    journal.add(entry);
-    journal.sort((a, b) => b.date.compareTo(a.date));
-    _save();
-  }
-
-  void removeEntry(JournalEntry entry) {
-    journal.remove(entry);
-    _save();
-  }
-
-  // Hangulatcímkék
-
-  /// A címke az azonosítója alapján; ismeretlennél egy helyettesítő.
-  MoodTag tagFor(String id) {
-    for (final t in moodTags) {
-      if (t.id == id) return t;
-    }
-    return MoodTag(id: id, name: id);
-  }
-
-  List<MoodTag> get visibleTags => moodTags.where((t) => t.visible).toList();
-
-  /// Van-e már ilyen nevű címke (kis- és nagybetűtől függetlenül).
-  bool tagNameTaken(String name, {MoodTag? except}) =>
-      moodTags.any((t) => t != except && t.name.toLowerCase() == name.trim().toLowerCase());
-
-  MoodTag addTag({required String name, required String emoji, String? image}) {
-    final tag = MoodTag(id: 'sajat-${newId()}', name: name.trim(), emoji: emoji, image: image);
-    moodTags.add(tag);
-    _save();
-    return tag;
-  }
-
-  /// Egy címke módosítása után (név, emoji, kép, láthatóság) menti a változást.
-  void updateTag(MoodTag tag) => _save();
-
-  void moveTag(int from, int to) {
-    moodTags.insert(to, moodTags.removeAt(from));
-    _save();
-  }
-
-  /// Hány bejegyzésben szerepel a címke.
-  int tagUsage(MoodTag tag) => journal.where((j) => j.tags.contains(tag.id)).length;
-
-  // Hangulatok (1–5)
-
-  MoodTag moodFace(int mood) => moodFaces[mood - 1];
-
-  /// Saját kép véglegesen egy hangulat arcának.
-  void setMoodFaceImage(int mood, String image) {
-    moodFaces[mood - 1].image = image;
-    _save();
-  }
-
-  /// Egy hangulat arcának visszaállítása az alapra.
-  void resetMoodFace(int mood) {
-    moodFaces[mood - 1] = defaultMoodFace(mood);
-    _save();
-  }
-
-  /// Törli a címkét, és kiveszi a bejegyzésekből is.
-  void removeTag(MoodTag tag) {
-    moodTags.remove(tag);
-    for (final j in journal) {
-      j.tags.remove(tag.id);
-    }
+  void linkChallengeHabit(String challengeId, String? habitId) {
+    habitId == null ? challengeHabits.remove(challengeId) : challengeHabits[challengeId] = habitId;
     _save();
   }
 }

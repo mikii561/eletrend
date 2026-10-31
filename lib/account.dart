@@ -21,29 +21,27 @@ class AccountException implements Exception {
 }
 
 String _hungarian(FirebaseAuthException e) => switch (e.code) {
-      'invalid-email' => 'Ez nem érvényes e-mail-cím.',
-      'email-already-in-use' => 'Ezzel az e-mail-címmel már van fiók. Jelentkezz be!',
-      'weak-password' => 'Túl gyenge a jelszó: legalább 6 karakter legyen.',
-      'user-not-found' || 'wrong-password' || 'invalid-credential' => 'Hibás e-mail-cím vagy jelszó.',
-      'user-disabled' => 'Ezt a fiókot letiltották.',
-      'too-many-requests' => 'Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.',
-      'network-request-failed' => 'Nincs internet. Ellenőrizd a kapcsolatot!',
-      'requires-recent-login' => 'Biztonsági okból add meg újra a jelszavad.',
-      'operation-not-allowed' => 'Ez a bejelentkezési mód nincs bekapcsolva a Firebase-ben.',
-      'popup-closed-by-user' || 'cancelled-popup-request' || 'web-context-canceled' => 'Megszakítottad a bejelentkezést.',
-      'popup-blocked' => 'A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.',
-      'account-exists-with-different-credential' =>
-        'Ezzel az e-mail-címmel már jelszavas fiókod van. Jelentkezz be jelszóval.',
-      'unauthorized-domain' => 'Ez a weboldal nincs engedélyezve a Firebase-ben (Authorized domains).',
-      _ => 'Valami hiba történt (${e.code}). Próbáld újra.',
-    };
+  'invalid-email' => 'Ez nem érvényes e-mail-cím.',
+  'email-already-in-use' => 'Ezzel az e-mail-címmel már van fiók. Jelentkezz be!',
+  'weak-password' => 'Túl gyenge a jelszó: legalább 6 karakter legyen.',
+  'user-not-found' || 'wrong-password' || 'invalid-credential' => 'Hibás e-mail-cím vagy jelszó.',
+  'user-disabled' => 'Ezt a fiókot letiltották.',
+  'too-many-requests' => 'Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.',
+  'network-request-failed' => 'Nincs internet. Ellenőrizd a kapcsolatot!',
+  'requires-recent-login' => 'Biztonsági okból add meg újra a jelszavad.',
+  'operation-not-allowed' => 'Ez a bejelentkezési mód nincs bekapcsolva a Firebase-ben.',
+  'popup-closed-by-user' || 'cancelled-popup-request' || 'web-context-canceled' => 'Megszakítottad a bejelentkezést.',
+  'popup-blocked' => 'A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.',
+  'account-exists-with-different-credential' =>
+    'Ezzel az e-mail-címmel már jelszavas fiókod van. Jelentkezz be jelszóval.',
+  'unauthorized-domain' => 'Ez a weboldal nincs engedélyezve a Firebase-ben (Authorized domains).',
+  _ => 'Valami hiba történt (${e.code}). Próbáld újra.',
+};
 
 /// Felhasználói fiók: regisztráció, bejelentkezés, kijelentkezés, törlés.
 /// Az adatok a fiókhoz kötve a felhőben vannak (lásd [CloudSync]).
 class Account {
-  Account({FirebaseAuth? auth, FirebaseFirestore? db})
-      : _authOverride = auth,
-        _dbOverride = db;
+  Account({FirebaseAuth? auth, FirebaseFirestore? db}) : _authOverride = auth, _dbOverride = db;
 
   static Account instance = Account();
 
@@ -76,32 +74,32 @@ class Account {
   /// Új fiók. Ha a böngészőben már volt névtelen munkamenet (pl. egy meghívásnál),
   /// azt alakítjuk fiókká, így a korábbi visszajelzések és meghívók megmaradnak.
   Future<User> register({required String name, required String email, required String password}) => _guard(() async {
-        final credential = EmailAuthProvider.credential(email: email.trim(), password: password);
-        final current = auth.currentUser;
-        final result = current != null && current.isAnonymous
-            ? await current.linkWithCredential(credential)
-            : await auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
-        await result.user!.updateDisplayName(name.trim());
-        return result.user!;
-      });
+    final credential = EmailAuthProvider.credential(email: email.trim(), password: password);
+    final current = auth.currentUser;
+    final result = current != null && current.isAnonymous
+        ? await current.linkWithCredential(credential)
+        : await auth.createUserWithEmailAndPassword(email: email.trim(), password: password);
+    await result.user!.updateDisplayName(name.trim());
+    return result.user!;
+  });
 
   /// Bejelentkezés Google-fiókkal (böngészőben felugró ablakban, telefonon a Google oldalán).
   /// Névtelen munkamenetből ez is fiókká alakít, mint a regisztráció.
   Future<User> signInWithGoogle() => _guard(() async {
-        final provider = GoogleAuthProvider()..setCustomParameters({'prompt': 'select_account'});
-        final current = auth.currentUser;
-        if (current != null && current.isAnonymous) {
-          try {
-            final linked = kIsWeb ? await current.linkWithPopup(provider) : await current.linkWithProvider(provider);
-            return linked.user!;
-          } on FirebaseAuthException catch (e) {
-            // Ehhez a Google-fiókhoz már tartozik Életrend-fiók: abba lépünk be.
-            if (e.code != 'credential-already-in-use' && e.code != 'email-already-in-use') rethrow;
-          }
-        }
-        final result = kIsWeb ? await auth.signInWithPopup(provider) : await auth.signInWithProvider(provider);
-        return result.user!;
-      });
+    final provider = GoogleAuthProvider()..setCustomParameters({'prompt': 'select_account'});
+    final current = auth.currentUser;
+    if (current != null && current.isAnonymous) {
+      try {
+        final linked = kIsWeb ? await current.linkWithPopup(provider) : await current.linkWithProvider(provider);
+        return linked.user!;
+      } on FirebaseAuthException catch (e) {
+        // Ehhez a Google-fiókhoz már tartozik fiók: abba lépünk be.
+        if (e.code != 'credential-already-in-use' && e.code != 'email-already-in-use') rethrow;
+      }
+    }
+    final result = kIsWeb ? await auth.signInWithPopup(provider) : await auth.signInWithProvider(provider);
+    return result.user!;
+  });
 
   /// Google-fiókkal regisztrált (nincs jelszava).
   bool get usesGoogle =>
@@ -109,35 +107,34 @@ class Account {
       user?.providerData.any((p) => p.providerId == 'password') != true;
 
   Future<User> login({required String email, required String password}) => _guard(() async {
-        final result = await auth.signInWithEmailAndPassword(email: email.trim(), password: password);
-        return result.user!;
-      });
+    final result = await auth.signInWithEmailAndPassword(email: email.trim(), password: password);
+    return result.user!;
+  });
 
   Future<void> resetPassword(String email) => _guard(() async {
-        await auth.setLanguageCode('hu');
-        await auth.sendPasswordResetEmail(email: email.trim());
-      });
+    await auth.setLanguageCode('hu');
+    await auth.sendPasswordResetEmail(email: email.trim());
+  });
 
   Future<void> logout() => auth.signOut();
 
   /// A fiók és minden felhőbeli adat végleges törlése. Biztonsági okból újra azonosítani kell:
   /// jelszóval, vagy Google-fióknál a Google bejelentkezéssel.
   Future<void> deleteAccount(String? password) => _guard(() async {
-        final u = user!;
-        if (usesGoogle) {
-          final provider = GoogleAuthProvider();
-          kIsWeb ? await u.reauthenticateWithPopup(provider) : await u.reauthenticateWithProvider(provider);
-        } else {
-          await u.reauthenticateWithCredential(EmailAuthProvider.credential(email: u.email!, password: password ?? ''));
-        }
-        await CloudSync(store: null, uid: u.uid, db: db).deleteAll();
-        await u.delete();
-      });
+    final u = user!;
+    if (usesGoogle) {
+      final provider = GoogleAuthProvider();
+      kIsWeb ? await u.reauthenticateWithPopup(provider) : await u.reauthenticateWithProvider(provider);
+    } else {
+      await u.reauthenticateWithCredential(EmailAuthProvider.credential(email: u.email!, password: password ?? ''));
+    }
+    await CloudSync(store: null, uid: u.uid, db: db).deleteAll();
+    await u.delete();
+  });
 }
 
 /// A felhasználó adatainak szinkronizálása a felhővel: `users/{uid}/{fajta}/{azonosító}`.
-/// Minden naplóbejegyzés, cél, program és címke külön dokumentum, így egyik sem
-/// ütközik a Firestore 1 MB-os dokumentumkorlátjába (a képek miatt fontos).
+/// Minden bejegyzés, feladat, cél és csoport külön dokumentum, így csak a változás megy fel.
 class CloudSync {
   CloudSync({required this.store, required this.uid, FirebaseFirestore? db}) : _db = db ?? FirebaseFirestore.instance;
 
@@ -145,11 +142,18 @@ class CloudSync {
   final String uid;
   final FirebaseFirestore _db;
 
-  static const kinds = ['events', 'habits', 'journal', 'moodTags', 'moodFaces', 'meta'];
+  static const kinds = ['events', 'tasks', 'habits', 'groups', 'meta'];
+
+  /// A régi (Életrend) változat gyűjteményei: a fiók törlésekor ezeket is töröljük, egyébként
+  /// nem nyúlunk hozzájuk (a régi napló a fiókban megmarad).
+  static const legacyKinds = ['journal', 'moodTags', 'moodFaces'];
 
   /// Amit legutóbb feltöltöttünk/letöltöttünk (útvonal → a tartalom ujjlenyomata), hogy csak a
   /// változást küldjük. Az eszközön megmarad, így az offline módosítások is felkerülnek később.
-  late final Map<String, String> _known = {...?store?.syncHashesFor(uid)};
+  late final Map<String, String> _known = {
+    for (final e in (store?.syncHashesFor(uid) ?? const <String, String>{}).entries)
+      if (kinds.contains(e.key.split('/').first)) e.key: e.value,
+  };
   Timer? _debounce;
   Future<void>? _pushing;
 
@@ -166,9 +170,8 @@ class CloudSync {
     return {
       for (final e in s.events) 'events/${e.id}': e.toJson(),
       for (final h in s.habits) 'habits/${h.id}': h.toJson(),
-      for (final j in s.journal) 'journal/${j.id}': j.toJson(),
-      for (var i = 0; i < s.moodTags.length; i++) 'moodTags/${s.moodTags[i].id}': {...s.moodTags[i].toJson(), 'order': i},
-      for (final f in s.moodFaces) 'moodFaces/${f.id}': f.toJson(),
+      for (final t in s.tasks) 'tasks/${t.id}': t.toJson(),
+      for (final g in s.groups) 'groups/${g.id}': g.toJson(),
       'meta/settings': s.cloudSettings(),
     };
   }
@@ -230,13 +233,11 @@ class CloudSync {
       ..clear()
       ..addAll(known);
     if (unchanged && store!.syncUid == uid) return;
-    final tags = [...docs['moodTags']!]..sort((a, b) => (a['order'] as int? ?? 0).compareTo(b['order'] as int? ?? 0));
     store!.applyCloud(
       events: docs['events']!.map(Event.fromJson).toList(),
       habits: docs['habits']!.map(Habit.fromJson).toList(),
-      journal: docs['journal']!.map(JournalEntry.fromJson).toList(),
-      moodTags: tags.map(MoodTag.fromJson).toList(),
-      moodFaces: docs['moodFaces']!.map(MoodTag.fromJson).toList(),
+      tasks: docs['tasks']!.map(TaskItem.fromJson).toList(),
+      groups: docs['groups']!.map(FriendGroup.fromJson).toList(),
       settings: docs['meta']!.isEmpty ? null : docs['meta']!.first,
     );
     store!.saveSyncHashes(uid, _known);
@@ -273,9 +274,12 @@ class CloudSync {
 
   void _onChange() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 1200), () => push().catchError((Object e) {
-          debugPrint('Felhő mentése nem sikerült, később újra: $e');
-        }));
+    _debounce = Timer(
+      const Duration(milliseconds: 1200),
+      () => push().catchError((Object e) {
+        debugPrint('Felhő mentése nem sikerült, később újra: $e');
+      }),
+    );
   }
 
   /// Visszatéréskor: előbb a függő változások fel, aztán a máshol történtek le.
@@ -295,15 +299,15 @@ class CloudSync {
   static String _hash(Map<String, dynamic> data) => sha1.convert(utf8.encode(jsonEncode(_canonical(data)))).toString();
 
   static Object? _canonical(Object? v) => switch (v) {
-        Map() => SplayTreeMap<String, Object?>.of({for (final e in v.entries) e.key.toString(): _canonical(e.value)}),
-        List() => [for (final x in v) _canonical(x)],
-        double() when v == v.roundToDouble() => v.toInt(),
-        _ => v,
-      };
+    Map() => SplayTreeMap<String, Object?>.of({for (final e in v.entries) e.key.toString(): _canonical(e.value)}),
+    List() => [for (final x in v) _canonical(x)],
+    double() when v == v.roundToDouble() => v.toInt(),
+    _ => v,
+  };
 
   /// A fiók összes adatának törlése a felhőből.
   Future<void> deleteAll() async {
-    for (final kind in [...kinds, 'push']) {
+    for (final kind in [...kinds, ...legacyKinds, 'push']) {
       final q = await _col(kind).get();
       for (var i = 0; i < q.docs.length; i += 400) {
         final batch = _db.batch();

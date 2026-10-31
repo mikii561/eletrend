@@ -9,10 +9,13 @@ import 'store.dart';
 
 /// Egy barát az appban (fiókkal), és amit megosztott magáról.
 class Friend {
-  const Friend({required this.uid, required this.name, this.streaks = const []});
+  const Friend({required this.uid, required this.name, this.streaks = const [], this.birthday});
 
   final String uid;
   final String name;
+
+  /// Születésnap „HH-NN” alakban, ha megosztja.
+  final String? birthday;
 
   /// A legjobb sorozatai (cél neve, nap), ha megosztja; különben üres.
   final List<(String, int)> streaks;
@@ -35,7 +38,7 @@ class FriendException implements Exception {
   String toString() => message;
 }
 
-/// Barátok fiókkal: barátkód, jelölés, elfogadás, sorozatok megosztása, meghívás egy gombnyomással.
+/// Barátok fiókkal: barátkód, jelölés, elfogadás, névjegy, meghívás, letiltás és jelentés.
 ///
 /// Felhő:
 /// - `codes/{KÓD}`: kinek a kódja (bárki megnézheti, aki ismeri a kódot)
@@ -43,6 +46,8 @@ class FriendException implements Exception {
 /// - `requests/{címzett}/items/{küldő}`: barátjelölések
 /// - `friendships/{uid}/list/{barát}`: a barátlista (mindkét oldalon)
 /// - `inbox/{uid}/items/{programId}`: barát által küldött meghívások
+/// - `blocks/{uid}/list/{másik}`: akiket letiltottam (tőlük nem jöhet jelölés, meghívás, bökés)
+/// - `reports/{id}`: jelentés az adminnak
 class Friends {
   Friends({FirebaseFirestore? db}) : _dbOverride = db;
 
@@ -59,6 +64,7 @@ class Friends {
   String? myCode;
   String? _lastCard;
   Timer? _debounce;
+  StreamSubscription<void>? _cacheSub;
 
   /// Bejelentkezéskor: saját kód (ha még nincs) és névjegy; utána a változásokat követi.
   Future<void> start(String uid, AppStore store, {Random? random}) async {
@@ -82,10 +88,28 @@ class Friends {
     await _updateCard(force: true);
     store.removeListener(_onChange);
     store.addListener(_onChange);
+    // A barátlista az eszközön is megmarad (offline nézethez és a születésnap-emlékeztetőkhöz).
+    await _cacheSub?.cancel();
+    _cacheSub = watchFriends().listen(
+      (list) =>
+          store.setFriendsCache([for (final f in list) FriendInfo(uid: f.uid, name: f.name, birthday: f.birthday)]),
+      onError: (Object e) => debugPrint('Barátlista később: $e'),
+    );
+  }
+
+  /// A barátok névjegyének frissítése az eszközön (pl. visszatéréskor: közben megadhatták a
+  /// születésnapjukat, amiről a barátlista figyelése magától nem szól).
+  Future<void> refreshCache() async {
+    final store = _store;
+    if (_uid == null || store == null) return;
+    final list = await watchFriends().first;
+    store.setFriendsCache([for (final f in list) FriendInfo(uid: f.uid, name: f.name, birthday: f.birthday)]);
   }
 
   void stop() {
     _debounce?.cancel();
+    _cacheSub?.cancel();
+    _cacheSub = null;
     _store?.removeListener(_onChange);
     _uid = null;
     _store = null;
@@ -95,12 +119,16 @@ class Friends {
 
   void _onChange() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(seconds: 2), () => _updateCard().catchError((Object e) {
-          debugPrint('Névjegy frissítése később: $e');
-        }));
+    _debounce = Timer(
+      const Duration(seconds: 2),
+      () => _updateCard().catchError((Object e) {
+        debugPrint('Névjegy frissítése később: $e');
+      }),
+    );
   }
 
-  /// A barátoknak látható névjegy: név, kód és (ha engedted) a sorozataid.
+  /// A barátoknak látható névjegy: név, kód, és amit engedtél: sorozatok, születésnap (év nélkül).
+  /// Az `invites` mezőt a szabályok nézik: ha kikapcsoltad, a barátaid nem hívhatnak meg.
   Map<String, dynamic> _card() {
     final s = _store!;
     final streaks = [
@@ -111,6 +139,8 @@ class Friends {
       'name': s.myName,
       'code': myCode,
       'streaks': s.shareStreaks ? streaks.take(5).toList() : [],
+      'birthday': s.shareBirthday && s.birthday != null && s.birthday!.length == 10 ? s.birthday!.substring(5) : null,
+      'invites': s.allowInvites,
     };
   }
 
@@ -151,7 +181,9 @@ class Friends {
       .doc(_me)
       .collection('items')
       .snapshots()
-      .map((q) => [for (final d in q.docs) FriendRequest(fromUid: d.id, fromName: d.data()['fromName'] as String? ?? '?')]);
+      .map(
+        (q) => [for (final d in q.docs) FriendRequest(fromUid: d.id, fromName: d.data()['fromName'] as String? ?? '?')],
+      );
 
   /// Elfogadás: mindkettőtök listájára felkerültök.
   Future<void> accept(FriendRequest r) async {
@@ -168,7 +200,8 @@ class Friends {
     await decline(r);
   }
 
-  Future<void> decline(FriendRequest r) => _db.collection('requests').doc(_me).collection('items').doc(r.fromUid).delete();
+  Future<void> decline(FriendRequest r) =>
+      _db.collection('requests').doc(_me).collection('items').doc(r.fromUid).delete();
 
   Future<void> remove(String friendUid) async {
     final batch = _db.batch()
@@ -178,20 +211,24 @@ class Friends {
   }
 
   /// A barátok listája a névjegyükkel (sorozatokkal) együtt.
-  Stream<List<Friend>> watchFriends() => _db.collection('friendships').doc(_me).collection('list').snapshots().asyncMap((q) async {
+  Stream<List<Friend>> watchFriends() =>
+      _db.collection('friendships').doc(_me).collection('list').snapshots().asyncMap((q) async {
         final friends = <Friend>[];
         for (final d in q.docs) {
           final name = d.data()['name'] as String? ?? '?';
           try {
             final card = (await _db.collection('people').doc(d.id).get()).data();
-            friends.add(Friend(
-              uid: d.id,
-              name: card?['name'] as String? ?? name,
-              streaks: [
-                for (final s in card?['streaks'] as List? ?? [])
-                  ((s as Map)['name'] as String, (s['days'] as num).toInt()),
-              ],
-            ));
+            friends.add(
+              Friend(
+                uid: d.id,
+                name: card?['name'] as String? ?? name,
+                birthday: card?['birthday'] as String?,
+                streaks: [
+                  for (final s in card?['streaks'] as List? ?? [])
+                    ((s as Map)['name'] as String, (s['days'] as num).toInt()),
+                ],
+              ),
+            );
           } catch (_) {
             friends.add(Friend(uid: d.id, name: name));
           }
@@ -200,18 +237,62 @@ class Friends {
       });
 
   /// Meghívás egy gombnyomással: a barátok „Meghívásaim” listájába kerül (a program már meg van osztva).
-  Future<void> invite(Event event, List<String> friendUids) async {
-    final batch = _db.batch();
+  /// Akinél ki van kapcsolva a meghívás, vagy letiltott, annál a szabály elutasítja: őket visszaadjuk.
+  Future<List<String>> invite(Event event, List<String> friendUids) async {
+    final failed = <String>[];
+    final when = (event.nextOccurrence()?.start ?? event.start).toIso8601String();
     for (final f in friendUids) {
-      batch.set(_db.collection('inbox').doc(f).collection('items').doc(event.shareId), {
-        'title': event.title,
-        'date': event.nextDate().toIso8601String(),
-        'fromUid': _me,
-        'fromName': _store!.myName,
-        'at': FieldValue.serverTimestamp(),
-      });
+      try {
+        await _db.collection('inbox').doc(f).collection('items').doc(event.shareId).set({
+          'title': event.title,
+          'date': when,
+          'fromUid': _me,
+          'fromName': _store!.myName,
+          'at': FieldValue.serverTimestamp(),
+        });
+      } on FirebaseException catch (e) {
+        if (e.code != 'permission-denied') rethrow;
+        failed.add(f);
+      }
     }
+    return failed;
+  }
+
+  // Letiltás és jelentés
+
+  /// Letiltás: a barátság megszűnik, és tőle többé nem jöhet jelölés, meghívás, bökés.
+  Future<void> block(String uid, String name) async {
+    final batch = _db.batch()
+      ..set(_db.collection('blocks').doc(_me).collection('list').doc(uid), {
+        'name': name,
+        'at': FieldValue.serverTimestamp(),
+      })
+      ..delete(_db.collection('friendships').doc(_me).collection('list').doc(uid))
+      ..delete(_db.collection('friendships').doc(uid).collection('list').doc(_me))
+      ..delete(_db.collection('requests').doc(_me).collection('items').doc(uid));
     await batch.commit();
+  }
+
+  Future<void> unblock(String uid) => _db.collection('blocks').doc(_me).collection('list').doc(uid).delete();
+
+  /// A letiltottak (azonosító → név).
+  Stream<Map<String, String>> watchBlocked() => _db
+      .collection('blocks')
+      .doc(_me)
+      .collection('list')
+      .snapshots()
+      .map((q) => {for (final d in q.docs) d.id: d.data()['name'] as String? ?? '?'});
+
+  /// Jelentés az adminnak egy felhasználóról vagy egy közös programról.
+  Future<void> report({String? userUid, String? eventId, required String reason}) async {
+    final text = reason.trim();
+    await _db.collection('reports').add({
+      'reporterUid': _me,
+      'userUid': userUid,
+      'eventId': eventId,
+      'reason': text.length > 500 ? text.substring(0, 500) : text,
+      'at': FieldValue.serverTimestamp(),
+    });
   }
 
   /// A barátoktól kapott meghívások átkerülnek a saját „Meghívásaim” listába.
@@ -219,11 +300,14 @@ class Friends {
       _db.collection('inbox').doc(_me).collection('items').snapshots().listen((q) async {
         for (final d in q.docs) {
           final data = d.data();
-          _store?.saveInvite(Invite(
-            id: d.id,
-            title: data['title'] as String? ?? '',
-            date: DateTime.tryParse(data['date'] as String? ?? '') ?? DateTime.now(),
-          ));
+          _store?.saveInvite(
+            Invite(
+              id: d.id,
+              title: data['title'] as String? ?? '',
+              date: DateTime.tryParse(data['date'] as String? ?? '') ?? DateTime.now(),
+              fromName: data['fromName'] as String? ?? '',
+            ),
+          );
           await d.reference.delete();
         }
       }, onError: (Object e) => debugPrint('Meghívások később: $e'));

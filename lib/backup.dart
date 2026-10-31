@@ -6,16 +6,16 @@ import 'package:intl/intl.dart';
 
 import 'store.dart';
 
-/// Biztonsági mentés fájlba és visszatöltés. Telefonon a mentés helyét a
+/// Adataid exportálása fájlba (olvasható JSON) és visszatöltése. Telefonon a mentés helyét a
 /// felhasználó választja, böngészőben letöltésként jelenik meg.
 class Backup {
   static Future<void> export(BuildContext context, AppStore store) async {
-    final name = 'eletrend-mentes-${DateFormat('yyyy-MM-dd').format(DateTime.now())}.json';
+    final name = 'lifeup-adataim-${DateFormat('yyyy-MM-dd').format(DateTime.now())}.json';
     final messenger = ScaffoldMessenger.of(context);
     try {
       final saved = await FilePicker.saveFile(
         fileName: name,
-        bytes: utf8.encode(store.exportBackup()),
+        bytes: utf8.encode(store.exportData()),
         mimeType: 'application/json',
         dialogTitle: 'Hova mentsem?',
       );
@@ -31,9 +31,11 @@ class Backup {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Visszatöltöd a mentést?'),
-        content: const Text('A mentésben lévő adatok a mostaniak helyére kerülnek. '
-            'Ha a mostaniakra is szükséged lehet, előbb mentsd el őket.'),
+        title: const Text('Visszatöltöd az exportot?'),
+        content: const Text(
+          'A fájlban lévő adatok a mostaniak helyére kerülnek. '
+          'Ha a mostaniakra is szükséged lehet, előbb exportáld őket.',
+        ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Mégse')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Fájl kiválasztása')),
@@ -44,11 +46,15 @@ class Backup {
     final files = await FilePicker.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
     if (files.isEmpty) return;
     try {
-      await store.importBackup(utf8.decode(await files.first.readAsBytes()));
-      messenger.showSnackBar(SnackBar(
-        content: Text('Visszatöltve: ${store.journal.length} naplóbejegyzés, ${store.habits.length} cél, '
-            '${store.events.length} program.'),
-      ));
+      store.importData(utf8.decode(await files.first.readAsBytes()));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Visszatöltve: ${store.events.length} bejegyzés, ${store.tasks.length} feladat, '
+            '${store.habits.length} cél.',
+          ),
+        ),
+      );
     } on FormatException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (_) {

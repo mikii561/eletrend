@@ -6,12 +6,10 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import 'badges_screen.dart';
-import 'breathing_screen.dart';
 import 'habit_editor.dart';
 import 'habit_history_screen.dart';
 import 'shared_goal_widgets.dart';
-import 'today_screen.dart' show CheckCircle, StreakChip, habitProgress;
+import '../widgets/goal_widgets.dart';
 
 /// Célok listája az elmúlt 7 nap teljesítésével.
 class HabitsScreen extends StatelessWidget {
@@ -32,18 +30,6 @@ class HabitsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Célok'),
         actions: [
-          if (store.shows(Feature.breathing))
-            IconButton(
-              tooltip: 'Légzőgyakorlat',
-              icon: const Icon(Icons.self_improvement),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BreathingScreen())),
-            ),
-          if (store.shows(Feature.badges))
-            IconButton(
-              tooltip: 'Jelvények',
-              icon: const Icon(Icons.emoji_events_outlined),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BadgesScreen())),
-            ),
           TextButton.icon(
             onPressed: () => showHabitTemplates(context),
             icon: const Icon(Icons.auto_awesome_outlined),

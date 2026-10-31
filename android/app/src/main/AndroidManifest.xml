@@ -3,10 +3,8 @@
     <!-- Emlékeztető értesítések -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
-        android:label="Életrend"
+        android:label="LIFEUP"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <!-- Az ütemezett értesítések megjelenítése, újraindítás után is -->
@@ -41,25 +39,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
-        <!-- Kezdőképernyő-widget: mai célok -->
-        <receiver android:name=".HabitsWidgetProvider"
-            android:label="Mai célok"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider"
-                android:resource="@xml/habits_widget_info" />
-        </receiver>
-
-        <!-- A widgeten koppintás a háttérben futtatja a Dart kódot -->
-        <receiver android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="es.antonborri.home_widget.action.BACKGROUND" />
-            </intent-filter>
-        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

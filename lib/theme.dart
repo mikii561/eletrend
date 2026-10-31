@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'availability.dart';
+import 'models.dart';
+
 /// Az app színei és stílusa egy helyen.
 ///
 /// „Papírnapló” paletta: meleg krém alap, mély burgundi márkaszín, zsálya kiemelés;
@@ -35,19 +38,70 @@ class AppColors {
 
   /// Kiemelt felületek (fejléc, dátum, kész pipa): egyszínű márkaszín, enyhe mélységgel.
   static LinearGradient get headerGradient => LinearGradient(
-        colors: dark ? const [Color(0xFF7A1512), Color(0xFF5E0C09)] : const [Color(0xFF590907), Color(0xFF470705)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
+    colors: dark ? const [Color(0xFF7A1512), Color(0xFF5E0C09)] : const [Color(0xFF590907), Color(0xFF470705)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
-  /// Hangulatonkénti szín (1–5).
-  static const moods = [
-    Color(0xFFA8433A),
-    Color(0xFFC97B4A),
-    Color(0xFFD4A95A),
-    Color(0xFF9AA477),
-    Color(0xFF6B8A5E),
-  ];
+  /// Szín egy kategóriához; sötét módban világosabb árnyalat, hogy kiolvasható legyen.
+  static Color category(EventCategory c) => switch (c) {
+    EventCategory.personal => dark ? const Color(0xFFA3B08E) : const Color(0xFF5F6E4E),
+    EventCategory.work => dark ? const Color(0xFF9AA7BD) : const Color(0xFF4F5D73),
+    EventCategory.study => dark ? const Color(0xFFD9AE63) : const Color(0xFF94661E),
+    EventCategory.social => dark ? const Color(0xFFE08A7E) : const Color(0xFF8C1C17),
+    EventCategory.health => dark ? const Color(0xFF86B595) : const Color(0xFF3F6B4F),
+    EventCategory.important => dark ? const Color(0xFFE8946B) : const Color(0xFFB4532A),
+    EventCategory.shared => dark ? const Color(0xFFC495B5) : const Color(0xFF6E3B5E),
+  };
+
+  /// Egy bejegyzés színe: a saját, ha van, különben a kategóriáé.
+  static Color ofEvent(Event e) => e.color != null ? Color(e.color!) : category(e.category);
+
+  /// Saját színek a szerkesztőben (a paletta árnyalatai).
+  static const customColors = [0xFF590907, 0xFF8C5A3C, 0xFFA0672A, 0xFF6B6E5D, 0xFF3F5E5A, 0xFF4F5D73, 0xFF7A4E6E];
+
+  /// Az elérhetőségi állapot jelzőszíne.
+  static Color status(AvailabilityStatus s) => switch (s) {
+    AvailabilityStatus.available => dark ? const Color(0xFF86B595) : const Color(0xFF3F7A52),
+    AvailabilityStatus.open => dark ? const Color(0xFFD9AE63) : const Color(0xFFA0672A),
+    AvailabilityStatus.busy => dark ? const Color(0xFFE08A7E) : const Color(0xFF8C1C17),
+    AvailabilityStatus.dnd => dark ? const Color(0xFFB5A595) : const Color(0xFF7A6A5E),
+  };
+
+  /// Hibaszín (törlés, hibaüzenet).
+  static Color get danger => dark ? const Color(0xFFF09080) : const Color(0xFFB3261E);
+}
+
+/// Ikon egy kategóriához.
+IconData categoryIcon(EventCategory c) => switch (c) {
+  EventCategory.personal => Icons.person_outline,
+  EventCategory.work => Icons.work_outline,
+  EventCategory.study => Icons.school_outlined,
+  EventCategory.social => Icons.celebration_outlined,
+  EventCategory.health => Icons.fitness_center,
+  EventCategory.important => Icons.priority_high_rounded,
+  EventCategory.shared => Icons.groups_outlined,
+};
+
+/// Ikon egy elérhetőségi állapothoz.
+IconData statusIcon(AvailabilityStatus s) => switch (s) {
+  AvailabilityStatus.available => Icons.check_circle_outline,
+  AvailabilityStatus.open => Icons.waving_hand_outlined,
+  AvailabilityStatus.busy => Icons.schedule,
+  AvailabilityStatus.dnd => Icons.do_not_disturb_on_outlined,
+};
+
+/// Térközök és lekerekítések egy helyen (8-as alap).
+class Space {
+  static const xs = 4.0;
+  static const s = 8.0;
+  static const m = 12.0;
+  static const l = 16.0;
+  static const xl = 24.0;
+  static const xxl = 32.0;
+
+  static const radius = 14.0;
+  static const radiusSmall = 10.0;
 }
 
 /// Az app témája világos vagy sötét módban.
@@ -94,22 +148,43 @@ ThemeData buildTheme({bool dark = false}) {
       elevation: 0,
       centerTitle: false,
       foregroundColor: textColor,
-      titleTextStyle: TextStyle(fontFamily: font, fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.6, color: textColor),
+      titleTextStyle: TextStyle(
+        fontFamily: font,
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.6,
+        color: textColor,
+      ),
     ),
     cardTheme: CardThemeData(
       color: card,
       elevation: 0,
       margin: const EdgeInsets.symmetric(vertical: 5),
-      shape: RoundedRectangleBorder(borderRadius: radius, side: BorderSide(color: border)),
+      shape: RoundedRectangleBorder(
+        borderRadius: radius,
+        side: BorderSide(color: border),
+      ),
     ),
-    listTileTheme: ListTileThemeData(iconColor: muted, titleTextStyle: text.bodyLarge?.copyWith(fontWeight: FontWeight.w500)),
+    listTileTheme: ListTileThemeData(
+      iconColor: muted,
+      titleTextStyle: text.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+    ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: card,
       hintStyle: TextStyle(color: muted),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primary, width: 1.5)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: primary, width: 1.5),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
     ),
     filledButtonTheme: FilledButtonThemeData(
@@ -128,7 +203,9 @@ ThemeData buildTheme({bool dark = false}) {
       ),
     ),
     textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(textStyle: TextStyle(fontFamily: font, fontWeight: FontWeight.w600)),
+      style: TextButton.styleFrom(
+        textStyle: TextStyle(fontFamily: font, fontWeight: FontWeight.w600),
+      ),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primary,
@@ -171,7 +248,9 @@ ThemeData buildTheme({bool dark = false}) {
       ),
     ),
     switchTheme: SwitchThemeData(
-      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.onPrimaryFor(dark) : null),
+      thumbColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? AppColors.onPrimaryFor(dark) : null,
+      ),
       trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? primary : null),
       trackOutlineColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? primary : border),
     ),

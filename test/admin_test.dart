@@ -10,21 +10,27 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
-  test('adatlap: darabszámok, napló tartalma nélkül; statisztika', () async {
+  test('adatlap: darabszámok, tartalom nélkül; statisztika', () async {
     final db = FakeFirebaseFirestore();
     final admin = Admin(db: db);
     SharedPreferences.setMockInitialValues({});
     final store = await AppStore.load();
     store.setMyName('Gabi');
     store.addHabit('Séta');
-    store.saveEntry(JournalEntry(id: 'j', date: DateTime(2026, 10, 28), mood: 5, note: 'titkos gondolat'));
-    await admin.updateProfile(uid: 'u1', email: 'gabi@pelda.hu', store: store, createdAt: DateTime(2026, 10, 1), force: true);
+    store.saveTask(TaskItem(id: 't', title: 'titkos teendő'));
+    await admin.updateProfile(
+      uid: 'u1',
+      email: 'gabi@pelda.hu',
+      store: store,
+      createdAt: DateTime(2026, 10, 1),
+      force: true,
+    );
 
     final doc = await db.collection('profiles').doc('u1').get();
     expect(doc.data()!.toString(), isNot(contains('titkos')));
     final users = await admin.users();
     expect(users.single.name, 'Gabi');
-    expect(users.single.counts, {'journal': 1, 'habits': 1, 'events': 0});
+    expect(users.single.counts, {'events': 0, 'tasks': 1, 'habits': 1});
 
     // Óránként csak egyszer frissít (kíméli a kvótát)
     store.addHabit('Olvasás');
@@ -32,13 +38,34 @@ void main() {
     expect((await admin.users()).single.counts['habits'], 1);
 
     final now = DateTime.now();
-    final s = AdminStats([
-      UserProfile(uid: 'a', name: 'A', email: '', lastSeen: now.subtract(const Duration(days: 2)), createdAt: now, platform: 'web', counts: const {'journal': 3}),
-      UserProfile(uid: 'b', name: 'B', email: '', lastSeen: now.subtract(const Duration(days: 20)), platform: 'android', counts: const {'journal': 2, 'habits': 4}),
-      const UserProfile(uid: 'c', name: 'C', email: ''),
-    ], sharedEvents: 1, openFeedback: 2, errors24h: 0, now: now);
+    final s = AdminStats(
+      [
+        UserProfile(
+          uid: 'a',
+          name: 'A',
+          email: '',
+          lastSeen: now.subtract(const Duration(days: 2)),
+          createdAt: now,
+          platform: 'web',
+          counts: const {'tasks': 3},
+        ),
+        UserProfile(
+          uid: 'b',
+          name: 'B',
+          email: '',
+          lastSeen: now.subtract(const Duration(days: 20)),
+          platform: 'android',
+          counts: const {'tasks': 2, 'habits': 4},
+        ),
+        const UserProfile(uid: 'c', name: 'C', email: ''),
+      ],
+      sharedEvents: 1,
+      openFeedback: 2,
+      errors24h: 0,
+      now: now,
+    );
     expect([s.total, s.active7, s.active30, s.newThisWeek], [3, 1, 2, 1]);
-    expect(s.totals, {'journal': 5, 'habits': 4, 'events': 0});
+    expect(s.totals, {'events': 0, 'tasks': 5, 'habits': 4});
     expect(s.platforms, {'web': 1, 'android': 1, '?': 1});
   });
 
@@ -96,20 +123,27 @@ void main() {
       'platform': 'web',
       'version': appVersion,
       'lastSeen': Timestamp.now(),
-      'counts': {'journal': 3, 'habits': 2, 'events': 1},
+      'counts': {'events': 1, 'tasks': 3, 'habits': 2},
     });
-    await db.collection('feedback').add({'uid': 'u1', 'name': 'Teszt Elek', 'email': 'elek@pelda.hu', 'text': 'Jó az app!', 'done': false, 'at': Timestamp.now()});
+    await db.collection('feedback').add({
+      'uid': 'u1',
+      'name': 'Teszt Elek',
+      'email': 'elek@pelda.hu',
+      'text': 'Jó az app!',
+      'done': false,
+      'at': Timestamp.now(),
+    });
 
     await tester.pumpWidget(const MaterialApp(home: AdminScreen()));
     await tester.pumpAndSettle();
     expect(find.text('Felhasználó'), findsOneWidget); // áttekintés csempe
-    expect(find.text('Naplóbejegyzés'), findsOneWidget);
+    expect(find.text('Feladat'), findsOneWidget);
 
     await tester.tap(find.text('Felhasználók'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Teszt Elek'));
     await tester.pumpAndSettle();
-    expect(find.text('3 napló • 2 cél • 1 program'), findsOneWidget);
+    expect(find.text('1 bejegyzés • 3 feladat • 2 cél'), findsOneWidget);
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
     expect(await Admin.instance.isBanned('u1'), isTrue);
@@ -131,5 +165,23 @@ void main() {
     await tester.tap(find.text('Programok'));
     await tester.pumpAndSettle();
     expect(find.text('Nincs megosztott program.'), findsOneWidget);
+
+    // Jelentés egy felhasználóról: az admin látja, és kezeltnek jelölheti.
+    await tester.runAsync(
+      () => db.collection('reports').add({
+        'reporterUid': 'u7',
+        'userUid': 'u1',
+        'reason': 'Kéretlen üzenetek',
+        'at': Timestamp.now(),
+      }),
+    );
+    await tester.ensureVisible(find.text('Jelentések'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Jelentések'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kéretlen üzenetek'), findsOneWidget);
+    await tester.tap(find.byTooltip('Kezelve (törlés)'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nincs jelentés.'), findsOneWidget);
   });
 }

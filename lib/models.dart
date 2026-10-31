@@ -1,173 +1,328 @@
-/// Az app adatmodelljei: programok, célok, naplóbejegyzések.
+/// Az app adatmodelljei: naptárbejegyzések, feladatok, célok, baráti csoportok.
 library;
 
-import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 /// Egy napot azonosító kulcs, pl. "2026-10-27".
-String dayKey(DateTime d) =>
-    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+String dayKey(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
 /// [n] naptári nappal később (negatívval korábban), délben.
 /// Nem 24 órákat ad hozzá, így az óraátállítás napján sem csúszik el.
 DateTime addDays(DateTime d, int n) => DateTime(d.year, d.month, d.day + n, 12);
 
-String newId() => DateTime.now().microsecondsSinceEpoch.toString();
+/// A nap kezdete (éjfél, helyi idő).
+DateTime startOfDay(DateTime d) => DateTime(d.year, d.month, d.day);
 
-/// Közös program barátokkal.
-class Event {
-  Event({
-    required this.id,
-    required this.title,
-    required this.date,
-    this.place = '',
-    this.lat,
-    this.lng,
-    List<String>? invited,
-    this.repeat = Repeat.none,
-    List<Expense>? expenses,
-    this.shareId,
-    this.bgTheme,
-    this.bgImage,
-  })  : invited = invited ?? [],
-        expenses = expenses ?? [];
+/// Ugyanaz a naptári nap-e.
+bool sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
-  final String id;
-  String title;
-  DateTime date;
-  String place;
+final _idRandom = Random();
+var _idSeq = 0;
 
-  /// A helyszín koordinátái, ha térképen lett kiválasztva.
-  double? lat;
-  double? lng;
-  List<String> invited;
+/// Egyedi azonosító. Az idő mellett sorszám és véletlen rész is van benne, mert egyes gépeken
+/// az óra felbontása durva: két gyorsan egymás után (vagy két eszközön egyszerre) létrehozott
+/// elem különben ugyanazt kaphatná, és a felhőben felülírnák egymást.
+String newId() =>
+    '${DateTime.now().microsecondsSinceEpoch}${(_idSeq++ % 1000).toString().padLeft(3, '0')}${_idRandom.nextInt(1000).toString().padLeft(3, '0')}';
 
-  bool get hasLocation => lat != null && lng != null;
+/// Bejegyzések kategóriái; a színük és ikonjuk a theme.dart-ban van.
+enum EventCategory {
+  personal('Személyes'),
+  work('Munka'),
+  study('Tanulás'),
+  social('Közösségi'),
+  health('Egészség, sport'),
+  important('Fontos'),
+  shared('Közös');
 
-  /// Ismétlődés; a [date] ilyenkor az első alkalom.
-  Repeat repeat;
+  const EventCategory(this.label);
 
-  /// Ki mennyit fizetett a programon.
-  List<Expense> expenses;
-
-  /// A felhőbe kitett példány azonosítója, ha megosztottad a barátaiddal (a meghívólinkben is ez van).
-  String? shareId;
-
-  /// Háttér: kész téma kulcsa, vagy saját fotó (base64 JPEG). A fotó az erősebb.
-  String? bgTheme;
-  String? bgImage;
-
-  /// Az [i]-edik alkalom időpontja (0 = az első). Naptári napokkal számol, így
-  /// óraátállításkor sem csúszik el az időpont.
-  DateTime occurrence(int i) => switch (repeat) {
-        Repeat.none => date,
-        Repeat.weekly => DateTime(date.year, date.month, date.day + 7 * i, date.hour, date.minute),
-        Repeat.biweekly => DateTime(date.year, date.month, date.day + 14 * i, date.hour, date.minute),
-        Repeat.monthly => DateTime(
-            date.year,
-            date.month + i,
-            min(date.day, DateTime(date.year, date.month + i + 1, 0).day),
-            date.hour,
-            date.minute,
-          ),
-      };
-
-  /// A következő alkalom a mai naptól (ma is beleszámít). Nem ismétlődőnél maga a [date].
-  DateTime nextDate([DateTime? now]) {
-    if (repeat == Repeat.none) return date;
-    final today = now ?? DateTime.now();
-    final start = DateTime(today.year, today.month, today.day);
-    var i = 0;
-    while (occurrence(i).isBefore(start)) {
-      i++;
-    }
-    return occurrence(i);
-  }
-
-  /// Van-e alkalma az adott napon.
-  bool occursOn(DateTime day) {
-    final key = dayKey(day);
-    for (var i = 0;; i++) {
-      final d = occurrence(i);
-      if (dayKey(d) == key) return true;
-      if (repeat == Repeat.none || d.isAfter(DateTime(day.year, day.month, day.day, 23, 59))) return false;
-    }
-  }
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'date': date.toIso8601String(),
-        'place': place,
-        'lat': lat,
-        'lng': lng,
-        'invited': invited,
-        'repeat': repeat.name,
-        'expenses': expenses.map((x) => x.toJson()).toList(),
-        'shareId': shareId,
-        if (bgTheme != null) 'bgTheme': bgTheme,
-        if (bgImage != null) 'bgImage': bgImage,
-      };
-
-  factory Event.fromJson(Map<String, dynamic> j) => Event(
-        id: j['id'] as String,
-        title: j['title'] as String,
-        date: DateTime.parse(j['date'] as String),
-        place: j['place'] as String? ?? '',
-        lat: (j['lat'] as num?)?.toDouble(),
-        lng: (j['lng'] as num?)?.toDouble(),
-        invited: List<String>.from(j['invited'] as List? ?? []),
-        repeat: Repeat.values.asNameMap()[j['repeat']] ?? Repeat.none,
-        expenses: [for (final x in j['expenses'] as List? ?? []) Expense.fromJson(x as Map<String, dynamic>)],
-        shareId: j['shareId'] as String?,
-        bgTheme: j['bgTheme'] as String?,
-        bgImage: j['bgImage'] as String?,
-      );
+  final String label;
 }
 
-/// Program ismétlődése.
+/// Ismétlődés; a kezdés ilyenkor az első alkalom.
 enum Repeat {
   none('Nem ismétlődik'),
+  daily('Naponta'),
   weekly('Hetente'),
   biweekly('Kéthetente'),
-  monthly('Havonta');
+  monthly('Havonta'),
+  yearly('Évente');
 
   const Repeat(this.label);
 
   final String label;
 }
 
-/// Egy kiadás a programon: ki fizette, mennyit, és kik között oszlik meg.
-class Expense {
-  Expense({required this.id, required this.title, required this.amount, required this.payer, required this.shares});
+/// Egy naptárbejegyzés (saját vagy barátokkal közös).
+class Event {
+  Event({
+    required this.id,
+    required this.title,
+    required this.start,
+    this.durationMin = 60,
+    this.allDay = false,
+    this.category = EventCategory.personal,
+    this.color,
+    this.place = '',
+    this.lat,
+    this.lng,
+    this.notes = '',
+    this.repeat = Repeat.none,
+    this.reminderMin = 30,
+    this.busy = true,
+    this.shareId,
+    this.limit,
+    this.inviteOnly = false,
+    Set<String>? skipped,
+  }) : skipped = skipped ?? {};
 
   final String id;
   String title;
 
-  /// Forintban.
-  int amount;
-  String payer;
+  /// Az (első) alkalom kezdete, helyi idő. Egész napos bejegyzésnél éjfél.
+  DateTime start;
 
-  /// Akik között egyenlően oszlik meg (a fizető is lehet köztük).
-  List<String> shares;
+  /// Hossz percben; egész naposnál a napok száma × 1440.
+  int durationMin;
+  bool allDay;
+  EventCategory category;
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'amount': amount, 'payer': payer, 'shares': shares};
+  /// Saját szín (ARGB); null = a kategória színe.
+  int? color;
+  String place;
 
-  factory Expense.fromJson(Map<String, dynamic> j) => Expense(
-        id: j['id'] as String,
-        title: j['title'] as String? ?? '',
-        amount: j['amount'] as int,
-        payer: j['payer'] as String,
-        shares: List<String>.from(j['shares'] as List? ?? []),
-      );
+  /// A helyszín koordinátái, ha térképen lett kiválasztva.
+  double? lat;
+  double? lng;
+  String notes;
+  Repeat repeat;
+
+  /// Emlékeztető ennyi perccel előtte; null = nincs.
+  int? reminderMin;
+
+  /// Foglaltnak számít-e (a barátok ezt látják, a részleteket soha).
+  bool busy;
+
+  /// A felhőbe kitett közös példány azonosítója, ha megosztottad (a meghívólinkben is ez van).
+  String? shareId;
+
+  /// Közös programnál a létszámkorlát (null = nincs).
+  int? limit;
+
+  /// Közös programnál: csak a meghívottak láthatják (a link önmagában nem elég).
+  bool inviteOnly;
+
+  /// Ismétlődő bejegyzés kihagyott alkalmai (napkulcsok), pl. „csak ezt törlöm”.
+  Set<String> skipped;
+
+  bool get hasLocation => lat != null && lng != null;
+  bool get isShared => shareId != null;
+  Duration get duration => Duration(minutes: durationMin);
+
+  /// Az [i]-edik alkalom kezdete (0 = az első). Naptári napokkal számol, így
+  /// óraátállításkor sem csúszik el az időpont.
+  DateTime occurrence(int i) {
+    final s = start;
+    return switch (repeat) {
+      Repeat.none => s,
+      Repeat.daily => DateTime(s.year, s.month, s.day + i, s.hour, s.minute),
+      Repeat.weekly => DateTime(s.year, s.month, s.day + 7 * i, s.hour, s.minute),
+      Repeat.biweekly => DateTime(s.year, s.month, s.day + 14 * i, s.hour, s.minute),
+      Repeat.monthly => DateTime(
+        s.year,
+        s.month + i,
+        min(s.day, DateTime(s.year, s.month + i + 1, 0).day),
+        s.hour,
+        s.minute,
+      ),
+      Repeat.yearly => DateTime(
+        s.year + i,
+        s.month,
+        min(s.day, DateTime(s.year + i, s.month + 1, 0).day),
+        s.hour,
+        s.minute,
+      ),
+    };
+  }
+
+  /// Hányadik alkalomtól érdemes keresni, hogy [from]-ig ne kelljen az elejétől számolni.
+  int _firstIndexNear(DateTime from) {
+    final days = startOfDay(from).difference(startOfDay(start)).inDays - (durationMin ~/ 1440) - 1;
+    if (days <= 0) return 0;
+    return switch (repeat) {
+      Repeat.none => 0,
+      Repeat.daily => days,
+      Repeat.weekly => days ~/ 7,
+      Repeat.biweekly => days ~/ 14,
+      Repeat.monthly => max(0, days ~/ 31 - 1),
+      Repeat.yearly => max(0, days ~/ 366 - 1),
+    };
+  }
+
+  /// Az alkalmak, amelyek belelógnak a [from, to) időszakba (a kihagyottak nélkül).
+  List<Occurrence> occurrencesBetween(DateTime from, DateTime to) {
+    final result = <Occurrence>[];
+    for (var i = _firstIndexNear(from); ; i++) {
+      final s = occurrence(i);
+      if (!s.isBefore(to)) break;
+      final e = s.add(duration);
+      if (e.isAfter(from) && !skipped.contains(dayKey(s))) result.add(Occurrence(this, s, e));
+      if (repeat == Repeat.none) break;
+    }
+    return result;
+  }
+
+  /// A következő (még nem véget ért) alkalom; null, ha már nincs.
+  Occurrence? nextOccurrence([DateTime? now]) {
+    final t = now ?? DateTime.now();
+    final list = occurrencesBetween(t, t.add(const Duration(days: 400)));
+    return list.isEmpty ? null : list.first;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'date': start.toIso8601String(),
+    'durationMin': durationMin,
+    if (allDay) 'allDay': true,
+    'category': category.name,
+    if (color != null) 'color': color,
+    'place': place,
+    'lat': lat,
+    'lng': lng,
+    if (notes.isNotEmpty) 'notes': notes,
+    'repeat': repeat.name,
+    'reminderMin': reminderMin,
+    if (!busy) 'busy': false,
+    'shareId': shareId,
+    if (limit != null) 'limit': limit,
+    if (inviteOnly) 'inviteOnly': true,
+    if (skipped.isNotEmpty) 'skipped': skipped.toList()..sort(),
+  };
+
+  /// A régi (Életrend) programok is beolvashatók: azok közösségi, kétórás programok voltak.
+  factory Event.fromJson(Map<String, dynamic> j) => Event(
+    id: j['id'] as String,
+    title: j['title'] as String? ?? '',
+    start: DateTime.parse(j['date'] as String),
+    durationMin: (j['durationMin'] as num?)?.toInt() ?? 120,
+    allDay: j['allDay'] as bool? ?? false,
+    category: EventCategory.values.asNameMap()[j['category']] ?? EventCategory.social,
+    color: (j['color'] as num?)?.toInt(),
+    place: j['place'] as String? ?? '',
+    lat: (j['lat'] as num?)?.toDouble(),
+    lng: (j['lng'] as num?)?.toDouble(),
+    notes: j['notes'] as String? ?? '',
+    repeat: Repeat.values.asNameMap()[j['repeat']] ?? Repeat.none,
+    reminderMin: j.containsKey('reminderMin') ? (j['reminderMin'] as num?)?.toInt() : 60,
+    busy: j['busy'] as bool? ?? true,
+    shareId: j['shareId'] as String?,
+    limit: (j['limit'] as num?)?.toInt(),
+    inviteOnly: j['inviteOnly'] as bool? ?? false,
+    skipped: {for (final s in j['skipped'] as List? ?? []) s as String},
+  );
 }
 
-/// Napi cél, a teljesített napok kulcsaival.
+/// Egy bejegyzés egy konkrét alkalma (ismétlődőnél mindegyik külön).
+class Occurrence {
+  const Occurrence(this.event, this.start, this.end);
+
+  final Event event;
+  final DateTime start;
+  final DateTime end;
+}
+
+/// Feladat: lehet határideje, és beosztható a naptárba (időblokk).
+class TaskItem {
+  TaskItem({
+    required this.id,
+    required this.title,
+    this.due,
+    this.scheduled,
+    this.durationMin = 30,
+    this.category = EventCategory.personal,
+    this.notes = '',
+    this.done = false,
+    this.doneAt,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  final String id;
+  String title;
+
+  /// Határidő napja (null = nincs).
+  DateTime? due;
+
+  /// Időblokk a naptárban: mikor dolgozol rajta (null = nincs beosztva).
+  DateTime? scheduled;
+  int durationMin;
+  EventCategory category;
+  String notes;
+  bool done;
+  DateTime? doneAt;
+  final DateTime createdAt;
+
+  /// Melyik napra esik: a beosztás, különben a határidő napja.
+  DateTime? get day => scheduled ?? due;
+
+  bool isOverdue([DateTime? now]) {
+    final d = due;
+    return !done && d != null && startOfDay(d).isBefore(startOfDay(now ?? DateTime.now()));
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    if (due != null) 'due': dayKey(due!),
+    if (scheduled != null) 'scheduled': scheduled!.toIso8601String(),
+    'durationMin': durationMin,
+    'category': category.name,
+    if (notes.isNotEmpty) 'notes': notes,
+    'done': done,
+    if (doneAt != null) 'doneAt': doneAt!.toIso8601String(),
+    'createdAt': createdAt.toIso8601String(),
+  };
+
+  factory TaskItem.fromJson(Map<String, dynamic> j) => TaskItem(
+    id: j['id'] as String,
+    title: j['title'] as String? ?? '',
+    due: j['due'] == null ? null : DateTime.parse('${j['due']}T12:00:00'),
+    scheduled: j['scheduled'] == null ? null : DateTime.parse(j['scheduled'] as String),
+    durationMin: (j['durationMin'] as num?)?.toInt() ?? 30,
+    category: EventCategory.values.asNameMap()[j['category']] ?? EventCategory.personal,
+    notes: j['notes'] as String? ?? '',
+    done: j['done'] as bool? ?? false,
+    doneAt: j['doneAt'] == null ? null : DateTime.parse(j['doneAt'] as String),
+    createdAt: j['createdAt'] == null ? null : DateTime.parse(j['createdAt'] as String),
+  );
+}
+
+/// Saját baráti csoport (pl. „Foci csapat”): csak te látod, a meghívásnál és a közös
+/// időpont keresésénél egy koppintással kiválasztható.
+class FriendGroup {
+  FriendGroup({required this.id, required this.name, List<String>? members}) : members = members ?? [];
+
+  final String id;
+  String name;
+
+  /// A tagok azonosítói (uid).
+  List<String> members;
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'members': members};
+
+  factory FriendGroup.fromJson(Map<String, dynamic> j) => FriendGroup(
+    id: j['id'] as String,
+    name: j['name'] as String? ?? '',
+    members: List<String>.from(j['members'] as List? ?? []),
+  );
+}
+
+/// Személyes cél, a teljesített napok kulcsaival.
 ///
 /// Lehet heti cél („hetente 3×”) és mennyiségi („8 pohár víz”) is; a [doneDays] mindig azokat
-/// a napokat tartalmazza, amikor az aznapi adag megvolt, így a sorozat, a statisztika és a
-/// widget ugyanúgy működik minden fajtánál.
+/// a napokat tartalmazza, amikor az aznapi adag megvolt, így a sorozat és a statisztika
+/// ugyanúgy működik minden fajtánál.
 class Habit {
   Habit({
     required this.id,
@@ -178,8 +333,8 @@ class Habit {
     this.unit = '',
     Map<String, int>? counts,
     this.reminderMinutes,
-  })  : doneDays = doneDays ?? {},
-        counts = counts ?? {};
+  }) : doneDays = doneDays ?? {},
+       counts = counts ?? {};
 
   final String id;
   String name;
@@ -260,11 +415,9 @@ class Habit {
     var best = 0;
     if (isWeekly) {
       // Hétfők, amelyik héten megvolt a cél; aztán az egymást követő hetek.
-      final mondays = {for (final d in days) dayKey(addDays(d, 1 - d.weekday))}
-          .map((k) => DateTime.parse('${k}T12:00:00'))
-          .where((m) => doneInWeek(m) >= perWeek!)
-          .toList()
-        ..sort();
+      final mondays = {
+        for (final d in days) dayKey(addDays(d, 1 - d.weekday)),
+      }.map((k) => DateTime.parse('${k}T12:00:00')).where((m) => doneInWeek(m) >= perWeek!).toList()..sort();
       DateTime? prev;
       var run = 0;
       for (final m in mondays) {
@@ -294,193 +447,79 @@ class Habit {
   String get streakUnit => isWeekly ? 'hét' : 'nap';
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'doneDays': doneDays.toList(),
-        if (perWeek != null) 'perWeek': perWeek,
-        if (target != 1) 'target': target,
-        if (unit.isNotEmpty) 'unit': unit,
-        if (counts.isNotEmpty) 'counts': counts,
-        if (reminderMinutes != null) 'reminderMinutes': reminderMinutes,
-      };
+    'id': id,
+    'name': name,
+    'doneDays': doneDays.toList(),
+    if (perWeek != null) 'perWeek': perWeek,
+    if (target != 1) 'target': target,
+    if (unit.isNotEmpty) 'unit': unit,
+    if (counts.isNotEmpty) 'counts': counts,
+    if (reminderMinutes != null) 'reminderMinutes': reminderMinutes,
+  };
 
   factory Habit.fromJson(Map<String, dynamic> j) => Habit(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        doneDays: Set<String>.from(j['doneDays'] as List? ?? []),
-        perWeek: (j['perWeek'] as num?)?.toInt(),
-        target: (j['target'] as num?)?.toInt() ?? 1,
-        unit: j['unit'] as String? ?? '',
-        counts: {for (final e in (j['counts'] as Map? ?? {}).entries) e.key as String: (e.value as num).toInt()},
-        reminderMinutes: (j['reminderMinutes'] as num?)?.toInt(),
-      );
+    id: j['id'] as String,
+    name: j['name'] as String,
+    doneDays: Set<String>.from(j['doneDays'] as List? ?? []),
+    perWeek: (j['perWeek'] as num?)?.toInt(),
+    target: (j['target'] as num?)?.toInt() ?? 1,
+    unit: j['unit'] as String? ?? '',
+    counts: {for (final e in (j['counts'] as Map? ?? {}).entries) e.key as String: (e.value as num).toInt()},
+    reminderMinutes: (j['reminderMinutes'] as num?)?.toInt(),
+  );
 }
 
-/// Napi hangulat- és hálanapló-bejegyzés.
-class JournalEntry {
-  JournalEntry({
-    required this.id,
-    required this.date,
-    required this.mood,
-    this.gratitude = '',
-    this.note = '',
-    this.question = '',
-    this.answer = '',
-    this.photoPath,
-    this.moodImage,
-    List<String>? tags,
-  }) : tags = tags ?? [];
-
-  final String id;
-  DateTime date;
-
-  /// 1 (nagyon rossz) – 5 (nagyon jó)
-  int mood;
-  String gratitude;
-  String note;
-
-  /// A napi kérdés és a rá adott válasz (üres, ha nem válaszolt).
-  String question;
-  String answer;
-
-  /// A nap fotója a telefon tárhelyén (null, ha nincs).
-  String? photoPath;
-
-  /// Saját kép a nap hangulatához (base64, kicsi négyzet), pl. egy szelfi.
-  /// Ha van, ez látszik a hangulatarc helyett ennél a napnál.
-  String? moodImage;
-
-  /// A kiválasztott hangulatcímkék azonosítói ([MoodTag.id]).
-  List<String> tags;
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'date': date.toIso8601String(),
-        'mood': mood,
-        'gratitude': gratitude,
-        'note': note,
-        'question': question,
-        'answer': answer,
-        'photoPath': photoPath,
-        'moodImage': moodImage,
-        'tags': tags,
-      };
-
-  factory JournalEntry.fromJson(Map<String, dynamic> j) => JournalEntry(
-        id: j['id'] as String,
-        date: DateTime.parse(j['date'] as String),
-        mood: j['mood'] as int,
-        gratitude: j['gratitude'] as String? ?? '',
-        note: j['note'] as String? ?? '',
-        question: j['question'] as String? ?? '',
-        answer: j['answer'] as String? ?? '',
-        photoPath: j['photoPath'] as String?,
-        moodImage: j['moodImage'] as String?,
-        tags: List<String>.from(j['tags'] as List? ?? []),
-      );
-}
-
-/// Hangulatcímke: beépített vagy saját, emojival vagy saját képpel.
-class MoodTag {
-  MoodTag({required this.id, required this.name, this.emoji = '🏷️', this.image, this.visible = true});
-
-  /// Állandó azonosító; a bejegyzések ezt tárolják, így átnevezéskor sem vesznek el.
-  final String id;
-  String name;
-  String emoji;
-
-  /// Megjelenik-e a napló szerkesztőjében.
-  bool visible;
-
-  /// Saját kép base64-ben (null, ha emoji van helyette).
-  String? image;
-
-  String? _decodedFrom;
-  Uint8List? _bytes;
-
-  /// A kép bájtjai; csak akkor dekódoljuk újra, ha a kép megváltozott.
-  Uint8List? get imageBytes {
-    if (image == null) return null;
-    if (!identical(_decodedFrom, image)) {
-      _bytes = base64Decode(image!);
-      _decodedFrom = image;
-    }
-    return _bytes;
-  }
-
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'emoji': emoji, 'image': image, 'visible': visible};
-
-  factory MoodTag.fromJson(Map<String, dynamic> j) => MoodTag(
-        id: j['id'] as String,
-        name: j['name'] as String,
-        emoji: j['emoji'] as String? ?? '🏷️',
-        image: j['image'] as String?,
-        visible: j['visible'] as bool? ?? true,
-      );
-}
-
-/// Az alap hangulatcímkék (név → emoji). A nevük egyben az azonosítójuk is.
-const defaultMoodTags = {
-  'boldog': '🥳',
-  'nyugodt': '😌',
-  'hálás': '🙏',
-  'motivált': '💪',
-  'produktív': '✅',
-  'kreatív': '🎨',
-  'szerelmes': '😍',
-  'társasági': '👯',
-  'fáradt': '😴',
-  'stresszes': '😰',
-  'szorongó': '😟',
-  'ideges': '😠',
-  'szomorú': '😢',
-  'magányos': '🫥',
-  'unatkozó': '🥱',
-  'beteg': '🤒',
-};
-
-/// Az [mood] (1–5) hangulat alapértelmezett arca és felirata.
-MoodTag defaultMoodFace(int mood) => MoodTag(id: 'mood$mood', name: moodLabels[mood - 1], emoji: moodEmojis[mood - 1]);
-
-const moodEmojis = ['😞', '🙁', '😐', '🙂', '😄'];
-const moodLabels = ['Nagyon rossz', 'Rossz', 'Átlagos', 'Jó', 'Nagyon jó'];
-
-/// Egy program, ahová valaki más hívott meg (a meghívólinkből), hogy később is megtaláld.
+/// Egy közös program, ahová egy barátod meghívott (a meghívólinkből vagy a Meghívásaim közül).
 class Invite {
-  const Invite({required this.id, required this.title, required this.date});
+  const Invite({required this.id, required this.title, required this.date, this.fromName = ''});
 
   final String id;
   final String title;
   final DateTime date;
+  final String fromName;
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'date': date.toIso8601String()};
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'date': date.toIso8601String(),
+    if (fromName.isNotEmpty) 'fromName': fromName,
+  };
 
-  factory Invite.fromJson(Map<String, dynamic> j) =>
-      Invite(id: j['id'] as String, title: j['title'] as String? ?? '', date: DateTime.parse(j['date'] as String));
+  factory Invite.fromJson(Map<String, dynamic> j) => Invite(
+    id: j['id'] as String,
+    title: j['title'] as String? ?? '',
+    date: DateTime.parse(j['date'] as String),
+    fromName: j['fromName'] as String? ?? '',
+  );
 }
 
-/// Gyors hangulat napközben („Hogy vagy most?”), időponttal.
-class CheckIn {
-  const CheckIn({required this.at, required this.mood});
+/// Egy barát, ahogy az eszközön megjegyezzük (offline is látszik, és az emlékeztetőkhöz kell).
+class FriendInfo {
+  const FriendInfo({required this.uid, required this.name, this.birthday});
 
-  final DateTime at;
+  final String uid;
+  final String name;
 
-  /// 1–5, mint a napi hangulat.
-  final int mood;
+  /// Születésnap „HH-NN” alakban, ha megosztja.
+  final String? birthday;
 
-  Map<String, dynamic> toJson() => {'at': at.toIso8601String(), 'mood': mood};
+  Map<String, dynamic> toJson() => {'uid': uid, 'name': name, if (birthday != null) 'birthday': birthday};
 
-  factory CheckIn.fromJson(Map<String, dynamic> j) =>
-      CheckIn(at: DateTime.parse(j['at'] as String), mood: (j['mood'] as num).toInt());
+  factory FriendInfo.fromJson(Map<String, dynamic> j) =>
+      FriendInfo(uid: j['uid'] as String, name: j['name'] as String? ?? '?', birthday: j['birthday'] as String?);
+
+  /// A következő születésnapja [now]-tól (a mai is beleszámít); null, ha nem ismert.
+  DateTime? nextBirthday([DateTime? now]) => nextBirthdayOf(birthday, now);
 }
 
-/// Napszak egy időpontból (a hangulat napszakos statisztikájához).
-String partOfDay(DateTime t) => switch (t.hour) {
-      >= 5 && < 10 => 'reggel',
-      >= 10 && < 12 => 'délelőtt',
-      >= 12 && < 17 => 'délután',
-      >= 17 && < 22 => 'este',
-      _ => 'éjjel',
-    };
-
-const partsOfDay = ['reggel', 'délelőtt', 'délután', 'este', 'éjjel'];
+/// A „HH-NN” születésnap következő napja (február 29. nem szökőévben február 28.).
+DateTime? nextBirthdayOf(String? mmdd, [DateTime? now]) {
+  if (mmdd == null) return null;
+  final m = RegExp(r'^(\d\d)-(\d\d)$').firstMatch(mmdd);
+  if (m == null) return null;
+  final month = int.parse(m.group(1)!), day = int.parse(m.group(2)!);
+  final today = startOfDay(now ?? DateTime.now());
+  DateTime on(int year) => DateTime(year, month, min(day, DateTime(year, month + 1, 0).day), 12);
+  final thisYear = on(today.year);
+  return thisYear.isBefore(today) ? on(today.year + 1) : thisYear;
+}

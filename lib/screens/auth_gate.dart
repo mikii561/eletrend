@@ -6,18 +6,17 @@ import 'package:flutter/material.dart';
 import '../account.dart';
 import '../admin.dart';
 import '../app_navigator.dart';
-import '../bumps.dart';
+import '../availability_service.dart';
 import '../challenges.dart';
 import '../friends.dart';
 import '../notifications.dart';
+import '../nudges.dart';
 import '../push.dart';
-import '../widgets/effects.dart';
-import 'bump_screens.dart';
+import 'nudge_screens.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'auth_screen.dart';
-import 'week_summary_screen.dart';
 
 /// Az app kapuja: bejelentkezés nélkül a regisztráció jön; bejelentkezve betölti a fiók
 /// adatait, és utána a [child] (az app) következik.
@@ -89,11 +88,12 @@ class _AuthGateState extends State<AuthGate> {
     }
   }
 
-  /// Barátkód, névjegy, és a barátoktól jövő meghívások figyelése.
+  /// Barátkód, névjegy, elérhetőség, és a barátoktól jövő meghívások és bökések figyelése.
   Future<void> _startFriends(User user, AppStore store) async {
     try {
       Challenges.instance.start(user.uid, store);
-      Bumps.instance.start(user.uid, (b) => _onBump(b, store));
+      Nudges.instance.start(user.uid, _onNudge);
+      AvailabilityService.instance.start(user.uid, store);
       Notifications.onTap = _onNotificationTap;
       if (Notifications.pendingTap case final tap?) {
         Notifications.pendingTap = null;
@@ -112,47 +112,42 @@ class _AuthGateState extends State<AuthGate> {
     _inbox = null;
     Friends.instance.stop();
     Challenges.instance.stop();
-    Bumps.instance.stop();
+    Nudges.instance.stop();
+    AvailabilityService.instance.stop();
   }
 
-  /// Új bump: ha az app előtérben van, rögtön felugrik; ha háttérben, telefonos értesítés jön.
-  void _onBump(Bump b, AppStore store) {
+  /// Új bökés: ha az app előtérben van, rövid sáv jelenik meg; ha háttérben, telefonos értesítés jön.
+  void _onNudge(Nudge n) {
     final nav = appNavigatorKey.currentState;
     final foreground = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
     if (nav == null || !foreground) {
       if (Notifications.supported) {
-        Notifications.showBump(
-          b.id,
-          b.headline,
-          b.eventTitle == null ? 'Koppints a megnyitáshoz' : '📅 ${b.eventTitle}',
+        Notifications.showNudge(
+          n.id,
+          '${n.emoji} ${n.fromName}',
+          n.eventTitle == null ? n.text : '${n.text} · ${n.eventTitle}',
         );
       }
-      Bumps.instance.notShown(b.id);
+      Nudges.instance.notShown(n.id);
       return;
     }
-    final ctx = nav.context;
-    if (store.effectsOn) playEffect(ctx, b.show);
-    ScaffoldMessenger.of(ctx).showSnackBar(
+    ScaffoldMessenger.of(nav.context).showSnackBar(
       SnackBar(
         duration: const Duration(seconds: 6),
-        content: Text(b.headline),
-        action: SnackBarAction(label: 'Megnyitom', onPressed: () => openBump(nav.context, b)),
+        content: Text(n.headline),
+        action: SnackBarAction(label: 'Megnyitom', onPressed: () => openNudge(nav.context, n)),
       ),
     );
-    Bumps.instance.markSeen(b.id).catchError((_) {});
+    Nudges.instance.markSeen(n.id).catchError((_) {});
   }
 
-  /// Értesítésre koppintva: a bump (és a programja) megnyílik, az effekt lejátszódik.
+  /// Értesítésre koppintva: a bökés (és a programja) megnyílik.
   Future<void> _onNotificationTap(String payload) async {
-    if (payload == 'weekly') {
-      await appNavigatorKey.currentState?.push(MaterialPageRoute<void>(builder: (_) => const WeekSummaryScreen()));
-      return;
-    }
-    if (!payload.startsWith('bump:')) return;
-    final bump = await Bumps.instance.fetch(payload.substring(5));
+    if (!payload.startsWith('nudge:')) return;
+    final nudge = await Nudges.instance.fetch(payload.substring(6));
     final nav = appNavigatorKey.currentState;
-    if (bump == null || nav == null || !nav.mounted) return;
-    await openBump(nav.context, bump);
+    if (nudge == null || nav == null || !nav.mounted) return;
+    await openNudge(nav.context, nudge);
   }
 
   /// Felfüggesztett-e a fiók, és az adminnak látható adatlap frissítése.

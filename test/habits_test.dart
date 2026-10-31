@@ -1,7 +1,7 @@
 import 'package:eletrend/models.dart';
 import 'package:eletrend/notifications.dart';
 import 'package:eletrend/screens/habits_screen.dart';
-import 'package:eletrend/screens/today_screen.dart' show habitProgress;
+import 'package:eletrend/widgets/goal_widgets.dart' show habitProgress;
 import 'package:eletrend/store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,7 +73,14 @@ void main() {
     store.toggleHabit(h, DateTime(2026, 10, 28));
     expect(h.isDoneOn(DateTime(2026, 10, 28)), isTrue);
     expect(habitProgress(h, DateTime(2026, 10, 28)), isNull);
-    expect(Habit.fromJson({'id': 'x', 'name': 'Régi', 'doneDays': ['2026-10-01']}).target, 1);
+    expect(
+      Habit.fromJson({
+        'id': 'x',
+        'name': 'Régi',
+        'doneDays': ['2026-10-01'],
+      }).target,
+      1,
+    );
   });
 
   testWidgets('cél-szerkesztő: heti, mennyiségi; a + gomb számol', (tester) async {
@@ -82,7 +89,12 @@ void main() {
     addTearDown(tester.view.reset);
     await initializeDateFormatting('hu');
     final store = (await tester.runAsync(emptyStore))!;
-    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
+    await tester.pumpWidget(
+      StoreScope(
+        store: store,
+        child: const MaterialApp(home: HabitsScreen()),
+      ),
+    );
 
     await tester.tap(find.text('Új cél'));
     await tester.pumpAndSettle();
@@ -121,7 +133,12 @@ void main() {
     addTearDown(tester.view.reset);
     await initializeDateFormatting('hu');
     final store = (await tester.runAsync(emptyStore))!;
-    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
+    await tester.pumpWidget(
+      StoreScope(
+        store: store,
+        child: const MaterialApp(home: HabitsScreen()),
+      ),
+    );
 
     Future<void> addFirstPack() async {
       await tester.tap(find.text('Sablonok'));
@@ -136,31 +153,5 @@ void main() {
     await addFirstPack();
     expect(store.habits.length, 4);
     expect(find.text('Ezek már mind megvannak. 🙂'), findsOneWidget);
-  });
-
-  testWidgets('légzőgyakorlat: 1 perc után kész, és kipipálja a meditációt', (tester) async {
-    tester.view.physicalSize = const Size(400, 860);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-    await initializeDateFormatting('hu');
-    final store = (await tester.runAsync(emptyStore))!;
-    store.addHabit('🧘 5 perc meditáció');
-    await tester.pumpWidget(StoreScope(store: store, child: const MaterialApp(home: HabitsScreen())));
-    await tester.tap(find.byTooltip('Légzőgyakorlat'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('1 perc'));
-    await tester.pump();
-    await tester.scrollUntilVisible(find.text('Indítás'), 300);
-    await tester.tap(find.text('Indítás'));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 2));
-    expect(find.text('Belégzés'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
-    expect(find.text('Tartsd'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 56));
-    await tester.pump();
-    expect(find.text('Kész! Szép munka.'), findsOneWidget);
-    expect(store.habits.single.isDoneOn(DateTime.now()), isTrue);
   });
 }
