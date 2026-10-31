@@ -116,6 +116,31 @@ const maxChallengeDays = 366;
 /// hogy a kihívás dokumentumában elférjen és a barátoknál is gyorsan betöltsön.
 String prepareChallengeIcon(Uint8List bytes) => squareJpegBase64(bytes, side: 192);
 
+/// Mi történt egy kihívásban, amiről értesítünk.
+enum ChallengeActivityKind {
+  /// Valaki ma elvégezte, én még nem.
+  done,
+
+  /// Valaki megbuzdított.
+  cheered,
+}
+
+class ChallengeActivity {
+  const ChallengeActivity({required this.kind, required this.challenge, required this.name});
+
+  final ChallengeActivityKind kind;
+  final Challenge challenge;
+
+  /// Aki elvégezte (a buzdításnál nem tudjuk, ki volt).
+  final String name;
+
+  String get title => kind == ChallengeActivityKind.done ? '💪 $name már megcsinálta!' : '👏 Megbuzdítottak!';
+
+  String get body => kind == ChallengeActivityKind.done
+      ? '${challenge.title}: most te jössz! Ha te is kész vagy, buzdítsd a többieket.'
+      : '${challenge.title}: valaki szerint menni fog. Csináld meg ma!';
+}
+
 /// Közös kihívások: `challenges/{id}` (tagok, nevek), `challenges/{id}/progress/{uid}` (teljesített napok, buzdítások).
 class Challenges {
   Challenges({FirebaseFirestore? db}) : _dbOverride = db;
@@ -144,6 +169,15 @@ class Challenges {
 
   void stop() {
     _debounce?.cancel();
+    _activitySub?.cancel();
+    _activitySub = null;
+    for (final s in _progressSubs.values) {
+      s.cancel();
+    }
+    _progressSubs.clear();
+    _watched.clear();
+    _seenDone.clear();
+    _seenCheers.clear();
     _store?.removeListener(_onChange);
     _uid = null;
     _store = null;
@@ -157,6 +191,81 @@ class Challenges {
         debugPrint('Kihívás frissítése később: $e');
       }),
     );
+  }
+
+  // Értesítés a többiek teljesítéséről és a buzdításokról
+
+  StreamSubscription<List<Challenge>>? _activitySub;
+  final _progressSubs = <String, StreamSubscription<QuerySnapshot<Map<String, dynamic>>>>{};
+  final _watched = <String, Challenge>{};
+  final _seenDone = <String, Set<String>>{};
+  final _seenCheers = <String, int>{};
+
+  /// Figyeli a kihívásaimat: ha valaki ma elvégezte, és én még nem, vagy megbuzdítottak, szól az [onActivity].
+  /// Az első betöltés csak az induló állapotot jegyzi meg (a régi dolgokról nem értesít).
+  void listenActivity(void Function(ChallengeActivity activity) onActivity) {
+    _activitySub?.cancel();
+    _activitySub = watchMine().listen((list) {
+      final active = {
+        for (final c in list)
+          if (!c.isGoal && c.isActive()) c.id: c,
+      };
+      for (final gone in _progressSubs.keys.where((id) => !active.containsKey(id)).toList()) {
+        _progressSubs.remove(gone)?.cancel();
+        _watched.remove(gone);
+      }
+      _watched.addAll(active);
+      for (final id in active.keys) {
+        _progressSubs.putIfAbsent(
+          id,
+          () => _col.doc(id).collection('progress').snapshots().listen((q) => _onProgress(id, q, onActivity)),
+        );
+      }
+    }, onError: (Object e) => debugPrint('Kihívás-figyelés később: $e'));
+  }
+
+  void _onProgress(String id, QuerySnapshot<Map<String, dynamic>> q, void Function(ChallengeActivity) onActivity) {
+    final challenge = _watched[id];
+    final me = _uid;
+    if (challenge == null || me == null) return;
+    final today = dayKey(DateTime.now());
+    final progress = [for (final d in q.docs) ChallengeProgress.fromDoc(d)];
+    final iDone = progress.any((p) => p.uid == me && p.done.contains(today));
+    for (final p in progress) {
+      final key = '$id/${p.uid}';
+      final firstLoad = !_seenDone.containsKey(key);
+      final before = _seenDone[key] ?? const <String>{};
+      final cheersBefore = _seenCheers[key] ?? 0;
+      _seenDone[key] = p.done;
+      _seenCheers[key] = p.cheers;
+      if (firstLoad) continue;
+      if (p.uid == me) {
+        if (p.cheers > cheersBefore) {
+          onActivity(ChallengeActivity(kind: ChallengeActivityKind.cheered, challenge: challenge, name: ''));
+        }
+      } else if (p.done.contains(today) && !before.contains(today) && !iDone) {
+        onActivity(ChallengeActivity(kind: ChallengeActivityKind.done, challenge: challenge, name: p.name));
+      }
+    }
+  }
+
+  /// Megbuzdítja mindazokat, akik ma még nem csinálták meg. Hányan voltak?
+  Future<int> cheerAll(Challenge c) async {
+    final me = _uid!;
+    final today = dayKey(DateTime.now());
+    final progress = await _col.doc(c.id).collection('progress').get();
+    final waiting =
+        {
+          for (final m in c.members)
+            if (m != me) m,
+        }..removeAll([
+          for (final d in progress.docs)
+            if ((d.data()['done'] as List? ?? []).contains(today)) d.id,
+        ]);
+    for (final uid in waiting) {
+      await cheer(c.id, uid);
+    }
+    return waiting.length;
   }
 
   Stream<List<Challenge>> watchMine() => _col

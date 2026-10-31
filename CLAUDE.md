@@ -53,6 +53,7 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - Meghívólink: `https://mikii561.github.io/eletrend/?e=<id>` → `InviteScreen` („Hozzáadom a naptáramhoz”: `SharedEvent.toEvent()`, azonosító `inv-…`).
 - Kihívások és közös cél: `lib/challenges.dart` (`challenges/{id}`, `kind: 'goal'` = közös cél), változatlanul.
 - Új kihívás űrlap: az ötletek (`challengeIdeas`) mellett saját név, emoji, kép a galériából (`image` mező: 192 px-es négyzetes JPEG base64-ben, `prepareChallengeIcon`; megjelenítés: `ChallengeIcon`) és saját napszám (1–`maxChallengeDays` = 366, a szabály is ennyit enged). Szabályváltozás nem kellett.
+- Kihívás-értesítés: `Challenges.listenActivity` (az `AuthGate` indítja) figyeli a kihívásaim `progress` dokumentumait: ha valaki más **ma** elvégezte, és én még nem → „💪 Anna már megcsinálta! … most te jössz”; ha megbuzdítottak (`cheers` nőtt) → „👏 Megbuzdítottak!”. Az induló állapotról nem értesít. Előtérben SnackBar, háttérben helyi értesítés (`Notifications.showChallenge`, csatorna „Kihívások”, payload `challenge:id`, koppintásra `ChallengeDetail`). **Bezárt appra nincs** (ahhoz szerveroldali push kell, lásd Bumpok). A kihívás oldalán „Buzdíts mindenkit, aki ma még nem csinálta meg” gomb (`cheerAll`). Szabályváltozás nem kellett.
 
 ## Emlékek (közös fotók)
 

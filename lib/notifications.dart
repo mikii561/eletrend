@@ -50,6 +50,13 @@ class Notifications {
       'Születésnapok',
       channelDescription: 'A barátaid születésnapjai',
     ),
+    'challenges': AndroidNotificationDetails(
+      'challenges',
+      'Kihívások',
+      channelDescription: 'Amikor a kihívásaidban valaki megcsinálta a mait, vagy megbuzdítottak',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
     'nudges': AndroidNotificationDetails(
       'nudges',
       'Bökések a barátoktól',
@@ -66,6 +73,7 @@ class Notifications {
   static const _birthdayBase = 4000; // legfeljebb 100
   static const _memoryBase = 4500; // legfeljebb 30
   static const _nudgeBase = 5000; // 5000 + (azonosító hash % 1000)
+  static const _challengeBase = 6000; // 6000 + (azonosító hash % 1000)
   static const _testId = 9999;
 
   /// Értesítésre koppintáskor (pl. `nudge:azonosító`).
@@ -119,6 +127,18 @@ class Notifications {
       body: body,
       notificationDetails: NotificationDetails(android: _channels['nudges']),
       payload: 'nudge:$id',
+    );
+  }
+
+  /// Kihívás-értesítés (ha az app a háttérben fut). Koppintásra az [onTap] kapja: `challenge:azonosító`.
+  static Future<void> showChallenge(String challengeId, String title, String body) async {
+    if (!_ready) return;
+    await _plugin.show(
+      id: _challengeBase + challengeId.hashCode.abs() % 1000,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(android: _channels['challenges']),
+      payload: 'challenge:$challengeId',
     );
   }
 
@@ -196,13 +216,14 @@ class Notifications {
           PlannedNotification(
             _taskBase + i++,
             when,
-            s == null ? 'Ma a határidő: ${t.title}' : (before == 0 ? 'Most: ${t.title}' : '${_inText(before)}: ${t.title}'),
+            s == null
+                ? 'Ma a határidő: ${t.title}'
+                : (before == 0 ? 'Most: ${t.title}' : '${_inText(before)}: ${t.title}'),
             s == null ? 'Pipáld ki, ha megvan. ✅' : '${formatTime(s)}-kor, ${t.durationMin} percet szántál rá.',
           ),
         );
       }
     }
-
 
     // Célonkénti saját emlékeztető: csak ha aznap (hetinél: azon a héten) még nincs meg.
     for (var i = 0; i < store.habits.length && i < 30; i++) {

@@ -329,6 +329,7 @@ class ChallengeDetail extends StatefulWidget {
 
 class _ChallengeDetailState extends State<ChallengeDetail> {
   late final Stream<List<ChallengeProgress>> _progress = Challenges.instance.watchProgress(widget.challenge.id);
+  bool _cheeredAll = false;
 
   @override
   Widget build(BuildContext context) {
@@ -414,6 +415,29 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                   ),
                 ),
               ),
+              if (c.isActive() &&
+                  c.members.any(
+                    (m) =>
+                        m != me &&
+                        !(progress.where((p) => p.uid == m).firstOrNull?.done.contains(dayKey(today)) ?? false),
+                  ))
+                FilledButton.tonalIcon(
+                  onPressed: _cheeredAll
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          setState(() => _cheeredAll = true);
+                          try {
+                            final n = await Challenges.instance.cheerAll(c);
+                            messenger.showSnackBar(SnackBar(content: Text('Megbuzdítottál $n embert 👏')));
+                          } catch (e) {
+                            if (mounted) setState(() => _cheeredAll = false);
+                            if (context.mounted) _error(context, e);
+                          }
+                        },
+                  icon: const Text('👏', style: TextStyle(fontSize: 18)),
+                  label: Text(_cheeredAll ? 'Megbuzdítottad őket' : 'Buzdíts mindenkit, aki ma még nem csinálta meg'),
+                ),
               const SectionTitle('Ranglista'),
               Card(
                 child: Column(

@@ -17,6 +17,7 @@ import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'auth_screen.dart';
+import 'challenges_screen.dart' show ChallengeDetail;
 import 'verify_email_screen.dart';
 
 /// Az app kapuja: bejelentkezés nélkül a regisztráció jön; bejelentkezve betölti a fiók
@@ -116,6 +117,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _startFriends(User user, AppStore store) async {
     try {
       Challenges.instance.start(user.uid, store);
+      Challenges.instance.listenActivity(_onChallengeActivity);
       Nudges.instance.start(user.uid, _onNudge);
       AvailabilityService.instance.start(user.uid, store);
       Notifications.onTap = _onNotificationTap;
@@ -165,8 +167,35 @@ class _AuthGateState extends State<AuthGate> {
     // Olvasottá csak akkor válik, ha megnyitja (a számláló addig mutatja).
   }
 
-  /// Értesítésre koppintva: a bökés (és a programja) megnyílik.
+  /// Valaki ma megcsinálta a kihívást (és én még nem), vagy megbuzdítottak: előtérben sáv, háttérben értesítés.
+  void _onChallengeActivity(ChallengeActivity a) {
+    final nav = appNavigatorKey.currentState;
+    final foreground = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+    if (nav == null || !foreground) {
+      if (Notifications.supported) Notifications.showChallenge(a.challenge.id, a.title, a.body);
+      return;
+    }
+    ScaffoldMessenger.of(nav.context).showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Text('${a.title}\n${a.body}'),
+        action: SnackBarAction(
+          label: 'Megnyitom',
+          onPressed: () => nav.push(MaterialPageRoute(builder: (_) => ChallengeDetail(challenge: a.challenge))),
+        ),
+      ),
+    );
+  }
+
+  /// Értesítésre koppintva: a bökés (és a programja), illetve a kihívás megnyílik.
   Future<void> _onNotificationTap(String payload) async {
+    if (payload.startsWith('challenge:')) {
+      final challenge = await Challenges.instance.get(payload.substring(10));
+      final nav = appNavigatorKey.currentState;
+      if (challenge == null || nav == null || !nav.mounted) return;
+      await nav.push(MaterialPageRoute<void>(builder: (_) => ChallengeDetail(challenge: challenge)));
+      return;
+    }
     if (!payload.startsWith('nudge:')) return;
     final nudge = await Nudges.instance.fetch(payload.substring(6));
     final nav = appNavigatorKey.currentState;

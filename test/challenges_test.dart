@@ -88,6 +88,61 @@ void main() {
     gabi.stop();
   });
 
+  test('kihívás-értesítés: ha más ma megcsinálta és én még nem; buzdításról is; közös buzdítás', () async {
+    final db = FakeFirebaseFirestore();
+    final gabi = Challenges(db: db)..start('gabi', await device('Gabi'));
+    final anna = Challenges(db: db)..start('anna', await device('Anna'));
+    final bela = Challenges(db: db)..start('bela', await device('Béla'));
+    final today = DateTime.now();
+    await gabi.create(
+      title: '30 nap edzés',
+      emoji: '🏋️',
+      days: 30,
+      start: today,
+      friends: {'anna': 'Anna', 'bela': 'Béla'},
+    );
+    final c = (await gabi.watchMine().first).single;
+    for (final who in [anna, bela]) {
+      await who.checkIn(c, today, false); // saját haladás-dokumentum
+    }
+
+    final gabiSees = <String>[];
+    final annaSees = <String>[];
+    final belaSees = <String>[];
+    gabi.listenActivity((a) => gabiSees.add('${a.kind.name}:${a.name}'));
+    anna.listenActivity((a) => annaSees.add('${a.kind.name}:${a.name}'));
+    await pumpEventQueue();
+    expect(gabiSees, isEmpty); // az induló állapotról nem értesítünk
+
+    // Anna megcsinálja: Gabi és Béla értesül (Béla nem figyel itt, de Gabi igen), Anna magáról nem.
+    await anna.checkIn(c, today, true);
+    await pumpEventQueue();
+    expect(gabiSees, ['done:Anna']);
+    expect(annaSees, isEmpty);
+
+    // Gabi közben megcsinálja: Béla kész után már Gabi nem kap értesítést (ő is kész).
+    await gabi.checkIn(c, today, true);
+    await pumpEventQueue();
+    await bela.checkIn(c, today, true);
+    await pumpEventQueue();
+    expect(gabiSees, ['done:Anna']);
+
+    // Közös buzdítás: aki ma még nem csinálta meg, mind kap egyet; a buzdításról értesülnek.
+    await bela.checkIn(c, today, false);
+    await pumpEventQueue();
+    bela.listenActivity((a) => belaSees.add(a.kind.name));
+    await pumpEventQueue();
+    expect(await gabi.cheerAll(c), 1); // csak Béla maradt le
+    await pumpEventQueue();
+    expect(annaSees, isEmpty);
+    expect((await gabi.watchProgress(c.id).first).firstWhere((p) => p.uid == 'bela').cheers, 1);
+    expect(belaSees, ['cheered']);
+
+    gabi.stop();
+    anna.stop();
+    bela.stop();
+  });
+
   test('közös cél: megosztás, csatlakozás saját céllal, pipák átmennek, a kihívások közt nincs', () async {
     final db = FakeFirebaseFirestore();
     final gabiStore = await device('Gabi');
