@@ -65,7 +65,7 @@ String repeatLabel(Repeat repeat, DateTime start) => switch (repeat) {
 const reminderOptions = <int?>[null, 0, 10, 30, 60, 120, 1440];
 
 String reminderLabel(int? minutes) => switch (minutes) {
-  null => 'Nincs emlékeztető',
+  null => 'Nincs értesítés',
   0 => 'Amikor kezdődik',
   1440 => '1 nappal előtte',
   _ => '${formatDuration(minutes)}cel előtte'.replaceAll('óracel', 'órával'),

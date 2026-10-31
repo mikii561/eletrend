@@ -182,7 +182,7 @@ void main() {
     expect(repeatLabel(Repeat.weekly, DateTime(2026, 10, 1)), 'Hetente, csütörtökönként');
     expect(reminderLabel(30), '30 perccel előtte');
     expect(reminderLabel(60), '1 órával előtte');
-    expect(reminderLabel(null), 'Nincs emlékeztető');
+    expect(reminderLabel(null), 'Nincs értesítés');
     expect(nextBirthdayOf('02-29', DateTime(2027, 2, 1)), DateTime(2027, 2, 28, 12));
     expect(nextBirthdayOf('03-01', DateTime(2027, 3, 1, 15)), DateTime(2027, 3, 1, 12)); // ma is számít
   });

@@ -177,36 +177,75 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// A legközelebbi (még nem véget ért) alkalom kiemelve.
+/// A legközelebbi (még nem véget ért) program vagy beosztott feladat kiemelve.
+///
+/// Mindig látszik, függetlenül attól, kér-e hozzá értesítést: az értesítés beállítása csak a
+/// telefonos jelzést szabályozza.
 class _NextUp extends StatelessWidget {
   const _NextUp({required this.store, required this.now});
 
   final AppStore store;
   final DateTime now;
 
+  /// A következő teendő: időpontos bejegyzés vagy a naptárba beosztott (még nyitott) feladat.
+  static ({String title, DateTime start, DateTime end, Color color, IconData icon, String place, VoidCallback Function(BuildContext) open})?
+      pick(AppStore store, DateTime now) {
+    final event = store.upcoming(days: 7, now: now).where((o) => !o.event.allDay).firstOrNull;
+    final task = (store.tasks.where((t) {
+      final s = t.scheduled;
+      return !t.done && s != null && s.add(Duration(minutes: t.durationMin)).isAfter(now) && s.isBefore(now.add(const Duration(days: 7)));
+    }).toList()
+          ..sort((a, b) => a.scheduled!.compareTo(b.scheduled!)))
+        .firstOrNull;
+    if (task != null && (event == null || task.scheduled!.isBefore(event.start))) {
+      final s = task.scheduled!;
+      return (
+        title: task.title,
+        start: s,
+        end: s.add(Duration(minutes: task.durationMin)),
+        color: AppColors.category(task.category),
+        icon: Icons.task_alt,
+        place: '',
+        open: (context) => () => showTaskEditor(context, task: task),
+      );
+    }
+    if (event == null) return null;
+    return (
+      title: event.event.title,
+      start: event.start,
+      end: event.end,
+      color: AppColors.ofEvent(event.event),
+      icon: categoryIcon(event.event.category),
+      place: event.event.place,
+      open: (context) => () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => EventDetailScreen(eventId: event.event.id, start: event.start)),
+          ),
+    );
+  }
+
+  /// Mennyi idő múlva, pl. „40 perc múlva”, „17:00-kor · 2 óra múlva”, „Most tart · 15:00-ig”.
+  static String whenLabel(DateTime start, DateTime end, DateTime now) {
+    final minutes = start.difference(now).inMinutes;
+    if (!start.isAfter(now)) return 'Most tart · ${formatTime(end)}-ig';
+    if (minutes < 60) return '${minutes < 1 ? 1 : minutes} perc múlva';
+    if (sameDay(start, now)) return '${formatTime(start)}-kor · ${formatDuration(minutes)} múlva';
+    return '${formatDay(start)} ${formatTime(start)}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final next = store.upcoming(days: 7, now: now).where((o) => !o.event.allDay).firstOrNull;
+    final next = pick(store, now);
     if (next == null) return const SizedBox.shrink();
-    final color = AppColors.ofEvent(next.event);
     final running = !next.start.isAfter(now);
-    final minutes = next.start.difference(now).inMinutes;
-    final when = running
-        ? 'Most tart · ${formatTime(next.end)}-ig'
-        : minutes < 60
-        ? '$minutes perc múlva'
-        : sameDay(next.start, now)
-        ? '${formatTime(next.start)}-kor · ${formatDuration(minutes)} múlva'
-        : '${formatDay(next.start)} ${formatTime(next.start)}';
     return Card(
-      color: color.withValues(alpha: AppColors.dark ? 0.22 : 0.10),
+      color: next.color.withValues(alpha: AppColors.dark ? 0.22 : 0.10),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(Space.radius),
-        side: BorderSide(color: color.withValues(alpha: 0.35)),
+        side: BorderSide(color: next.color.withValues(alpha: 0.35)),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-        leading: Icon(categoryIcon(next.event.category), color: color),
+        leading: Icon(next.icon, color: next.color),
         title: Text(
           running ? 'Most' : 'Következő',
           style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w600),
@@ -214,16 +253,12 @@ class _NextUp extends StatelessWidget {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(next.event.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.text)),
-            Text([when, if (next.event.place.isNotEmpty) next.event.place].join(' · ')),
+            Text(next.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.text)),
+            Text([whenLabel(next.start, next.end, now), if (next.place.isNotEmpty) next.place].join(' · ')),
           ],
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => EventDetailScreen(eventId: next.event.id, start: next.start),
-          ),
-        ),
+        onTap: next.open(context),
       ),
     );
   }

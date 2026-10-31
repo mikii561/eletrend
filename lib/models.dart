@@ -259,6 +259,7 @@ class TaskItem {
     this.category = EventCategory.personal,
     this.notes = '',
     this.done = false,
+    this.reminderMin = 0,
     this.doneAt,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -275,6 +276,10 @@ class TaskItem {
   EventCategory category;
   String notes;
   bool done;
+
+  /// Értesítés: beosztott feladatnál ennyi perccel a kezdés előtt; csak határidősnél a határidő
+  /// napján reggel 9-kor (bármilyen nem null érték). Null = nincs értesítés (a Főoldalon így is látszik).
+  int? reminderMin;
   DateTime? doneAt;
   final DateTime createdAt;
 
@@ -295,6 +300,7 @@ class TaskItem {
     'category': category.name,
     if (notes.isNotEmpty) 'notes': notes,
     'done': done,
+    'reminderMin': reminderMin,
     if (doneAt != null) 'doneAt': doneAt!.toIso8601String(),
     'createdAt': createdAt.toIso8601String(),
   };
@@ -308,6 +314,8 @@ class TaskItem {
     category: EventCategory.values.asNameMap()[j['category']] ?? EventCategory.personal,
     notes: j['notes'] as String? ?? '',
     done: j['done'] as bool? ?? false,
+    // Régebbi feladatoknál (mező nélkül) maradt a korábbi viselkedés: emlékeztető a kezdéskor.
+    reminderMin: j.containsKey('reminderMin') ? (j['reminderMin'] as num?)?.toInt() : 0,
     doneAt: j['doneAt'] == null ? null : DateTime.parse(j['doneAt'] as String),
     createdAt: j['createdAt'] == null ? null : DateTime.parse(j['createdAt'] as String),
   );

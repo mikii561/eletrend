@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import 'formatting.dart' show formatTime;
 import 'memories.dart' show pickMemory;
 import 'models.dart';
 import 'store.dart';
@@ -178,23 +179,30 @@ class Notifications {
       }
     }
 
-    // Feladatok: a beosztott időpontban, vagy a határidő napján reggel 9-kor.
+    // Feladatok: beosztottnál a választott idővel a kezdés előtt, csak határidősnél a határidő
+    // napján reggel 9-kor. „Nincs értesítés” (null) esetén semmi (a Főoldalon így is látszik).
     if (store.taskReminders) {
       var i = 0;
       for (final t in store.openTasks) {
         if (i >= 100) break;
-        final when = t.scheduled ?? (t.due == null ? null : DateTime(t.due!.year, t.due!.month, t.due!.day, 9));
+        final before = t.reminderMin;
+        if (before == null) continue;
+        final s = t.scheduled;
+        final when = s != null
+            ? s.subtract(Duration(minutes: before))
+            : (t.due == null ? null : DateTime(t.due!.year, t.due!.month, t.due!.day, 9));
         if (when == null || !when.isAfter(now) || when.isAfter(now.add(const Duration(days: 14)))) continue;
         out.add(
           PlannedNotification(
             _taskBase + i++,
             when,
-            t.scheduled != null ? 'Most: ${t.title}' : 'Ma a határidő: ${t.title}',
-            t.scheduled != null ? '${t.durationMin} percet szántál rá.' : 'Pipáld ki, ha megvan. ✅',
+            s == null ? 'Ma a határidő: ${t.title}' : (before == 0 ? 'Most: ${t.title}' : '${_inText(before)}: ${t.title}'),
+            s == null ? 'Pipáld ki, ha megvan. ✅' : '${formatTime(s)}-kor, ${t.durationMin} percet szántál rá.',
           ),
         );
       }
     }
+
 
     // Célonkénti saját emlékeztető: csak ha aznap (hetinél: azon a héten) még nincs meg.
     for (var i = 0; i < store.habits.length && i < 30; i++) {

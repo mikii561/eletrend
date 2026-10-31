@@ -35,6 +35,9 @@ class _TaskEditorState extends State<_TaskEditor> {
   late DateTime? _scheduled = widget.task?.scheduled ?? widget.scheduled;
   late int _duration = widget.task?.durationMin ?? 30;
   late EventCategory _category = widget.task?.category ?? EventCategory.personal;
+
+  /// Értesítés (null = nincs). Új feladatnál az alapbeállítás szerint.
+  late int? _reminder = widget.task != null ? widget.task!.reminderMin : StoreScope.of(context).defaultReminderMin;
   String? _error;
 
   @override
@@ -99,7 +102,8 @@ class _TaskEditorState extends State<_TaskEditor> {
       ..due = _due
       ..scheduled = _scheduled
       ..durationMin = _duration
-      ..category = _category;
+      ..category = _category
+      ..reminderMin = _reminder;
     store.saveTask(t);
     navigator.pop();
   }
@@ -190,6 +194,31 @@ class _TaskEditorState extends State<_TaskEditor> {
                       onSelected: (_) => setState(() => _duration = m),
                     ),
                 ],
+              ),
+            // Értesítés: beosztott feladatnál mennyivel előtte; csak határidősnél a határidő napján.
+            if (_scheduled != null)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.notifications_none),
+                title: DropdownButtonHideUnderline(
+                  child: DropdownButton<int?>(
+                    value: _reminder,
+                    isExpanded: true,
+                    items: [
+                      for (final m in {...reminderOptions, _reminder}) DropdownMenuItem(value: m, child: Text(reminderLabel(m))),
+                    ],
+                    onChanged: (m) => setState(() => _reminder = m),
+                  ),
+                ),
+                subtitle: _reminder == null ? const Text('A Főoldalon így is látszik, csak nem jön értesítés.') : null,
+              )
+            else if (_due != null)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                secondary: const Icon(Icons.notifications_none),
+                title: const Text('Értesítés a határidő napján (9:00)'),
+                value: _reminder != null,
+                onChanged: (on) => setState(() => _reminder = on ? 0 : null),
               ),
             ConflictHint(conflicts: _conflicts(store)),
             const SizedBox(height: 16),

@@ -303,6 +303,7 @@ class _EventEditorState extends State<EventEditor> {
                       onChanged: (m) => setState(() => _reminder = m),
                     ),
                   ),
+                  subtitle: _reminder == null ? const Text('A Főoldalon így is látszik, csak nem jön értesítés.') : null,
                 ),
               ],
             ),
