@@ -71,7 +71,8 @@ service cloud.firestore {
       allow get: if isAdmin() || (realUser() && request.auth.uid == uid);
       allow list, delete: if isAdmin();
       allow write: if realUser() && request.auth.uid == uid && !banned()
-        && request.resource.data.keys().hasOnly(['name', 'email', 'createdAt', 'lastSeen', 'platform', 'version', 'counts'])
+        && request.resource.data.keys().hasOnly(['name', 'email', 'createdAt', 'lastSeen', 'platform', 'version', 'counts', 'activeDays'])
+        && (!('activeDays' in request.resource.data) || request.resource.data.activeDays is list)
         && request.resource.data.name is string && request.resource.data.name.size() <= 40
         && request.resource.data.email is string && request.resource.data.email.size() <= 200;
     }

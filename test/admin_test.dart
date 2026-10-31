@@ -110,8 +110,98 @@ void main() {
     expect(await admin.isAdmin('u1'), isTrue);
   });
 
+  test('idősor: oszlopok a szűrő szerint, az előző időszakhoz képest +/−, egy felhasználó oszloponként egyszer', () {
+    final now = DateTime(2030, 3, 15, 12);
+    DateTime daysAgo(int n) => DateTime(2030, 3, 15 - n, 9);
+
+    final week = TrendSeries.build(
+      [
+        [daysAgo(0)],
+        [daysAgo(0)],
+        [daysAgo(2)],
+        [daysAgo(8)], // az előző héten
+        [daysAgo(9)],
+        [daysAgo(10)],
+        [daysAgo(20)], // régebbi: sehol nem számít
+      ],
+      StatRange.week,
+      now,
+    );
+    expect(week.counts, [0, 0, 0, 0, 1, 0, 2]);
+    expect([week.total, week.previous, week.delta], [3, 3, 0]);
+
+    // Aktív felhasználó: ugyanaz egy napon belül kétszer is csak egyszer számít, két napon kétszer az összegben egyszer.
+    final active = TrendSeries.build(
+      [
+        [daysAgo(0), DateTime(2030, 3, 15, 18), daysAgo(1)],
+      ],
+      StatRange.week,
+      now,
+    );
+    expect(active.counts, [0, 0, 0, 0, 0, 1, 1]);
+    expect(active.total, 1);
+
+    expect(TrendSeries.bucketStarts(StatRange.month, now), hasLength(30));
+    expect(TrendSeries.bucketStarts(StatRange.quarter, now), hasLength(13));
+    final months = TrendSeries.bucketStarts(StatRange.year, now);
+    expect([months.first, months.last], [DateTime(2029, 4), DateTime(2030, 3)]);
+
+    final trends = Trends(
+      [
+        UserProfile(
+          uid: 'a',
+          name: 'A',
+          email: '',
+          createdAt: daysAgo(1),
+          activeDays: const ['2030-03-14', '2030-03-15'],
+        ),
+        UserProfile(uid: 'b', name: 'B', email: '', createdAt: daysAgo(40), lastSeen: daysAgo(3)),
+      ],
+      errorTimes: [daysAgo(0), daysAgo(1), daysAgo(1), daysAgo(9)],
+    );
+    expect(trends.of(TrendKind.newUsers, StatRange.week, now: now).total, 1);
+    expect(trends.of(TrendKind.active, StatRange.week, now: now).total, 2);
+    final errors = trends.of(TrendKind.errors, StatRange.week, now: now);
+    expect([errors.total, errors.previous, errors.delta], [3, 1, 2]);
+  });
+
+  testWidgets('admin áttekintés: szűrő, zöld + / piros − és diagramok', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await initializeDateFormatting('hu');
+    final db = FakeFirebaseFirestore();
+    Admin.instance = Admin(db: db);
+    final now = DateTime.now();
+    await db.collection('profiles').doc('u1').set({
+      'name': 'Új Elek',
+      'email': '',
+      'createdAt': Timestamp.fromDate(now.subtract(const Duration(days: 1))),
+      'lastSeen': Timestamp.fromDate(now),
+    });
+    await db.collection('errors').add({'message': 'baj', 'at': Timestamp.fromDate(now)});
+    await tester.pumpWidget(const MaterialApp(home: AdminScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('A változás az előző 7 naphoz képest.'), findsOneWidget);
+    // Egy új felhasználó és egy hiba: a felhasználók +1 (zöld), a hiba +1 (piros, mert a több a rossz).
+    final plusOnes = tester.widgetList<Text>(find.text('+1')).toList();
+    expect(plusOnes, isNotEmpty);
+    final colors = {for (final t in plusOnes) t.style!.color};
+    expect(colors, hasLength(2));
+    expect(find.text('Új felhasználók'), findsOneWidget);
+    expect(find.text('Hibák száma'), findsOneWidget);
+
+    await tester.tap(find.text('30 nap'));
+    await tester.pumpAndSettle();
+    expect(find.text('A változás az előző 30 naphoz képest.'), findsOneWidget);
+    await tester.tap(find.text('1 év'));
+    await tester.pumpAndSettle();
+    expect(find.text('A változás az előző 1 évhez képest.'), findsOneWidget);
+  });
+
   testWidgets('admin felület: minden fül megnyílik, felhasználó felfüggeszthető', (tester) async {
-    tester.view.physicalSize = const Size(400, 860);
+    tester.view.physicalSize = const Size(400, 1700);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await initializeDateFormatting('hu');

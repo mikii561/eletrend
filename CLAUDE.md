@@ -71,6 +71,7 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - `lib/admin.dart` + `lib/screens/admin_screen.dart`: áttekintés, felhasználók (felfüggesztés `bans/{uid}`, adattörlés), hibák (`errors`, csak release buildben), visszajelzések (`feedback`), megosztott programok moderálása, jelentések (`reports`).
 - Admin az, akinek van `admins/{uid}` dokumentuma; **csak a Firebase konzolban** lehet felvenni.
 - Az admin a tartalmat nem látja, csak darabszámokat (`profiles/{uid}`).
+- Áttekintés: szűrő (`StatRange`: 7 nap / 30 nap / 3 hónap / 1 év), csempék és oszlopdiagramok (`TrendSeries`, `Trends`), a változás az előző, ugyanolyan hosszú időszakhoz képest: `+3` zölden, `-2` pirosan (a hibáknál fordítva). Az „aktív” az `activeDays` mezőből jön (`profiles/{uid}.activeDays`, naponta egy dátum, külön írással, hogy a régi szabályokkal se törjön el); előtte csak a `lastSeen` van meg. A hibák és visszajelzések a legutóbbi 200-ig látszanak.
 - `appVersion` (lib/admin.dart) a pubspec verzióval együtt léptetendő.
 
 ## Értesítések

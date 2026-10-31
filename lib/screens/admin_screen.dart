@@ -5,8 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../admin.dart';
+import '../availability.dart' show AvailabilityStatus;
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/motion.dart';
 
 String _when(DateTime? d) => d == null ? '–' : DateFormat('yyyy. MMM d. HH:mm', 'hu').format(d);
 
@@ -91,92 +93,263 @@ class _LoaderState<T> extends State<_Loader<T>> {
   }
 }
 
-class _Overview extends StatelessWidget {
+class _Overview extends StatefulWidget {
   const _Overview();
+
+  @override
+  State<_Overview> createState() => _OverviewState();
+}
+
+class _OverviewState extends State<_Overview> {
+  StatRange _range = StatRange.week;
 
   @override
   Widget build(BuildContext context) {
     return _Loader<AdminStats>(
       load: Admin.instance.stats,
-      builder: (context, s, _) => ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Row(
-            children: [
-              _Tile('Felhasználó', '${s.total}'),
-              const SizedBox(width: 8),
-              _Tile('Aktív (7 nap)', '${s.active7}'),
-              const SizedBox(width: 8),
-              _Tile('Aktív (30 nap)', '${s.active30}'),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _Tile('Új a héten', '${s.newThisWeek}'),
-              const SizedBox(width: 8),
-              _Tile('Nyitott visszajelzés', '${s.openFeedback}'),
-              const SizedBox(width: 8),
-              _Tile('Hiba (24 óra)', '${s.errors24h}', warn: s.errors24h > 0),
-            ],
-          ),
-          const SectionTitle('Tartalom összesen'),
-          Card(
-            child: Column(
+      builder: (context, s, _) {
+        TrendSeries series(TrendKind k) => s.trends.of(k, _range);
+        final newUsers = series(TrendKind.newUsers);
+        final active = series(TrendKind.active);
+        final errors = series(TrendKind.errors);
+        final feedback = series(TrendKind.feedback);
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            SegmentedButton<StatRange>(
+              showSelectedIcon: false,
+              segments: [for (final r in StatRange.values) ButtonSegment(value: r, label: Text(r.label))],
+              selected: {_range},
+              onSelectionChanged: (v) => setState(() => _range = v.first),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: Text(
+                'A változás az előző ${_range.previousLabel} képest.',
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
               children: [
-                ListTile(
-                  leading: const IconTile(Icons.checklist),
-                  title: const Text('Feladat'),
-                  trailing: _Num(s.totals['tasks']),
-                ),
-                ListTile(
-                  leading: const IconTile(Icons.task_alt),
-                  title: const Text('Cél'),
-                  trailing: _Num(s.totals['habits']),
-                ),
-                ListTile(
-                  leading: const IconTile(Icons.celebration_outlined),
-                  title: const Text('Naptárbejegyzés'),
-                  trailing: _Num(s.totals['events']),
-                ),
-                ListTile(
-                  leading: const IconTile(Icons.link),
-                  title: const Text('Megosztott program'),
-                  trailing: _Num(s.sharedEvents),
-                ),
+                _Tile('Felhasználó', '${s.total}', delta: newUsers.total, goodWhenUp: true),
+                const SizedBox(width: 8),
+                _Tile('Aktív', '${active.total}', delta: active.delta, goodWhenUp: true),
+                const SizedBox(width: 8),
+                _Tile('Új', '${newUsers.total}', delta: newUsers.delta, goodWhenUp: true),
               ],
             ),
-          ),
-          const SectionTitle('Platformok'),
-          Card(
-            child: Column(
+            const SizedBox(height: 8),
+            Row(
               children: [
-                for (final e in s.platforms.entries)
+                _Tile('Hiba', '${errors.total}', delta: errors.delta, goodWhenUp: false),
+                const SizedBox(width: 8),
+                _Tile('Visszajelzés', '${feedback.total}', delta: feedback.delta, goodWhenUp: true),
+                const SizedBox(width: 8),
+                _Tile('Nyitott visszajelzés', '${s.openFeedback}'),
+              ],
+            ),
+            const SectionTitle('Alakulás'),
+            _ChartCard('Új felhasználók', newUsers, _range),
+            _ChartCard('Aktív felhasználók', active, _range),
+            _ChartCard('Hibák száma', errors, _range, goodWhenUp: false, color: AppColors.danger),
+            _ChartCard('Beérkezett visszajelzések', feedback, _range),
+            const SectionTitle('Tartalom összesen'),
+            Card(
+              child: Column(
+                children: [
                   ListTile(
-                    title: Text(
-                      e.key == 'web'
-                          ? '🌐 Weboldal'
-                          : e.key == 'android'
-                          ? '🤖 Android'
-                          : e.key,
-                    ),
-                    trailing: _Num(e.value),
+                    leading: const IconTile(Icons.checklist),
+                    title: const Text('Feladat'),
+                    trailing: _Num(s.totals['tasks']),
                   ),
+                  ListTile(
+                    leading: const IconTile(Icons.task_alt),
+                    title: const Text('Cél'),
+                    trailing: _Num(s.totals['habits']),
+                  ),
+                  ListTile(
+                    leading: const IconTile(Icons.celebration_outlined),
+                    title: const Text('Naptárbejegyzés'),
+                    trailing: _Num(s.totals['events']),
+                  ),
+                  ListTile(
+                    leading: const IconTile(Icons.link),
+                    title: const Text('Megosztott program'),
+                    trailing: _Num(s.sharedEvents),
+                  ),
+                ],
+              ),
+            ),
+            const SectionTitle('Platformok'),
+            Card(
+              child: Column(
+                children: [
+                  for (final e in s.platforms.entries)
+                    ListTile(
+                      title: Text(
+                        e.key == 'web'
+                            ? '🌐 Weboldal'
+                            : e.key == 'android'
+                            ? '🤖 Android'
+                            : e.key,
+                      ),
+                      trailing: _Num(e.value),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// „+3” zölden, „-2” pirosan; a hibáknál fordítva (a több a rossz). Nullánál szürke „±0”.
+class _Delta extends StatelessWidget {
+  const _Delta(this.delta, {required this.goodWhenUp, this.fontSize = 12});
+
+  final int delta;
+  final bool goodWhenUp;
+  final double fontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final good = AppColors.status(AvailabilityStatus.available);
+    final bad = AppColors.danger;
+    final color = delta == 0 ? AppColors.textMuted : ((delta > 0) == goodWhenUp ? good : bad);
+    return Text(
+      delta == 0 ? '±0' : (delta > 0 ? '+$delta' : '$delta'),
+      style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w800, color: color),
+    );
+  }
+}
+
+/// Egy mutató kártyája: az összeg, a változás és az oszlopdiagram.
+class _ChartCard extends StatelessWidget {
+  const _ChartCard(this.title, this.series, this.range, {this.goodWhenUp = true, this.color});
+
+  final String title;
+  final TrendSeries series;
+  final StatRange range;
+  final bool goodWhenUp;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                ),
+                Text('${series.total}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+                const SizedBox(width: 8),
+                _Delta(series.delta, goodWhenUp: goodWhenUp, fontSize: 14),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 10),
+            _BarChart(series, range, color: color ?? AppColors.primary),
+          ],
+        ),
       ),
     );
   }
 }
 
+class _BarChart extends StatelessWidget {
+  const _BarChart(this.series, this.range, {required this.color});
+
+  final TrendSeries series;
+  final StatRange range;
+  final Color color;
+
+  static const _height = 96.0;
+
+  String _label(DateTime d) => range.monthly ? DateFormat.MMM('hu').format(d) : DateFormat('M. d.', 'hu').format(d);
+
+  @override
+  Widget build(BuildContext context) {
+    final max = series.counts.fold(0, (a, b) => a > b ? a : b);
+    final n = series.counts.length;
+    final muted = TextStyle(fontSize: 10, color: AppColors.textMuted);
+    return Column(
+      children: [
+        SizedBox(
+          height: _height,
+          child: Stack(
+            children: [
+              for (final f in [0.0, 0.5, 1.0])
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: f * (_height - 1),
+                  child: Divider(height: 1, color: AppColors.divider),
+                ),
+              Positioned(left: 0, top: 0, child: Text(max == 0 ? '' : '$max', style: muted)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  for (var i = 0; i < n; i++)
+                    Expanded(
+                      child: Tooltip(
+                        message: '${_label(series.starts[i])}: ${series.counts[i]}',
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: n > 20 ? 1 : 3),
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween(end: max == 0 ? 0 : series.counts[i] / max),
+                            duration: Motion.of(context, Motion.slow),
+                            curve: Motion.curve,
+                            builder: (context, v, _) => FractionallySizedBox(
+                              alignment: Alignment.bottomCenter,
+                              heightFactor: series.counts[i] == 0 ? 0 : v.clamp(0.03, 1.0),
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: color,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                                ),
+                                child: const SizedBox(width: double.infinity),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(_label(series.starts.first), style: muted),
+            if (n > 7) Text(_label(series.starts[n ~/ 2]), style: muted),
+            Text(_label(series.starts.last), style: muted),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _Tile extends StatelessWidget {
-  const _Tile(this.label, this.value, {this.warn = false});
+  const _Tile(this.label, this.value, {this.delta, this.goodWhenUp = true});
 
   final String label;
   final String value;
-  final bool warn;
+
+  /// Változás az előző időszakhoz képest (nincs → nem látszik).
+  final int? delta;
+  final bool goodWhenUp;
 
   @override
   Widget build(BuildContext context) => Expanded(
@@ -186,10 +359,8 @@ class _Tile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
         child: Column(
           children: [
-            Text(
-              value,
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: warn ? Colors.red.shade400 : null),
-            ),
+            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+            if (delta != null) _Delta(delta!, goodWhenUp: goodWhenUp) else const SizedBox(height: 15),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -371,7 +542,10 @@ class _UserDetailState extends State<_UserDetail> {
                   subtitle: const Text('A fiókot a Firebase konzolban (Authentication) lehet törölni.'),
                   enabled: !_busy,
                   onTap: () async {
-                    final ok = await _confirm('Törlöd ${u.name} összes adatát?', 'Naptár, feladatok, célok. Nem vonható vissza.');
+                    final ok = await _confirm(
+                      'Törlöd ${u.name} összes adatát?',
+                      'Naptár, feladatok, célok. Nem vonható vissza.',
+                    );
                     if (!ok) return;
                     await _run(() => Admin.instance.deleteUserData(u.uid), 'Adatok törölve');
                   },
@@ -637,22 +811,22 @@ class _Reports extends StatelessWidget {
 
 /// Egy csatolt képernyőkép nagyban (nagyítható).
 Future<void> _showScreenshot(BuildContext context, Uint8List bytes) => showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(12),
-        child: Stack(
-          children: [
-            InteractiveViewer(maxScale: 5, child: Image.memory(bytes, fit: BoxFit.contain)),
-            Positioned(
-              right: 4,
-              top: 4,
-              child: IconButton.filledTonal(
-                tooltip: 'Bezárás',
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ],
+  context: context,
+  builder: (context) => Dialog(
+    insetPadding: const EdgeInsets.all(12),
+    child: Stack(
+      children: [
+        InteractiveViewer(maxScale: 5, child: Image.memory(bytes, fit: BoxFit.contain)),
+        Positioned(
+          right: 4,
+          top: 4,
+          child: IconButton.filledTonal(
+            tooltip: 'Bezárás',
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);

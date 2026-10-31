@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
+import 'models.dart' show dayKey;
 import 'store.dart';
 
 /// Az app verziója (a pubspec.yaml-lel együtt kell léptetni); a hibajelentésekben látszik.
@@ -24,6 +25,7 @@ class UserProfile {
     this.platform = '',
     this.version = '',
     this.counts = const {},
+    this.activeDays = const [],
     this.banned = false,
   });
 
@@ -37,7 +39,13 @@ class UserProfile {
 
   /// Hány bejegyzése, feladata, célja van.
   final Map<String, int> counts;
+
+  /// Azok a napok („ÉÉÉÉ-HH-NN”), amikor megnyitotta az appot (az aktivitási grafikonhoz).
+  final List<String> activeDays;
   final bool banned;
+
+  /// Az aktív napok időpontként, kiegészítve az utolsó látogatással (a régi adatnál csak az van).
+  List<DateTime> get activeTimes => [for (final d in activeDays) ?DateTime.tryParse(d), ?lastSeen];
 
   factory UserProfile.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc, {bool banned = false}) {
     final d = doc.data()!;
@@ -50,6 +58,7 @@ class UserProfile {
       platform: d['platform'] as String? ?? '',
       version: d['version'] as String? ?? '',
       counts: {for (final e in (d['counts'] as Map? ?? {}).entries) e.key as String: (e.value as num).toInt()},
+      activeDays: [for (final d in (d['activeDays'] as List? ?? [])) d.toString()],
       banned: banned,
     );
   }
@@ -157,6 +166,125 @@ class UserReport {
   }
 }
 
+/// Az idősor szűrője az áttekintésen.
+enum StatRange {
+  week('7 nap', 7, '7 naphoz'),
+  month('30 nap', 30, '30 naphoz'),
+  quarter('3 hónap', 91, '3 hónaphoz'),
+  year('1 év', 365, '1 évhez');
+
+  const StatRange(this.label, this.days, this.previousLabel);
+
+  final String label;
+  final int days;
+
+  /// „az előző … képest” szerkezethez.
+  final String previousLabel;
+
+  /// Egy oszlop = egy nap (7 és 30 nap), egy hét (3 hónap) vagy egy hónap (1 év).
+  bool get monthly => this == year;
+}
+
+/// Egy mutató alakulása: oszlopok a szűrt időszakon, az összeg és az előző, ugyanolyan hosszú időszak összege.
+class TrendSeries {
+  const TrendSeries({required this.starts, required this.counts, required this.total, required this.previous});
+
+  /// Az oszlopok kezdőnapjai (helyi idő).
+  final List<DateTime> starts;
+  final List<int> counts;
+  final int total;
+  final int previous;
+
+  /// Mennyivel több (+) vagy kevesebb (−) az előző időszaknál.
+  int get delta => total - previous;
+
+  /// Az oszlopok kezdőpontjai a szűrő szerint; az utolsó oszlop a mai napot (hónapot) tartalmazza.
+  static List<DateTime> bucketStarts(StatRange range, DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    switch (range) {
+      case StatRange.week:
+        return [for (var i = 6; i >= 0; i--) DateTime(today.year, today.month, today.day - i)];
+      case StatRange.month:
+        return [for (var i = 29; i >= 0; i--) DateTime(today.year, today.month, today.day - i)];
+      case StatRange.quarter:
+        return [for (var i = 12; i >= 0; i--) DateTime(today.year, today.month, today.day - 6 - i * 7)];
+      case StatRange.year:
+        return [for (var i = 11; i >= 0; i--) DateTime(today.year, today.month - i)];
+    }
+  }
+
+  /// Az [entities] mindegyike egy dolog (felhasználó, hiba…) az időpontjaival; egy oszlopba
+  /// ugyanaz a dolog csak egyszer számít (így a „hány felhasználó volt aktív” nem duplázódik).
+  factory TrendSeries.build(Iterable<Iterable<DateTime>> entities, StatRange range, DateTime now) {
+    final starts = bucketStarts(range, now);
+    final today = DateTime(now.year, now.month, now.day);
+    final end = DateTime(today.year, today.month, today.day + 1);
+    final start = starts.first;
+    final prevStart = start.subtract(end.difference(start));
+    final counts = List.filled(starts.length, 0);
+    var total = 0;
+    var previous = 0;
+    for (final times in entities) {
+      final seen = <int>{};
+      var inPeriod = false;
+      var inPrevious = false;
+      for (final t in times) {
+        if (!t.isBefore(start) && t.isBefore(end)) {
+          inPeriod = true;
+          var i = starts.lastIndexWhere((s) => !t.isBefore(s));
+          if (i < 0) i = 0;
+          if (seen.add(i)) counts[i]++;
+        } else if (!t.isBefore(prevStart) && t.isBefore(start)) {
+          inPrevious = true;
+        }
+      }
+      if (inPeriod) total++;
+      if (inPrevious) previous++;
+    }
+    return TrendSeries(starts: starts, counts: counts, total: total, previous: previous);
+  }
+}
+
+/// Mit mérünk az idősoron.
+enum TrendKind {
+  newUsers(goodWhenUp: true),
+  active(goodWhenUp: true),
+  errors(goodWhenUp: false),
+  feedback(goodWhenUp: true);
+
+  const TrendKind({required this.goodWhenUp});
+
+  /// Zöld-e, ha több lett (a hibáknál fordítva: a több a rossz).
+  final bool goodWhenUp;
+}
+
+/// Az áttekintés idősorai: új és aktív felhasználók, hibák, visszajelzések.
+class Trends {
+  Trends(this.users, {this.errorTimes = const [], this.feedbackTimes = const []});
+
+  final List<UserProfile> users;
+  final List<DateTime> errorTimes;
+  final List<DateTime> feedbackTimes;
+
+  TrendSeries of(TrendKind kind, StatRange range, {DateTime? now}) {
+    final at = now ?? DateTime.now();
+    final Iterable<Iterable<DateTime>> entities = switch (kind) {
+      TrendKind.newUsers => [
+        for (final u in users)
+          if (u.createdAt != null) [u.createdAt!],
+      ],
+      TrendKind.active => [for (final u in users) u.activeTimes],
+      TrendKind.errors => [
+        for (final t in errorTimes) [t],
+      ],
+      TrendKind.feedback => [
+        for (final t in feedbackTimes) [t],
+      ],
+    };
+    return TrendSeries.build(entities, range, at);
+  }
+}
+
 /// Összesítés az áttekintéshez.
 class AdminStats {
   AdminStats(
@@ -164,8 +292,11 @@ class AdminStats {
     required this.sharedEvents,
     required this.openFeedback,
     required this.errors24h,
+    List<DateTime> errorTimes = const [],
+    List<DateTime> feedbackTimes = const [],
     DateTime? now,
-  }) : total = users.length,
+  }) : trends = Trends(users, errorTimes: errorTimes, feedbackTimes: feedbackTimes),
+       total = users.length,
        active7 = users
            .where((u) => u.lastSeen != null && (now ?? DateTime.now()).difference(u.lastSeen!).inDays < 7)
            .length,
@@ -180,6 +311,7 @@ class AdminStats {
          for (final k in ['events', 'tasks', 'habits']) k: users.fold(0, (acc, u) => acc + (u.counts[k] ?? 0)),
        };
 
+  final Trends trends;
   final int total;
   final int active7;
   final int active30;
@@ -248,6 +380,12 @@ class Admin {
       'version': appVersion,
       'counts': {'events': store.events.length, 'tasks': store.tasks.length, 'habits': store.habits.length},
     }, SetOptions(merge: true));
+    // Külön írás: ha a szabályok még nem ismerik a mezőt, az adatlap többi része így is frissül.
+    try {
+      await _db.collection('profiles').doc(uid).set({
+        'activeDays': FieldValue.arrayUnion([dayKey(now)]),
+      }, SetOptions(merge: true));
+    } catch (_) {}
   }
 
   // Hibajelentés
@@ -311,18 +449,17 @@ class Admin {
     required String email,
     required String text,
     List<Uint8List> images = const [],
-  }) =>
-      _db.collection('feedback').add({
-        'uid': uid,
-        'name': name,
-        'email': email,
-        'text': text.length > 2000 ? text.substring(0, 2000) : text,
-        'platform': platformName,
-        'version': appVersion,
-        'done': false,
-        if (images.isNotEmpty) 'images': [for (final i in images.take(maxScreenshots)) base64Encode(i)],
-        'at': FieldValue.serverTimestamp(),
-      });
+  }) => _db.collection('feedback').add({
+    'uid': uid,
+    'name': name,
+    'email': email,
+    'text': text.length > 2000 ? text.substring(0, 2000) : text,
+    'platform': platformName,
+    'version': appVersion,
+    'done': false,
+    if (images.isNotEmpty) 'images': [for (final i in images.take(maxScreenshots)) base64Encode(i)],
+    'at': FieldValue.serverTimestamp(),
+  });
 
   // Az admin felület lekérdezései
 
@@ -357,7 +494,20 @@ class Admin {
     final open = await _db.collection('feedback').where('done', isEqualTo: false).count().get();
     final since = Timestamp.fromDate(DateTime.now().subtract(const Duration(hours: 24)));
     final errs = await _db.collection('errors').where('at', isGreaterThan: since).count().get();
-    return AdminStats(all, sharedEvents: events.count ?? 0, openFeedback: open.count ?? 0, errors24h: errs.count ?? 0);
+    return AdminStats(
+      all,
+      sharedEvents: events.count ?? 0,
+      openFeedback: open.count ?? 0,
+      errors24h: errs.count ?? 0,
+      errorTimes: [
+        for (final e in await errors())
+          if (e.at != null) e.at!,
+      ],
+      feedbackTimes: [
+        for (final f in await feedback())
+          if (f.at != null) f.at!,
+      ],
+    );
   }
 
   Future<void> setBanned(String uid, bool banned) async {
@@ -408,14 +558,18 @@ class Admin {
     controller = StreamController<int>(
       onListen: () {
         subs
-          ..add(_db.collection('feedback').where('done', isEqualTo: false).snapshots().listen((q) {
-            feedback = q.size;
-            controller.add(feedback + reports);
-          }, onError: controller.addError))
-          ..add(_db.collection('reports').snapshots().listen((q) {
-            reports = q.size;
-            controller.add(feedback + reports);
-          }, onError: controller.addError));
+          ..add(
+            _db.collection('feedback').where('done', isEqualTo: false).snapshots().listen((q) {
+              feedback = q.size;
+              controller.add(feedback + reports);
+            }, onError: controller.addError),
+          )
+          ..add(
+            _db.collection('reports').snapshots().listen((q) {
+              reports = q.size;
+              controller.add(feedback + reports);
+            }, onError: controller.addError),
+          );
       },
       onCancel: () async {
         for (final s in subs) {
