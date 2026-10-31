@@ -85,6 +85,7 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 
 ## Ütemterv (MVP után)
 
+- **Google Naptár automatizálása (a felhasználó kérte):** most „Testing” módban csak a kézzel felvett test userek kapcsolhatják össze (max. 100). Cél: OAuth-ellenőrzés (verification), hogy bárki használhassa felvétel nélkül. Kell hozzá: adatvédelmi tájékoztató oldal, saját domain (a github.io nem elég), demó videó, néhány hét Google-átnézés. A test userek felvétele API-val nem automatizálható.
 - AI asszisztens (fizetős API + szerver kell: előbb megbeszélni a költséget), spontán tervek („Ki ér rá ma este?”), csoportos szavazás helyszínre/programra, születésnap-ajándék szervezés, emlékek (fotók), naptár-import (Google/Apple), bezárt appra push (ingyenes úton).
 
 ## Bemutató és tippek
