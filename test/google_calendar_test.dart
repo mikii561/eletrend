@@ -119,10 +119,10 @@ void main() {
     expect(store.events, hasLength(4));
     expect(store.googleSyncedAt, DateTime(2030, 3, 1));
 
-    // (Az időpontot a beolvasott eseményből vesszük, hogy a gép időzónájától független legyen.)
+    // Ütközésnél a Google-esemény is számít. (Az időpontot a beolvasott eseményből vesszük, hogy a gép
+    // időzónájától független legyen.)
     final dentist = store.events.firstWhere((e) => e.title == 'Fogorvos').start;
     expect(store.conflictsFor(start: dentist.add(const Duration(minutes: 30)), durationMin: 30).single.title, 'Fogorvos');
-    expect(store.conflictsFor(start: DateTime(2030, 3, 5, 13, 30), durationMin: 30).single.title, 'Fogorvos');
 
     store.setGoogleCalendars({'gabi@gmail.com': 'Gabi'});
     expect(store.events.map((e) => e.title), isNot(contains('Megbeszélés')));
