@@ -90,6 +90,11 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - **Google Naptár automatizálása (a felhasználó kérte):** most „Testing” módban csak a kézzel felvett test userek kapcsolhatják össze (max. 100). Cél: OAuth-ellenőrzés (verification), hogy bárki használhassa felvétel nélkül. Kell hozzá: adatvédelmi tájékoztató oldal, saját domain (a github.io nem elég), demó videó, néhány hét Google-átnézés. A test userek felvétele API-val nem automatizálható.
 - AI asszisztens (fizetős API + szerver kell: előbb megbeszélni a költséget), spontán tervek („Ki ér rá ma este?”), csoportos szavazás helyszínre/programra, születésnap-ajándék szervezés, emlékek (fotók), naptár-import (Google/Apple), bezárt appra push (ingyenes úton).
 
+## Első belépés és profilkép
+
+- `lib/screens/onboarding_screen.dart`: üdvözlés → „Első lépések” (`Beállítom később` = egyből a kész oldal) → születésnap (kihagyható) → barátok (barátkód, kihagyható) → profilkép + név (név kötelező) → „Kész is vagyunk” → `finishOnboarding` → a Főoldalon magától indul a bemutató. A név/kép/születésnap már a profil-lépésnél mentődik, az `onboarded` csak a végén áll át (különben eltűnne a kész oldal). A funkció-választás és a „mikor érsz rá” lépés kikerült (Profil → Főoldal testreszabása / Adatvédelem).
+- Profilkép: `store.profilePhoto` (256 px négyzetes JPEG base64, `lib/square_image.dart`; fiókkal szinkronban), választó: `widgets/profile_photo_button.dart` (kamera / galéria / törlés), megjelenítés: `NameAvatar(photo:)`. A barátok a `people/{uid}.photo` mezőből látják (külön írás, hogy a régi szabályokkal se törjön el a névjegy; a szabály ≤ 60 000 karaktert enged).
+
 ## Bemutató és tippek
 
 - `lib/widgets/app_tour.dart`: 9 lépéses bemutató a Főoldalon (kiemelés + kártya); első megnyitáskor magától (`store.tourDone`), a Profilból újraindítható (`HomeShell.startTour`). Az alsó menü fülét a `TourKeys.navBar` öt egyforma részéből számolja.

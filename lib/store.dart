@@ -49,6 +49,9 @@ class AppStore extends ChangeNotifier {
   /// A neved, ahogy a barátaid látják.
   String myName = '';
 
+  /// Profilkép: kicsi négyzetes JPEG base64-ben (üres, ha nincs). Fiókkal minden eszközön ugyanaz.
+  String profilePhoto = '';
+
   /// Születésnap „ÉÉÉÉ-HH-NN” (null, ha nem adtad meg).
   String? birthday;
 
@@ -174,6 +177,7 @@ class AppStore extends ChangeNotifier {
   /// A fiókhoz mentett beállítások egy dokumentumban.
   Map<String, dynamic> cloudSettings() => {
     'myName': myName,
+    'profilePhoto': profilePhoto,
     'birthday': birthday,
     'shareBirthday': shareBirthday,
     'shareStreaks': shareStreaks,
@@ -203,6 +207,7 @@ class AppStore extends ChangeNotifier {
 
   void _applySettings(Map<String, dynamic> s, {bool local = false}) {
     myName = s['myName'] as String? ?? myName;
+    profilePhoto = s['profilePhoto'] as String? ?? profilePhoto;
     birthday = s.containsKey('birthday') ? s['birthday'] as String? : birthday;
     shareBirthday = s['shareBirthday'] as bool? ?? shareBirthday;
     shareStreaks = s['shareStreaks'] as bool? ?? shareStreaks;
@@ -302,6 +307,7 @@ class AppStore extends ChangeNotifier {
   void _reset() {
     seenInvites = {};
     myName = '';
+    profilePhoto = '';
     birthday = null;
     shareBirthday = false;
     shareStreaks = false;
@@ -393,6 +399,11 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
+  void setProfilePhoto(String base64Jpeg) {
+    profilePhoto = base64Jpeg;
+    _save();
+  }
+
   void setBirthday(String? value) {
     birthday = value;
     _save();
@@ -452,7 +463,14 @@ class AppStore extends ChangeNotifier {
 
   // Értesítések, megjelenés, Főoldal
 
-  void setReminders({bool? events, bool? tasks, bool? birthdays, bool? memories, int? defaultMin, bool clearDefault = false}) {
+  void setReminders({
+    bool? events,
+    bool? tasks,
+    bool? birthdays,
+    bool? memories,
+    int? defaultMin,
+    bool clearDefault = false,
+  }) {
     memoryReminders = memories ?? memoryReminders;
     eventReminders = events ?? eventReminders;
     taskReminders = tasks ?? taskReminders;
@@ -610,7 +628,9 @@ class AppStore extends ChangeNotifier {
         final s = t.scheduled;
         if (t.done || s == null || t.id == ignoreTaskId) continue;
         final e = s.add(Duration(minutes: t.durationMin));
-        if (s.isBefore(slot.end) && e.isAfter(slot.start)) found.add(Conflict(title: t.title, start: s, end: e, task: true));
+        if (s.isBefore(slot.end) && e.isAfter(slot.start)) {
+          found.add(Conflict(title: t.title, start: s, end: e, task: true));
+        }
       }
     }
     found.sort((a, b) => a.start.compareTo(b.start));

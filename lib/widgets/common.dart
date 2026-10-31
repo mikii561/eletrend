@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -127,10 +129,13 @@ class DateBadge extends StatelessWidget {
 
 /// Kerek kezdőbetűs avatar egy névhez, névből számolt színnel.
 class NameAvatar extends StatelessWidget {
-  const NameAvatar(this.name, {super.key, this.radius = 16});
+  const NameAvatar(this.name, {super.key, this.radius = 16, this.photo = ''});
 
   final String name;
   final double radius;
+
+  /// Profilkép (base64 JPEG); ha van, a kezdőbetű helyett ez látszik.
+  final String photo;
 
   static const _colors = [
     Color(0xFF590907),
@@ -144,6 +149,14 @@ class NameAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _colors[name.hashCode.abs() % _colors.length];
+    if (photo.isNotEmpty) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: color,
+        backgroundImage: ResizeImage(MemoryImage(base64Decode(photo)), width: (radius * 4).round()),
+        onBackgroundImageError: (_, _) {},
+      );
+    }
     return CircleAvatar(
       radius: radius,
       backgroundColor: color,
@@ -410,7 +423,9 @@ class CountBadge extends StatelessWidget {
         label: TweenAnimationBuilder<double>(
           key: ValueKey(count),
           tween: Tween(begin: 0.6, end: 1),
-          duration: MediaQuery.maybeDisableAnimationsOf(context) == true ? Duration.zero : const Duration(milliseconds: 260),
+          duration: MediaQuery.maybeDisableAnimationsOf(context) == true
+              ? Duration.zero
+              : const Duration(milliseconds: 260),
           curve: Curves.easeOutBack,
           builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
           child: Text(count > 99 ? '99+' : '$count'),

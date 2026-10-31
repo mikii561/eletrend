@@ -122,7 +122,7 @@ void main() {
     await tester.tap(find.text('Fiók létrehozása'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Üdv a LIFEUP-ban!'), findsOneWidget); // új, üres fiók: a bevezető jön
+    expect(find.text('Üdvözlünk a LIFEUP alkalmazásban!'), findsOneWidget); // új, üres fiók: a bevezető jön
     expect(store.myName, 'Anna');
     final uid = Account.instance.user!.uid;
     expect((await tester.runAsync(() => count(db, uid, 'meta')))!, 1);

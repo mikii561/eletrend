@@ -9,10 +9,13 @@ import 'store.dart';
 
 /// Egy barát az appban (fiókkal), és amit megosztott magáról.
 class Friend {
-  const Friend({required this.uid, required this.name, this.streaks = const [], this.birthday});
+  const Friend({required this.uid, required this.name, this.streaks = const [], this.birthday, this.photo = ''});
 
   final String uid;
   final String name;
+
+  /// Profilkép (base64 JPEG), ha megosztotta; különben üres.
+  final String photo;
 
   /// Születésnap „HH-NN” alakban, ha megosztja.
   final String? birthday;
@@ -148,9 +151,29 @@ class Friends {
     if (_uid == null) return;
     final card = _card();
     final key = card.toString();
-    if (!force && key == _lastCard) return;
-    _lastCard = key;
-    await _db.collection('people').doc(_uid).set({...card, 'updatedAt': FieldValue.serverTimestamp()});
+    if (force || key != _lastCard) {
+      _lastCard = key;
+      // Összefésüléssel, hogy a külön írt profilkép ne törlődjön.
+      await _db.collection('people').doc(_uid).set({
+        ...card,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+    await _updatePhoto(force: force);
+  }
+
+  String? _lastPhoto;
+
+  /// A profilkép külön megy fel: ha a szabályok még nem ismerik a mezőt, a névjegy többi része így is frissül.
+  Future<void> _updatePhoto({bool force = false}) async {
+    final photo = _store!.profilePhoto;
+    if (!force && photo == _lastPhoto) return;
+    try {
+      await _db.collection('people').doc(_uid).set({'photo': photo}, SetOptions(merge: true));
+      _lastPhoto = photo;
+    } catch (e) {
+      debugPrint('Profilkép feltöltése később: $e');
+    }
   }
 
   /// Be van-e kapcsolódva (bejelentkezett felhasználóval).
@@ -223,6 +246,7 @@ class Friends {
                 uid: d.id,
                 name: card?['name'] as String? ?? name,
                 birthday: card?['birthday'] as String?,
+                photo: card?['photo'] as String? ?? '',
                 streaks: [
                   for (final s in card?['streaks'] as List? ?? [])
                     ((s as Map)['name'] as String, (s['days'] as num).toInt()),

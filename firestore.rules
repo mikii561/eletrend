@@ -122,7 +122,8 @@ service cloud.firestore {
     match /people/{uid} {
       allow get: if realUser() && (request.auth.uid == uid || isFriend(uid, request.auth.uid));
       allow write: if realUser() && request.auth.uid == uid && !banned()
-        && request.resource.data.keys().hasOnly(['name', 'code', 'streaks', 'birthday', 'invites', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['name', 'code', 'streaks', 'birthday', 'invites', 'updatedAt', 'photo'])
+        && (!('photo' in request.resource.data) || (request.resource.data.photo is string && request.resource.data.photo.size() <= 60000))
         && request.resource.data.name is string && request.resource.data.name.size() <= 40
         && request.resource.data.streaks is list && request.resource.data.streaks.size() <= 5
         && (request.resource.data.get('birthday', null) == null

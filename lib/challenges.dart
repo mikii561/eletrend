@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:image/image.dart' as img;
 
 import 'models.dart';
+import 'square_image.dart';
 import 'store.dart';
 
 /// Közös kihívás barátokkal, pl. „30 nap edzés”.
@@ -115,21 +114,7 @@ const maxChallengeDays = 366;
 
 /// Saját kép a kihíváshoz: középen négyzetre vágva, 192 px-esre kicsinyítve, JPEG (pár tíz KB),
 /// hogy a kihívás dokumentumában elférjen és a barátoknál is gyorsan betöltsön.
-String prepareChallengeIcon(Uint8List bytes) {
-  final decoded = img.decodeImage(bytes);
-  if (decoded == null) throw const FormatException('Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.');
-  final oriented = img.bakeOrientation(decoded);
-  final side = oriented.width < oriented.height ? oriented.width : oriented.height;
-  final square = img.copyCrop(
-    oriented,
-    x: (oriented.width - side) ~/ 2,
-    y: (oriented.height - side) ~/ 2,
-    width: side,
-    height: side,
-  );
-  final small = side > 192 ? img.copyResize(square, width: 192, height: 192) : square;
-  return base64Encode(img.encodeJpg(small, quality: 80));
-}
+String prepareChallengeIcon(Uint8List bytes) => squareJpegBase64(bytes, side: 192);
 
 /// Közös kihívások: `challenges/{id}` (tagok, nevek), `challenges/{id}/progress/{uid}` (teljesített napok, buzdítások).
 class Challenges {

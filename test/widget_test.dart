@@ -46,49 +46,65 @@ void main() {
   setUp(signInFakeAccount);
   setUpAll(() => initializeDateFormatting('hu'));
 
-  testWidgets('bevezető: név, mire használnád, mikor érsz rá; a megosztás alapból ki', (tester) async {
+  testWidgets('bevezető: üdvözlés, első lépések, születésnap, barátok, név és profilkép, kész, majd a bemutató', (
+    tester,
+  ) async {
     phone(tester);
     SharedPreferences.setMockInitialValues({});
     final store = (await tester.runAsync(AppStore.load))!;
     await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
-    expect(find.text('Üdv a LIFEUP-ban!'), findsOneWidget);
+    expect(find.text('Üdvözlünk a LIFEUP alkalmazásban!'), findsOneWidget);
 
-    await tester.tap(find.text('Kezdjük'));
+    await tester.tap(find.text('Tovább'));
     await tester.pumpAndSettle();
+    expect(find.text('Első lépések'), findsOneWidget);
+    expect(find.text('Beállítom később'), findsOneWidget);
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+
+    // Születésnap és barátok: kihagyhatók.
+    expect(find.text('Mikor van a születésnapod?'), findsOneWidget);
+    await tester.tap(find.text('Kihagyom'));
+    await tester.pumpAndSettle();
+    expect(find.text('Barátok felvétele'), findsOneWidget);
+    await tester.tap(find.text('Kihagyom'));
+    await tester.pumpAndSettle();
+
+    // Név nélkül nem megy tovább.
+    expect(find.text('Profilkép és név'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '');
     await tester.tap(find.text('Tovább'));
     await tester.pump();
-    expect(find.textContaining('Hogy szólíthatunk?'), findsOneWidget); // név nélkül nem megy tovább
+    expect(find.textContaining('Hogy szólíthatunk?'), findsOneWidget);
     await tester.enterText(find.byType(TextField), 'Anna');
     await tester.tap(find.text('Tovább'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Mire használnád?'), findsOneWidget);
-    await tester.tap(find.text('Kihívások a barátaimmal'));
-    await tester.tap(find.text('Tovább'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Mikor szoktál ráérni?'), findsOneWidget);
-    await tester.tap(find.text('Hétköznap este'));
-    await tester.pump();
-    await tester.tap(find.text('Tovább'));
-    await tester.pumpAndSettle();
-    expect(find.text('Emlékeztetők'), findsOneWidget); // Androidon: engedélykérés magyarázattal
-    await tester.tap(find.text('Kész'));
-    await tester.pumpAndSettle();
-
-    expect(store.onboarded, isTrue);
+    // Mentve, de a bevezető még a „kész” oldalon áll.
+    expect(find.text('Kész is vagyunk!'), findsOneWidget);
     expect(store.myName, 'Anna');
-    expect(store.freeWindows, hasLength(1));
+    expect(store.onboarded, isFalse);
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    expect(store.onboarded, isTrue);
     expect(store.shareAvailability, AvailabilityShare.nobody);
-    expect(store.showsCard(HomeCard.challenges), isFalse);
     expect(find.text('Főoldal'), findsWidgets); // az alsó menü (és a bemutató)
 
-    // A bevezető után magától jön a bemutató: végig lehet lépkedni rajta.
+    // Rögtön jön a bemutató: végig lehet lépkedni rajta.
     expect(find.text('Tovább'), findsOneWidget);
     // (Az Emlékek lépésben végtelenített animáció fut, ezért itt nem várunk teljes megállásra.)
-    for (final title in ['Főoldal', 'Az állapotod', 'Gyors gombok', 'Naptár', 'Létrehozás', 'Barátok', 'Közös fotók', 'Emlékek', 'Profil']) {
+    for (final title in [
+      'Főoldal',
+      'Az állapotod',
+      'Gyors gombok',
+      'Naptár',
+      'Létrehozás',
+      'Barátok',
+      'Közös fotók',
+      'Emlékek',
+      'Profil',
+    ]) {
       await tester.tap(find.text('Tovább'));
       // Néhány képkocka, amíg a kártyák közti átúszás lezajlik (a régi kártya csak utána tűnik el).
       for (var f = 0; f < 4; f++) {
@@ -101,6 +117,29 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.tourDone, isTrue);
     expect(find.text('Kezdjük!'), findsNothing);
+    stopServices();
+  });
+
+  testWidgets('bevezető: „Beállítom később” – egyből a kész oldal, név a fiókból, a bemutató jön', (tester) async {
+    phone(tester);
+    SharedPreferences.setMockInitialValues({});
+    final store = (await tester.runAsync(AppStore.load))!;
+    await tester.pumpWidget(LifeupApp(store: store));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Beállítom később'));
+    await tester.pumpAndSettle();
+    expect(find.text('Kész is vagyunk!'), findsOneWidget);
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    expect(store.onboarded, isTrue);
+    expect(store.myName, 'Teszt'); // a fiók neve (a Profilban átírható)
+    expect(store.tourDone, isFalse);
+    expect(find.text('Tovább'), findsOneWidget); // a bemutató első lépése
+    await tester.tap(find.text('Kihagyom'));
+    await tester.pumpAndSettle();
+    expect(store.tourDone, isTrue);
     stopServices();
   });
 

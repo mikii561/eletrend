@@ -13,6 +13,7 @@ import '../push.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/profile_photo_button.dart';
 import 'account_section.dart';
 import 'challenges_screen.dart';
 import 'google_calendar_screen.dart';
@@ -65,7 +66,12 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 ListTile(
                   contentPadding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
-                  leading: NameAvatar(store.myName.isEmpty ? '?' : store.myName, radius: 26),
+                  leading: ProfilePhotoButton(
+                    name: store.myName,
+                    photo: store.profilePhoto,
+                    radius: 26,
+                    onChanged: store.setProfilePhoto,
+                  ),
                   title: Text(
                     store.myName.isEmpty ? 'Add meg a neved' : store.myName,
                     style: Theme.of(context).textTheme.titleLarge,

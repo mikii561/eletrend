@@ -129,7 +129,7 @@ class AccountSection extends StatelessWidget {
           child: Column(
             children: [
               ListTile(
-                leading: NameAvatar(store.myName.isEmpty ? '?' : store.myName),
+                leading: NameAvatar(store.myName.isEmpty ? '?' : store.myName, photo: store.profilePhoto),
                 title: Text(
                   store.myName.isEmpty ? (user?.displayName ?? 'Fiók') : store.myName,
                   style: const TextStyle(fontWeight: FontWeight.w700),

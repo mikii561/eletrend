@@ -291,12 +291,12 @@ class _FriendTile extends StatelessWidget {
         : status.label;
     return ListTile(
       leading: status == null
-          ? NameAvatar(friend.name)
+          ? NameAvatar(friend.name, photo: friend.photo)
           : Badge(
               backgroundColor: AppColors.status(status),
               smallSize: 11,
               alignment: Alignment.bottomRight,
-              child: NameAvatar(friend.name),
+              child: NameAvatar(friend.name, photo: friend.photo),
             ),
       title: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle),
@@ -323,7 +323,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ListTile(
-              leading: NameAvatar(f.name, radius: 22),
+              leading: NameAvatar(f.name, radius: 22, photo: f.photo),
               title: Text(f.name, style: Theme.of(context).textTheme.titleLarge),
               subtitle: birthday == null ? null : Text('Születésnap: ${formatDay(birthday)}'),
             ),
