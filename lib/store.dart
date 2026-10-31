@@ -12,7 +12,7 @@ export 'availability.dart' show AvailabilityShare, AvailabilityStatus, FreeWindo
 /// A Főoldal kártyái; a sorrendjük és a láthatóságuk állítható.
 enum HomeCard {
   schedule('Mai beosztás', Icons.view_agenda_outlined),
-  tasks('Teendők', Icons.task_alt),
+  tasks('Teendők mára', Icons.task_alt),
   goals('Célok', Icons.flag_outlined),
   friends('Ki ér rá?', Icons.people_alt_outlined),
   birthdays('Születésnapok', Icons.cake_outlined),

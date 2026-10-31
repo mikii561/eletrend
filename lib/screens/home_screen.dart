@@ -305,26 +305,49 @@ class _TasksCard extends StatelessWidget {
   final AppStore store;
   final DateTime now;
 
+  /// A „1 ma · 2 holnap” felirat (csak a még nyitottakat számolja; ha nincs, null).
+  static String? countLabel(int today, int tomorrow) {
+    final parts = [if (today > 0) '$today ma', if (tomorrow > 0) '$tomorrow holnap'];
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final today = store.tasksOn(now, now: now);
-    final open = store.openTasks;
-    // Előbb a mai (és lejárt) feladatok, aztán a határidő nélküliek.
-    final shown = [...today, ...open.where((t) => t.day == null && !today.contains(t))].take(6).toList();
-    final left = today.where((t) => !t.done).length;
+    final tomorrowDay = DateTime(now.year, now.month, now.day + 1);
+    // Holnapra csak a holnapra beosztott vagy holnapi határidejű (a lejártak a mai alatt vannak).
+    final tomorrow = store.tasksOn(tomorrowDay, now: now);
+    final anytime = store.openTasks.where((t) => t.day == null).take(3).toList();
+    final todayLeft = today.where((t) => !t.done).length;
+    final tomorrowLeft = tomorrow.where((t) => !t.done).length;
+
+    Widget group(String label) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
+          ),
+        );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionTitle(HomeCard.tasks.label, trailing: left == 0 ? null : '$left ma'),
+        SectionTitle(HomeCard.tasks.label, trailing: countLabel(todayLeft, tomorrowLeft)),
         Card(
           child: Column(
             children: [
-              if (shown.isEmpty)
+              if (today.isEmpty && tomorrow.isEmpty && anytime.isEmpty)
                 const ListTile(
                   title: Text('Nincs nyitott feladatod.'),
                   subtitle: Text('Írd fel, ami a fejedben jár, hogy ne ott kelljen tartanod.'),
                 ),
-              for (final t in shown) TaskTile(task: t),
+              if (today.isNotEmpty) ...[group('Ma'), for (final t in today.take(6)) TaskTile(task: t)],
+              if (tomorrow.isNotEmpty) ...[group('Holnap'), for (final t in tomorrow.take(6)) TaskTile(task: t)],
+              // Ha erre a két napra nincs semmi, a határidő nélküliekből pár.
+              if (today.isEmpty && tomorrow.isEmpty && anytime.isNotEmpty) ...[
+                group('Bármikor'),
+                for (final t in anytime) TaskTile(task: t),
+              ],
               ListTile(
                 leading: Icon(Icons.add, color: AppColors.primary),
                 title: Text(
