@@ -49,4 +49,17 @@ void main() {
     }
     expect(find.text('Balatoni hétvége'), findsWidgets);
   });
+
+  testWidgets('a fotófeltöltés animált példája végigmegy: kiválasztás, beállítás, feltöltés, kész', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: Center(child: SizedBox(width: 300, child: PhotoUploadDemo())))));
+    final seen = <String>{};
+    for (var ms = 0; ms <= PhotoUploadDemo.loop.inMilliseconds; ms += 200) {
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(tester.takeException(), isNull);
+      for (final text in ['Képek kiválasztása', 'Hozzáadás (3)', '3 fotó feltöltése', 'Feltöltés: 2 / 3', 'Feltöltve: 3 fotó.']) {
+        if (find.text(text).evaluate().isNotEmpty) seen.add(text);
+      }
+    }
+    expect(seen, {'Képek kiválasztása', 'Hozzáadás (3)', '3 fotó feltöltése', 'Feltöltés: 2 / 3', 'Feltöltve: 3 fotó.'});
+  });
 }

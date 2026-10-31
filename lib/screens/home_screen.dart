@@ -764,20 +764,54 @@ class _TipCard extends StatelessWidget {
   }
 }
 
-/// Az emlékek animált példája egy ablakban (a tippből és bárhonnan).
-Future<void> showMemoriesExample(BuildContext context) => showDialog<void>(
+/// Az emlékek animált példái egy ablakban: fotók feltöltése és egy emlék megnézése.
+Future<void> showMemoriesExample(BuildContext context, {bool upload = true}) => showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Így működnek az emlékek'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Egy közös program oldalán az „Emlékek” résznél tölthettek fel fotókat. Később a Főoldalon '
-                'felbukkan az emlék: rákoppintva megnyílnak a közös képek.'),
-            SizedBox(height: 12),
-            MemoriesDemo(height: 260),
-          ],
-        ),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Értem'))],
-      ),
+      builder: (context) => _MemoriesExample(upload: upload),
     );
+
+class _MemoriesExample extends StatefulWidget {
+  const _MemoriesExample({required this.upload});
+
+  final bool upload;
+
+  @override
+  State<_MemoriesExample> createState() => _MemoriesExampleState();
+}
+
+class _MemoriesExampleState extends State<_MemoriesExample> {
+  late bool _upload = widget.upload;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Így működnek az emlékek'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SegmentedButton<bool>(
+            showSelectedIcon: false,
+            segments: const [
+              ButtonSegment(value: true, label: Text('Feltöltés'), icon: Icon(Icons.add_photo_alternate_outlined)),
+              ButtonSegment(value: false, label: Text('Megnézés'), icon: Icon(Icons.photo_library_outlined)),
+            ],
+            selected: {_upload},
+            onSelectionChanged: (s) => setState(() => _upload = s.first),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _upload
+                ? 'Egy közös program oldalán, az Emlékek résznél a „Fotó” gombbal választasz képeket, beállítod, '
+                    'ki láthatja őket, és feltöltöd.'
+                : 'Később a Főoldalon felbukkan az emlék: rákoppintva megnyílnak a közös képek, és bármelyiket '
+                    'megnézheted nagyban.',
+          ),
+          const SizedBox(height: 12),
+          // A kulcs miatt váltáskor elölről indul az animáció.
+          _upload ? const PhotoUploadDemo(key: ValueKey('upload'), height: 260) : const MemoriesDemo(key: ValueKey('view'), height: 260),
+        ],
+      ),
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Értem'))],
+    );
+  }
+}

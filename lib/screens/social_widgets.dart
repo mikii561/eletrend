@@ -11,6 +11,7 @@ import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'home_screen.dart' show showMemoriesExample;
 import 'memory_screen.dart';
 import 'nudge_screens.dart';
 
@@ -817,6 +818,14 @@ class _SharedEventSectionState extends State<SharedEventSection> {
                     going: shared.going.contains(Social.instance.uid),
                     onOpen: () => _openMemories(shared),
                   ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => showMemoriesExample(context),
+                    icon: const Icon(Icons.play_circle_outline, size: 18),
+                    label: const Text('Hogyan működik? (példa)'),
+                  ),
+                ),
                 if (shared.pollOpen || isOwner) const SectionTitle('Időpont-szavazás'),
                 if (shared.pollOpen)
                   PollCard(

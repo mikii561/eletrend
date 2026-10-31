@@ -208,7 +208,7 @@ void main() {
       await shot('00c-bemutato-6');
       await tester.tap(find.text('Tovább'));
       await tester.tap(find.text('Tovább'));
-      for (final (ms, name) in [(1800, '00d-pelda-1'), (2500, '00e-pelda-2'), (2400, '00f-pelda-3')]) {
+      for (final (ms, name) in [(2000, '00d-feltoltes-1'), (2200, '00e-feltoltes-2'), (1700, '00f-feltoltes-3'), (1700, '00g-feltoltes-4')]) {
         await tester.pump(Duration(milliseconds: ms));
         await shot(name, settle: false);
       }

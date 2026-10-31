@@ -87,7 +87,7 @@ void main() {
     // A bevezető után magától jön a bemutató: végig lehet lépkedni rajta.
     expect(find.text('Tovább'), findsOneWidget);
     // (Az Emlékek lépésben végtelenített animáció fut, ezért itt nem várunk teljes megállásra.)
-    for (final title in ['Főoldal', 'Az állapotod', 'Gyors gombok', 'Naptár', 'Létrehozás', 'Barátok', 'Emlékek', 'Profil']) {
+    for (final title in ['Főoldal', 'Az állapotod', 'Gyors gombok', 'Naptár', 'Létrehozás', 'Barátok', 'Közös fotók', 'Emlékek', 'Profil']) {
       await tester.tap(find.text('Tovább'));
       await tester.pump(const Duration(milliseconds: 800));
       expect(find.text(title), findsWidgets);
@@ -105,7 +105,7 @@ void main() {
     final store = (await tester.runAsync(readyStore))!..setTourDone(false);
     await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
-    expect(find.text('1/9'), findsOneWidget);
+    expect(find.text('1/10'), findsOneWidget);
     await tester.tap(find.text('Kihagyom'));
     await tester.pumpAndSettle();
     expect(store.tourDone, isTrue);
@@ -116,7 +116,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bemutató újra'));
     await tester.pumpAndSettle();
-    expect(find.text('1/9'), findsOneWidget);
+    expect(find.text('1/10'), findsOneWidget);
     expect(find.textContaining(', Gabi'), findsOneWidget); // visszavált a Főoldalra (a köszönés napszakfüggő)
     await tester.tap(find.text('Kihagyom'));
     await tester.pumpAndSettle();

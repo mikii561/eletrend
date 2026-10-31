@@ -72,10 +72,16 @@ final appTourSteps = <TourStep>[
     text: 'Add meg a barátkódokat, nézd meg, ki mikor ér rá, szervezz közös programot, vagy bökj meg valakit.',
   ),
   const TourStep(
+    icon: Icons.add_photo_alternate_outlined,
+    title: 'Közös fotók',
+    text: 'Egy közös program után a program oldalán, az Emlékek résznél tölthettek fel fotókat. '
+        'Te döntöd el, ki láthatja és letöltheti őket. Így megy:',
+    demo: PhotoUploadDemo(),
+  ),
+  const TourStep(
     icon: Icons.photo_library_outlined,
     title: 'Emlékek',
-    text: 'Egy közös program után a résztvevők fotókat tölthetnek fel. Később az app emlékként visszahozza '
-        'a Főoldalon: mi volt, mikor és hol. Így néz ki:',
+    text: 'Később az app emlékként visszahozza a Főoldalon: mi volt, mikor és hol, a közös képekkel. Így néz ki:',
     demo: MemoriesDemo(),
   ),
   TourStep(
