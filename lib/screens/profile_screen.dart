@@ -160,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.palette_outlined,
                   title: 'Megjelenés',
                   subtitle: switch (store.themeMode) {
-                    ThemeMode.light => 'Világos',
+                    ThemeMode.light => store.whiteTheme ? 'Fehér' : 'Bézs',
                     ThemeMode.dark => 'Sötét',
                     ThemeMode.system => 'A telefon beállítása szerint',
                   },
@@ -198,19 +198,60 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
-        child: RadioGroup<ThemeMode>(
-          groupValue: store.themeMode,
-          onChanged: (m) {
-            if (m != null) store.setThemeMode(m);
+        child: RadioGroup<String>(
+          groupValue: switch (store.themeMode) {
+            ThemeMode.light => store.whiteTheme ? 'white' : 'beige',
+            ThemeMode.dark => 'dark',
+            ThemeMode.system => 'system',
+          },
+          onChanged: (v) {
+            switch (v) {
+              case 'beige':
+                store.setThemeMode(ThemeMode.light, white: false);
+              case 'white':
+                store.setThemeMode(ThemeMode.light, white: true);
+              case 'dark':
+                store.setThemeMode(ThemeMode.dark);
+              case 'system':
+                store.setThemeMode(ThemeMode.system);
+            }
             Navigator.pop(context);
           },
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              RadioListTile(value: ThemeMode.system, title: Text('A telefon beállítása szerint')),
-              RadioListTile(value: ThemeMode.light, title: Text('Világos')),
-              RadioListTile(value: ThemeMode.dark, title: Text('Sötét')),
-              SizedBox(height: 8),
+              const RadioListTile(
+                value: 'system',
+                title: Text('A telefon beállítása szerint'),
+                subtitle: Text('Világos vagy sötét, ahogy a telefonod'),
+              ),
+              RadioListTile(
+                value: 'beige',
+                title: const Text('Bézs'),
+                subtitle: const Text('Meleg krém alap'),
+                secondary: _ThemeSwatch(dark: false, white: false),
+              ),
+              RadioListTile(
+                value: 'white',
+                title: const Text('Fehér'),
+                subtitle: const Text('Letisztult, világos'),
+                secondary: _ThemeSwatch(dark: false, white: true),
+              ),
+              RadioListTile(
+                value: 'dark',
+                title: const Text('Sötét'),
+                subtitle: const Text('Kíméli a szemet este'),
+                secondary: _ThemeSwatch(dark: true, white: false),
+              ),
+              if (store.themeMode == ThemeMode.system)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  child: Text(
+                    'Világos napszakban a ${store.whiteTheme ? 'fehér' : 'bézs'} alapot használja.',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  ),
+                ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -356,6 +397,42 @@ class HomeCardsScreen extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Kis minta egy megjelenésről: háttér, rajta egy kártya és egy márkaszínű pötty.
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch({required this.dark, required this.white});
+
+  final bool dark;
+  final bool white;
+
+  @override
+  Widget build(BuildContext context) {
+    final border = AppColors.borderFor(dark, white: white);
+    return Container(
+      width: 44,
+      height: 44,
+      padding: const EdgeInsets.all(7),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundFor(dark, white: white),
+        borderRadius: BorderRadius.circular(Space.radiusSmall),
+        border: Border.all(color: border),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.cardFor(dark, white: white),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: border),
+        ),
+        alignment: Alignment.center,
+        child: Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: AppColors.primaryFor(dark), shape: BoxShape.circle),
+        ),
       ),
     );
   }

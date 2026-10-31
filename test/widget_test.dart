@@ -7,6 +7,7 @@ import 'package:eletrend/models.dart';
 import 'package:eletrend/nudges.dart';
 import 'package:eletrend/screens/calendar_screen.dart';
 import 'package:eletrend/store.dart';
+import 'package:eletrend/theme.dart';
 import 'package:eletrend/widgets/goal_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -234,6 +235,29 @@ void main() {
     await tester.tap(find.widgetWithText(SwitchListTile, 'A heted'));
     await tester.pumpAndSettle();
     expect(store.showsCard(HomeCard.week), isFalse);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    // Megjelenés: bézs, fehér vagy sötét; a fehér a háttérszínt is váltja.
+    await tester.ensureVisible(find.text('Megjelenés'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Megjelenés'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bézs'), findsOneWidget);
+    await tester.tap(find.text('Fehér').last);
+    await tester.pumpAndSettle();
+    expect(store.themeMode, ThemeMode.light);
+    expect(store.whiteTheme, isTrue);
+    expect(AppColors.background, AppColors.backgroundFor(false, white: true));
+    expect(find.text('Fehér'), findsOneWidget);
+    await tester.tap(find.text('Megjelenés'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Sötét'));
+    await tester.pumpAndSettle();
+    expect(store.themeMode, ThemeMode.dark);
+    expect(AppColors.dark, isTrue);
+    store.setThemeMode(ThemeMode.light, white: false);
+    await tester.pumpAndSettle();
     stopServices();
   });
 }

@@ -46,8 +46,9 @@ void main() {
     ]);
   });
 
-  for (final dark in [false, true]) {
-    testWidgets('képernyők ${dark ? 'sötét' : 'világos'}', (tester) async {
+  for (final (mode, white) in [('vilagos', false), ('feher', true), ('sotet', false)]) {
+    final dark = mode == 'sotet';
+    testWidgets('képernyők $mode', (tester) async {
       if (out == null) return;
       tester.view.physicalSize = const Size(400, 860);
       tester.view.devicePixelRatio = 1;
@@ -67,6 +68,7 @@ void main() {
       AvailabilityService.instance = AvailabilityService(db: db);
       SharedPreferences.setMockInitialValues({'onboarded': true, 'themeMode': dark ? 'dark' : 'light'});
       final store = await AppStore.load();
+      store.setThemeMode(dark ? ThemeMode.dark : ThemeMode.light, white: white);
       store.setMyName('Gábriel');
       store.addHabit('Víz', target: 8, unit: 'pohár');
       store.addHabit('Edzés', perWeek: 3);
@@ -193,7 +195,7 @@ void main() {
         final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await tester.runAsync(() => boundary.toImage());
         final png = await tester.runAsync(() => image!.toByteData(format: ui.ImageByteFormat.png));
-        File('$out/${dark ? 'sotet' : 'vilagos'}-$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+        File('$out/$mode-$name.png').writeAsBytesSync(png!.buffer.asUint8List());
       }
 
       // Első megnyitás: a bemutató.

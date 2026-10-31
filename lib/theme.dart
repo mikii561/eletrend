@@ -13,6 +13,9 @@ class AppColors {
   /// így az alábbi getterek mindig az aktuális módhoz illő színt adják.
   static bool dark = false;
 
+  /// Fehér (letisztult) világos mód a bézs (krém) helyett. Sötét módban nincs hatása.
+  static bool white = false;
+
   /// Márkaszín: világosban mély burgundi, sötétben meleg krém, hogy kiolvasható legyen.
   static Color get primary => primaryFor(dark);
   static Color primaryFor(bool dark) => dark ? const Color(0xFFE8D2B5) : const Color(0xFF590907);
@@ -24,17 +27,26 @@ class AppColors {
   /// Kiemelés (sorozat, legjobb, hely): zsálya; világosban mélyebb árnyalat, hogy olvasható legyen.
   static Color get accent => dark ? const Color(0xFFA5A79B) : const Color(0xFF6B6E5D);
 
-  static Color get background => backgroundFor(dark);
-  static Color get card => cardFor(dark);
-  static Color get text => dark ? const Color(0xFFF4E9DA) : const Color(0xFF2B1714);
-  static Color get textMuted => dark ? const Color(0xFFB5A595) : const Color(0xFF7A6A5E);
+  static Color get background => backgroundFor(dark, white: white);
+  static Color get card => cardFor(dark, white: white);
+  static Color get text => textFor(dark, white: white);
+  static Color get textMuted => mutedFor(dark, white: white);
 
   /// Vékony vonalak, keretek, üres karikák szegélye.
-  static Color get divider => borderFor(dark);
+  static Color get divider => borderFor(dark, white: white);
 
-  static Color backgroundFor(bool dark) => dark ? const Color(0xFF1C1412) : const Color(0xFFF4E9DA);
-  static Color cardFor(bool dark) => dark ? const Color(0xFF2A1F1C) : const Color(0xFFFBF6EE);
-  static Color borderFor(bool dark) => dark ? const Color(0xFF3D2E29) : const Color(0xFFE8D7C1);
+  // Három megjelenés: sötét, bézs (krém) és fehér. A fehér semleges szürkéket használ;
+  // a márkaszín (burgundi) és a kategóriák színei ugyanazok, mint a bézsben.
+  static Color backgroundFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFF1C1412) : (white ? const Color(0xFFF5F5F6) : const Color(0xFFF4E9DA));
+  static Color cardFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFF2A1F1C) : (white ? const Color(0xFFFFFFFF) : const Color(0xFFFBF6EE));
+  static Color borderFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFF3D2E29) : (white ? const Color(0xFFE4E4E7) : const Color(0xFFE8D7C1));
+  static Color textFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFFF4E9DA) : (white ? const Color(0xFF1D1A1A) : const Color(0xFF2B1714));
+  static Color mutedFor(bool dark, {bool white = false}) =>
+      dark ? const Color(0xFFB5A595) : (white ? const Color(0xFF6B6869) : const Color(0xFF7A6A5E));
 
   /// Kiemelt felületek (fejléc, dátum, kész pipa): egyszínű márkaszín, enyhe mélységgel.
   static LinearGradient get headerGradient => LinearGradient(
@@ -104,14 +116,14 @@ class Space {
   static const radiusSmall = 10.0;
 }
 
-/// Az app témája világos vagy sötét módban.
-ThemeData buildTheme({bool dark = false}) {
-  final background = AppColors.backgroundFor(dark);
-  final card = AppColors.cardFor(dark);
-  final border = AppColors.borderFor(dark);
+/// Az app témája: sötét, vagy világos bézs ([white] = false) / fehér ([white] = true) alappal.
+ThemeData buildTheme({bool dark = false, bool white = false}) {
+  final background = AppColors.backgroundFor(dark, white: white);
+  final card = AppColors.cardFor(dark, white: white);
+  final border = AppColors.borderFor(dark, white: white);
   final primary = AppColors.primaryFor(dark);
-  final textColor = dark ? const Color(0xFFF4E9DA) : const Color(0xFF2B1714);
-  final muted = dark ? const Color(0xFFB5A595) : const Color(0xFF7A6A5E);
+  final textColor = AppColors.textFor(dark, white: white);
+  final muted = AppColors.mutedFor(dark, white: white);
   final font = GoogleFonts.inter().fontFamily;
 
   final scheme = ColorScheme.fromSeed(
@@ -278,8 +290,8 @@ ThemeData buildTheme({bool dark = false}) {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: dark ? const Color(0xFFF4E9DA) : const Color(0xFF2B1714),
-      contentTextStyle: TextStyle(fontFamily: font, color: dark ? const Color(0xFF2B1714) : const Color(0xFFFBF6EE)),
+      backgroundColor: dark ? const Color(0xFFF4E9DA) : textColor,
+      contentTextStyle: TextStyle(fontFamily: font, color: dark ? const Color(0xFF2B1714) : card),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );

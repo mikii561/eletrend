@@ -91,6 +91,9 @@ class AppStore extends ChangeNotifier {
   /// Megjelenés: a telefon beállítása szerint, mindig világos vagy mindig sötét.
   ThemeMode themeMode = ThemeMode.system;
 
+  /// Világos módban fehér alap a bézs (krém) helyett.
+  bool whiteTheme = false;
+
   /// Végigment-e már a bevezetőn.
   bool onboarded = false;
 
@@ -184,6 +187,7 @@ class AppStore extends ChangeNotifier {
     'memoryReminders': memoryReminders,
     'defaultReminderMin': defaultReminderMin,
     'themeMode': themeMode.name,
+    'whiteTheme': whiteTheme,
     'onboarded': onboarded,
     'tourDone': tourDone,
     'tipsOn': _tipsOn,
@@ -214,6 +218,7 @@ class AppStore extends ChangeNotifier {
     memoryReminders = s['memoryReminders'] as bool? ?? memoryReminders;
     if (s.containsKey('defaultReminderMin')) defaultReminderMin = (s['defaultReminderMin'] as num?)?.toInt();
     themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
+    whiteTheme = s['whiteTheme'] as bool? ?? whiteTheme;
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
     tourDone = s['tourDone'] as bool? ?? tourDone;
     _tipsOn = s['tipsOn'] as bool? ?? _tipsOn;
@@ -312,6 +317,7 @@ class AppStore extends ChangeNotifier {
     memoryReminders = true;
     defaultReminderMin = 30;
     themeMode = ThemeMode.system;
+    whiteTheme = false;
     onboarded = false;
     tourDone = false;
     _tipsOn = true;
@@ -482,8 +488,9 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  void setThemeMode(ThemeMode mode) {
+  void setThemeMode(ThemeMode mode, {bool? white}) {
     themeMode = mode;
+    if (white != null) whiteTheme = white;
     _save();
   }
 

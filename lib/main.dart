@@ -71,10 +71,11 @@ class LifeupApp extends StatelessWidget {
 
   /// Beállítja az [AppColors] módját. Ha váltott, minden képernyőt újrarajzol,
   /// hogy a const-ként megmaradt widgetek is az új színeket kapják.
-  static void _applyBrightness(BuildContext context) {
+  static void _applyBrightness(BuildContext context, {required bool white}) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    if (AppColors.dark == dark) return;
+    if (AppColors.dark == dark && AppColors.white == white) return;
     AppColors.dark = dark;
+    AppColors.white = white;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       void rebuild(Element e) {
         e.markNeedsBuild();
@@ -99,11 +100,11 @@ class LifeupApp extends StatelessWidget {
           locale: const Locale('hu'),
           supportedLocales: const [Locale('hu')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          theme: buildTheme(),
+          theme: buildTheme(white: store.whiteTheme),
           darkTheme: buildTheme(dark: true),
           themeMode: store.themeMode,
           builder: (context, child) {
-            _applyBrightness(context);
+            _applyBrightness(context, white: store.whiteTheme);
             return PhoneFrame(child: child!);
           },
           home: AuthGate(child: store.needsOnboarding ? const OnboardingScreen() : const HomeShell()),
