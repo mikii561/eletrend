@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
 
 import 'store.dart';
 
@@ -95,6 +97,7 @@ class UserFeedback {
     this.uid,
     this.done = false,
     this.at,
+    this.images = const [],
   });
 
   final String id;
@@ -104,6 +107,9 @@ class UserFeedback {
   final String? uid;
   final bool done;
   final DateTime? at;
+
+  /// Csatolt képernyőképek (JPEG, base64).
+  final List<String> images;
 
   factory UserFeedback.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -115,6 +121,7 @@ class UserFeedback {
       uid: d['uid'] as String?,
       done: d['done'] as bool? ?? false,
       at: (d['at'] as Timestamp?)?.toDate(),
+      images: [for (final i in d['images'] as List? ?? []) i as String],
     );
   }
 }
@@ -271,7 +278,40 @@ class Admin {
     }
   }
 
-  Future<void> sendFeedback({required String uid, required String name, required String email, required String text}) =>
+  /// Legfeljebb ennyi képernyőkép csatolható egy bejelentéshez.
+  static const maxScreenshots = 3;
+
+  /// Egy képernyőkép legfeljebb ekkora lehet (hogy a három együtt beférjen egy dokumentumba).
+  static const maxScreenshotBytes = 240 * 1024;
+
+  /// Képernyőkép előkészítése: legfeljebb 1280 px, JPEG; ha még mindig nagy, kisebb minőséggel.
+  /// [FormatException]-t dob, ha nem kép.
+  static Uint8List prepareScreenshot(Uint8List bytes) {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) throw const FormatException('Ezt a képet nem tudom megnyitni.');
+    var image = img.bakeOrientation(decoded);
+    final longest = image.width > image.height ? image.width : image.height;
+    if (longest > 1280) {
+      image = image.width >= image.height ? img.copyResize(image, width: 1280) : img.copyResize(image, height: 1280);
+    }
+    var quality = 75;
+    var out = Uint8List.fromList(img.encodeJpg(image, quality: quality));
+    while (out.length > maxScreenshotBytes && quality > 35) {
+      quality -= 10;
+      image = img.copyResize(image, width: (image.width * 0.85).round());
+      out = Uint8List.fromList(img.encodeJpg(image, quality: quality));
+    }
+    if (out.length > maxScreenshotBytes) throw const FormatException('Ez a kép túl nagy.');
+    return out;
+  }
+
+  Future<void> sendFeedback({
+    required String uid,
+    required String name,
+    required String email,
+    required String text,
+    List<Uint8List> images = const [],
+  }) =>
       _db.collection('feedback').add({
         'uid': uid,
         'name': name,
@@ -280,6 +320,7 @@ class Admin {
         'platform': platformName,
         'version': appVersion,
         'done': false,
+        if (images.isNotEmpty) 'images': [for (final i in images.take(maxScreenshots)) base64Encode(i)],
         'at': FieldValue.serverTimestamp(),
       });
 

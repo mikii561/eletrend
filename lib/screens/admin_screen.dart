@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -482,6 +484,27 @@ class _FeedbackList extends StatelessWidget {
                       Text(_when(f.at), style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
                       const SizedBox(height: 6),
                       SelectableText(f.text),
+                      if (f.images.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (final (i, image) in f.images.indexed)
+                              Semantics(
+                                button: true,
+                                label: '${i + 1}. képernyőkép megnyitása',
+                                child: GestureDetector(
+                                  onTap: () => _showScreenshot(context, base64Decode(image)),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(base64Decode(image), width: 96, height: 96, fit: BoxFit.cover),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
                       Row(
                         children: [
                           const Spacer(),
@@ -611,3 +634,25 @@ class _Reports extends StatelessWidget {
     );
   }
 }
+
+/// Egy csatolt képernyőkép nagyban (nagyítható).
+Future<void> _showScreenshot(BuildContext context, Uint8List bytes) => showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            InteractiveViewer(maxScale: 5, child: Image.memory(bytes, fit: BoxFit.contain)),
+            Positioned(
+              right: 4,
+              top: 4,
+              child: IconButton.filledTonal(
+                tooltip: 'Bezárás',
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );

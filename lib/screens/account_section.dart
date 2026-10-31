@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../account.dart';
 import '../admin.dart';
@@ -107,40 +110,12 @@ class AccountSection extends StatelessWidget {
     await store.clearAll();
   }
 
-  Future<void> _feedback(BuildContext context) async {
-    final store = StoreScope.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final text = TextEditingController();
-    final send = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hiba bejelentése / ötlet'),
-        content: TextField(
-          controller: text,
-          autofocus: true,
-          minLines: 4,
-          maxLines: 8,
-          maxLength: 2000,
-          textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(hintText: 'Mi történt? Mit csináltál előtte? Vagy mi hiányzik?'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Mégse')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Küldés')),
-        ],
-      ),
-    );
-    final message = text.text.trim();
-    text.dispose();
-    final user = Account.instance.user;
-    if (send != true || message.isEmpty || user == null) return;
-    try {
-      await Admin.instance.sendFeedback(uid: user.uid, name: store.myName, email: user.email ?? '', text: message);
-      messenger.showSnackBar(const SnackBar(content: Text('Köszönjük! Megkaptuk. 💜')));
-    } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Nem sikerült elküldeni. Van internet? ($e)')));
-    }
-  }
+  Future<void> _feedback(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => const FeedbackSheet(),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -195,6 +170,172 @@ class AccountSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// „Hiba bejelentése / ötlet”: szöveg és legfeljebb [Admin.maxScreenshots] képernyőkép.
+class FeedbackSheet extends StatefulWidget {
+  const FeedbackSheet({super.key, this.pick});
+
+  /// Képek kiválasztása (tesztben kicserélhető); alapból a telefon/böngésző képválasztója.
+  final Future<List<Uint8List>> Function(int limit)? pick;
+
+  @override
+  State<FeedbackSheet> createState() => _FeedbackSheetState();
+}
+
+class _FeedbackSheetState extends State<FeedbackSheet> {
+  final _text = TextEditingController();
+  final List<Uint8List> _images = [];
+  bool _sending = false;
+  bool _picking = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  static Future<List<Uint8List>> _pickFromDevice(int limit) async {
+    final files = await ImagePicker().pickMultiImage(limit: limit);
+    return [for (final f in files.take(limit)) await f.readAsBytes()];
+  }
+
+  Future<void> _addImages() async {
+    final left = Admin.maxScreenshots - _images.length;
+    if (left <= 0) return;
+    setState(() {
+      _picking = true;
+      _error = null;
+    });
+    try {
+      final picked = await (widget.pick ?? _pickFromDevice)(left);
+      var failed = 0;
+      for (final bytes in picked.take(left)) {
+        try {
+          _images.add(Admin.prepareScreenshot(bytes));
+        } on FormatException {
+          failed++;
+        }
+      }
+      if (failed > 0) _error = failed == 1 ? 'Egy képet nem tudtam megnyitni.' : '$failed képet nem tudtam megnyitni.';
+    } catch (e) {
+      _error = 'Nem sikerült megnyitni a képeket.';
+    } finally {
+      if (mounted) setState(() => _picking = false);
+    }
+  }
+
+  Future<void> _send() async {
+    final message = _text.text.trim();
+    if (message.isEmpty) {
+      setState(() => _error = 'Írd le pár szóban, mi történt.');
+      return;
+    }
+    final user = Account.instance.user;
+    if (user == null) return;
+    final store = StoreScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    setState(() {
+      _sending = true;
+      _error = null;
+    });
+    try {
+      await Admin.instance.sendFeedback(uid: user.uid, name: store.myName, email: user.email ?? '', text: message, images: _images);
+      navigator.pop();
+      messenger.showSnackBar(const SnackBar(content: Text('Köszönjük! Megkaptuk. 💜')));
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Nem sikerült elküldeni. Van internet?');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Hiba bejelentése / ötlet', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _text,
+              autofocus: true,
+              minLines: 4,
+              maxLines: 8,
+              maxLength: 2000,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(hintText: 'Mi történt? Mit csináltál előtte? Vagy mi hiányzik?'),
+              onChanged: (_) {
+                if (_error != null) setState(() => _error = null);
+              },
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Egy képernyőkép sokat segít: azon látjuk, mi jelent meg.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (var i = 0; i < _images.length; i++)
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(Space.radiusSmall),
+                        child: Image.memory(_images[i], width: 80, height: 80, fit: BoxFit.cover),
+                      ),
+                      Positioned(
+                        right: 2,
+                        top: 2,
+                        child: Material(
+                          color: Colors.black54,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: () => setState(() => _images.removeAt(i)),
+                            child: const Padding(
+                              padding: EdgeInsets.all(3),
+                              child: Icon(Icons.close, size: 14, color: Colors.white, semanticLabel: 'Kép eltávolítása'),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (_images.length < Admin.maxScreenshots)
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 80)),
+                    onPressed: _picking || _sending ? null : _addImages,
+                    icon: _picking
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.add_photo_alternate_outlined),
+                    label: Text(_images.isEmpty ? 'Képernyőkép csatolása' : 'Még egy (${_images.length}/${Admin.maxScreenshots})'),
+                  ),
+              ],
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(_error!, style: TextStyle(color: AppColors.danger, fontSize: 13)),
+              ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _sending || _picking ? null : _send,
+              child: Text(_sending ? 'Küldés…' : 'Küldés'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -85,11 +85,12 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
     }
 
-    // „Hiba bejelentése / ötlet”: bejelentkezett felhasználó küldheti, az admin kezeli.
+    // „Hiba bejelentése / ötlet”: bejelentkezett felhasználó küldheti (legfeljebb 3 képernyőképpel), az admin kezeli.
     match /feedback/{id} {
       allow create: if realUser()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'text', 'platform', 'version', 'done', 'at'])
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'text', 'platform', 'version', 'done', 'images', 'at'])
+        && (!('images' in request.resource.data) || (request.resource.data.images is list && request.resource.data.images.size() <= 3))
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 2000
