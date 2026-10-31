@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'memories_demo.dart';
 
 /// A bemutató lépései által kiemelt elemek. Egyszerre csak egy app fut, ezért elég közös kulcs.
 class TourKeys {
@@ -13,7 +14,7 @@ class TourKeys {
 
 /// Egy lépés: mit emelünk ki (egy elemet, az alsó menü egy fülét, vagy semmit), és mit mondunk róla.
 class TourStep {
-  const TourStep({this.target, this.navSlot, required this.icon, required this.title, required this.text});
+  const TourStep({this.target, this.navSlot, required this.icon, required this.title, required this.text, this.demo});
 
   final GlobalKey? target;
 
@@ -22,6 +23,9 @@ class TourStep {
   final IconData icon;
   final String title;
   final String text;
+
+  /// Animált példa a szöveg alatt (pl. hogyan kell megnézni egy emléket).
+  final Widget? demo;
 }
 
 /// Az app bemutatója a Főoldalon.
@@ -66,6 +70,13 @@ final appTourSteps = <TourStep>[
     icon: Icons.people_alt_outlined,
     title: 'Barátok',
     text: 'Add meg a barátkódokat, nézd meg, ki mikor ér rá, szervezz közös programot, vagy bökj meg valakit.',
+  ),
+  const TourStep(
+    icon: Icons.photo_library_outlined,
+    title: 'Emlékek',
+    text: 'Egy közös program után a résztvevők fotókat tölthetnek fel. Később az app emlékként visszahozza '
+        'a Főoldalon: mi volt, mikor és hol. Így néz ki:',
+    demo: MemoriesDemo(),
   ),
   TourStep(
     navSlot: 4,
@@ -217,6 +228,7 @@ class _TourCard extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Padding(padding: const EdgeInsets.only(right: 8), child: Text(step.text, style: const TextStyle(height: 1.4))),
+              if (step.demo != null) ...[const SizedBox(height: 12), step.demo!],
               const SizedBox(height: 12),
               Row(
                 children: [

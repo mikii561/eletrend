@@ -11,6 +11,7 @@ import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'home_screen.dart' show showMemoriesExample;
 import 'social_widgets.dart';
 
 /// Fotók kiválasztása és feltöltése egy közös programhoz. Előtte megkérdezi, ki láthatja őket,
@@ -249,7 +250,12 @@ class _MemoryScreenState extends State<MemoryScreen> {
     final now = DateTime.now();
     final past = widget.start.isBefore(now);
     return Scaffold(
-      appBar: AppBar(title: const Text('Emlékek')),
+      appBar: AppBar(
+        title: const Text('Emlékek'),
+        actions: [
+          IconButton(tooltip: 'Hogyan működik?', icon: const Icon(Icons.help_outline), onPressed: () => showMemoriesExample(context)),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => uploadMemoryPhotos(context, widget.eventId),
         icon: const Icon(Icons.add_photo_alternate_outlined),

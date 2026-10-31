@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'availability.dart';
 import 'models.dart';
+import 'tips.dart' show tipEveryDays;
 
 export 'availability.dart' show AvailabilityShare, AvailabilityStatus, FreeWindow;
 
@@ -92,6 +93,7 @@ class AppStore extends ChangeNotifier {
 
   /// Látta-e már a Főoldal bemutatóját (fiókonként egyszer jön elő magától).
   bool tourDone = false;
+  bool _tipsOn = true;
 
   /// A Főoldal kártyái sorrendben, és amiket elrejtett.
   List<HomeCard> homeCards = [...HomeCard.values];
@@ -176,6 +178,7 @@ class AppStore extends ChangeNotifier {
     'themeMode': themeMode.name,
     'onboarded': onboarded,
     'tourDone': tourDone,
+    'tipsOn': _tipsOn,
     'homeCards': [for (final c in homeCards) c.name],
     'hiddenCards': [for (final c in hiddenCards) c.name]..sort(),
     'challengeHabits': challengeHabits,
@@ -201,6 +204,7 @@ class AppStore extends ChangeNotifier {
     themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
     tourDone = s['tourDone'] as bool? ?? tourDone;
+    _tipsOn = s['tipsOn'] as bool? ?? _tipsOn;
     if (s['homeCards'] case final List cards) {
       final order = [for (final c in cards) ?HomeCard.values.asNameMap()[c]];
       // Ha később új kártya jön, a végére kerül.
@@ -293,6 +297,7 @@ class AppStore extends ChangeNotifier {
     themeMode = ThemeMode.system;
     onboarded = false;
     tourDone = false;
+    _tipsOn = true;
     homeCards = [...HomeCard.values];
     hiddenCards = {};
     challengeHabits = {};
@@ -428,6 +433,28 @@ class AppStore extends ChangeNotifier {
     birthdayReminders = birthdays ?? birthdayReminders;
     defaultReminderMin = clearDefault ? null : (defaultMin ?? defaultReminderMin);
     _save();
+  }
+
+  /// Tippek a Főoldalon (ki is kapcsolhatók).
+  bool get tipsOn => _tipsOn;
+
+  void setTipsOn(bool on) {
+    _tipsOn = on;
+    _save();
+  }
+
+  /// Az ezen az eszközön már bezárt tippek.
+  Set<String> get closedTips => {...?_prefs.getStringList('tipsClosed')};
+
+  /// Bezárás után egy ideig nem jön új tipp.
+  DateTime? get tipSnoozeUntil => DateTime.tryParse(_prefs.getString('tipSnooze') ?? '');
+
+  /// Egy tipp bezárása (vagy kipróbálása): többé nem jön elő, és [tipEveryDays] napig semmi sem.
+  void closeTip(String id, [DateTime? now]) {
+    final n = now ?? DateTime.now();
+    _prefs.setStringList('tipsClosed', {...closedTips, id}.toList());
+    _prefs.setString('tipSnooze', DateTime(n.year, n.month, n.day + tipEveryDays).toIso8601String());
+    notifyListeners();
   }
 
   void setTourDone(bool done) {

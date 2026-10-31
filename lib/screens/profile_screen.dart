@@ -304,12 +304,26 @@ class HomeCardsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Főoldal')),
       body: ReorderableListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-        header: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Text(
-            'Húzd a kártyákat a kívánt sorrendbe, és kapcsold ki, amire nincs szükséged.',
-            style: TextStyle(color: AppColors.textMuted),
-          ),
+        header: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Card(
+              child: SwitchListTile(
+                secondary: const Icon(Icons.lightbulb_outline),
+                title: const Text('Tippek'),
+                subtitle: const Text('Néha egy rövid „Tudtad?” a Főoldalon (legfeljebb kétnaponta).'),
+                value: store.tipsOn,
+                onChanged: store.setTipsOn,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+              child: Text(
+                'Húzd a kártyákat a kívánt sorrendbe, és kapcsold ki, amire nincs szükséged.',
+                style: TextStyle(color: AppColors.textMuted),
+              ),
+            ),
+          ],
         ),
         onReorderItem: store.moveCardTo,
         children: [

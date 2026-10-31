@@ -188,8 +188,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      Future<void> shot(String name) async {
-        await tester.pumpAndSettle();
+      Future<void> shot(String name, {bool settle = true}) async {
+        if (settle) await tester.pumpAndSettle();
         final boundary = key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
         final image = await tester.runAsync(() => boundary.toImage());
         final png = await tester.runAsync(() => image!.toByteData(format: ui.ImageByteFormat.png));
@@ -206,6 +206,12 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Tovább'));
       await shot('00c-bemutato-6');
+      await tester.tap(find.text('Tovább'));
+      await tester.tap(find.text('Tovább'));
+      for (final (ms, name) in [(1800, '00d-pelda-1'), (2500, '00e-pelda-2'), (2400, '00f-pelda-3')]) {
+        await tester.pump(Duration(milliseconds: ms));
+        await shot(name, settle: false);
+      }
       await tester.tap(find.text('Kihagyom'));
       await shot('01-fooldal');
       await tester.drag(find.byType(ListView).first, const Offset(0, -700));
@@ -218,7 +224,7 @@ void main() {
       await shot('02c-emlekek');
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Naptár'));
+      await tester.tap(find.text('Naptár').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Nap'));
       await shot('03-naptar-nap');

@@ -10,11 +10,13 @@ import '../memories.dart';
 import '../friends.dart';
 import '../models.dart';
 import '../store.dart';
+import '../tips.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/goal_widgets.dart';
 import '../widgets/app_tour.dart';
 import '../widgets/install_card.dart';
+import '../widgets/memories_demo.dart';
 import 'calendar_screen.dart' show OccurrenceTile;
 import 'challenges_screen.dart';
 import 'event_detail_screen.dart';
@@ -23,6 +25,8 @@ import 'find_time_screen.dart';
 import 'habits_screen.dart';
 import 'invite_screen.dart';
 import 'memory_screen.dart';
+import 'privacy_screen.dart';
+import 'profile_screen.dart' show HomeCardsScreen;
 import 'status_sheet.dart';
 import 'task_editor.dart';
 
@@ -67,6 +71,9 @@ class HomeScreen extends StatelessWidget {
             _NextUp(store: store, now: now),
             const SizedBox(height: 8),
             _QuickActions(onCalendar: () => onNavigate(1)),
+            if (store.tipsOn && store.tourDone)
+              if (pickTip(closed: store.closedTips, snoozeUntil: store.tipSnoozeUntil, now: now) case final tip?)
+                _TipCard(tip: tip, onNavigate: onNavigate),
             if (pendingInvites.isNotEmpty) ...[
               SectionTitle('Meghívásaim', trailing: '${pendingInvites.length}'),
               Card(
@@ -681,3 +688,96 @@ class WeekStats {
     );
   }
 }
+
+/// Egy rövid, bezárható „Tudtad?” tipp. Kétnaponta legfeljebb egy jön; a bezárt nem jön vissza.
+class _TipCard extends StatelessWidget {
+  const _TipCard({required this.tip, required this.onNavigate});
+
+  final Tip tip;
+  final ValueChanged<int> onNavigate;
+
+  void _act(BuildContext context) {
+    final store = StoreScope.of(context);
+    void push(Widget page) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    switch (tip.action) {
+      case TipAction.memories:
+        showMemoriesExample(context);
+      case TipAction.findTime:
+        push(const FindTimeScreen());
+      case TipAction.calendar:
+        onNavigate(1);
+      case TipAction.friends:
+        onNavigate(3);
+      case TipAction.homeCards:
+        push(const HomeCardsScreen());
+      case TipAction.privacy:
+        push(const PrivacyScreen());
+      case null:
+        break;
+    }
+    store.closeTip(tip.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = StoreScope.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: AppColors.dark ? 0.14 : 0.08),
+          borderRadius: BorderRadius.circular(Space.radius),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.lightbulb_outline, size: 20, color: AppColors.accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tudtad?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.accent)),
+                  const SizedBox(height: 2),
+                  Text(tip.text, style: const TextStyle(fontSize: 13, height: 1.35)),
+                  if (tip.actionLabel != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton(
+                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 32)),
+                        onPressed: () => _act(context),
+                        child: Text(tip.actionLabel!),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'Tipp bezárása',
+              icon: Icon(Icons.close, size: 18, color: AppColors.textMuted),
+              onPressed: () => store.closeTip(tip.id),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Az emlékek animált példája egy ablakban (a tippből és bárhonnan).
+Future<void> showMemoriesExample(BuildContext context) => showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Így működnek az emlékek'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Egy közös program oldalán az „Emlékek” résznél tölthettek fel fotókat. Később a Főoldalon '
+                'felbukkan az emlék: rákoppintva megnyílnak a közös képek.'),
+            SizedBox(height: 12),
+            MemoriesDemo(height: 260),
+          ],
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Értem'))],
+      ),
+    );

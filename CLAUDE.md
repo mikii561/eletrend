@@ -86,3 +86,9 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 ## Ütemterv (MVP után)
 
 - AI asszisztens (fizetős API + szerver kell: előbb megbeszélni a költséget), spontán tervek („Ki ér rá ma este?”), csoportos szavazás helyszínre/programra, születésnap-ajándék szervezés, emlékek (fotók), naptár-import (Google/Apple), bezárt appra push (ingyenes úton).
+
+## Bemutató és tippek
+
+- `lib/widgets/app_tour.dart`: 9 lépéses bemutató a Főoldalon (kiemelés + kártya); első megnyitáskor magától (`store.tourDone`), a Profilból újraindítható (`HomeShell.startTour`). Az alsó menü fülét a `TourKeys.navBar` öt egyforma részéből számolja.
+- `lib/widgets/memories_demo.dart`: rajzolt, végtelenített animáció (emlék → galéria → nagy fotó); a bemutató Emlékek-lépésében és a `showMemoriesExample` ablakban. Tesztben `pumpAndSettle` helyett `pump(…)` kell, amíg látszik.
+- `lib/tips.dart`: „Tudtad?” tippek a Főoldalon, kétnaponta legfeljebb egy (`pickTip`); a bezárt nem jön vissza (`store.closeTip`, eszközönként), Profil → Főoldal testreszabása → Tippek kapcsoló (`tipsOn`).
