@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,16 +48,17 @@ void main() {
     expect(find.text('Elmaradt teendők'), findsOneWidget);
 
     // Az elsőt (a legrégebbit: Számla) holnapra tesszük.
-    await tester.tap(find.text('Holnap').first);
+    await tester.tap(find.descendant(of: find.byType(BottomSheet), matching: find.text('Holnap')).first);
     await tester.pumpAndSettle();
     expect(store.tasks.firstWhere((t) => t.id == 'a').due, day(1));
     expect(store.missedTasks(), hasLength(2));
 
     // A másodikat késznek jelöljük, a harmadikat töröljük: a lap bezárul.
-    await tester.tap(find.byTooltip('Kész').first);
+    final sheet = find.byType(BottomSheet);
+    await tester.tap(find.descendant(of: sheet, matching: find.byTooltip('Kész')).first);
     await tester.pumpAndSettle();
     expect(store.missedTasks(), hasLength(1));
-    await tester.tap(find.byTooltip('Törlés').first);
+    await tester.tap(find.descendant(of: sheet, matching: find.byTooltip('Törlés')).first);
     await tester.pumpAndSettle();
     expect(store.missedTasks(), isEmpty);
     expect(find.text('Elmaradt teendők'), findsNothing);

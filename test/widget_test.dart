@@ -277,25 +277,27 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
-    // Megjelenés: bézs, fehér vagy sötét; a fehér a háttérszínt is váltja.
+    // Megjelenés: négy világos (bézs, fehér, narancs, kobalt) és a sötét; mindegyik a saját színeit adja.
     await tester.ensureVisible(find.text('Megjelenés'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Megjelenés'));
-    await tester.pumpAndSettle();
-    expect(find.text('Bézs'), findsOneWidget);
-    await tester.tap(find.text('Fehér').last);
-    await tester.pumpAndSettle();
-    expect(store.themeMode, ThemeMode.light);
-    expect(store.whiteTheme, isTrue);
-    expect(AppColors.background, AppColors.backgroundFor(false, white: true));
-    expect(find.text('Fehér'), findsOneWidget);
+    for (final p in LightPalette.values) {
+      await tester.tap(find.text('Megjelenés'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(p.label).last);
+      await tester.pumpAndSettle();
+      expect(store.themeMode, ThemeMode.light);
+      expect(store.palette, p);
+      expect(AppColors.background, AppColors.backgroundFor(false, palette: p));
+      expect(AppColors.primary, AppColors.primaryFor(false, palette: p));
+    }
+    expect(AppColors.primary.toARGB32(), 0xFF0736BB); // az utolsó, a kobalt
     await tester.tap(find.text('Megjelenés'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sötét'));
     await tester.pumpAndSettle();
     expect(store.themeMode, ThemeMode.dark);
     expect(AppColors.dark, isTrue);
-    store.setThemeMode(ThemeMode.light, white: false);
+    store.setThemeMode(ThemeMode.light, palette: LightPalette.beige);
     await tester.pumpAndSettle();
     stopServices();
   });

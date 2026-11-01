@@ -160,7 +160,7 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.palette_outlined,
                   title: 'Megjelenés',
                   subtitle: switch (store.themeMode) {
-                    ThemeMode.light => store.whiteTheme ? 'Fehér' : 'Bézs',
+                    ThemeMode.light => store.palette.label,
                     ThemeMode.dark => 'Sötét',
                     ThemeMode.system => 'A telefon beállítása szerint',
                   },
@@ -197,62 +197,57 @@ class ProfileScreen extends StatelessWidget {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       builder: (context) => SafeArea(
-        child: RadioGroup<String>(
-          groupValue: switch (store.themeMode) {
-            ThemeMode.light => store.whiteTheme ? 'white' : 'beige',
-            ThemeMode.dark => 'dark',
-            ThemeMode.system => 'system',
-          },
-          onChanged: (v) {
-            switch (v) {
-              case 'beige':
-                store.setThemeMode(ThemeMode.light, white: false);
-              case 'white':
-                store.setThemeMode(ThemeMode.light, white: true);
-              case 'dark':
+        child: SingleChildScrollView(
+          child: RadioGroup<String>(
+            groupValue: switch (store.themeMode) {
+              ThemeMode.light => store.palette.name,
+              ThemeMode.dark => 'dark',
+              ThemeMode.system => 'system',
+            },
+            onChanged: (v) {
+              if (v == 'dark') {
                 store.setThemeMode(ThemeMode.dark);
-              case 'system':
+              } else if (v == 'system') {
                 store.setThemeMode(ThemeMode.system);
-            }
-            Navigator.pop(context);
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const RadioListTile(
-                value: 'system',
-                title: Text('A telefon beállítása szerint'),
-                subtitle: Text('Világos vagy sötét, ahogy a telefonod'),
-              ),
-              RadioListTile(
-                value: 'beige',
-                title: const Text('Bézs'),
-                subtitle: const Text('Krém és burgundi, a LIFEUP saját színei'),
-                secondary: _ThemeSwatch(dark: false, white: false),
-              ),
-              RadioListTile(
-                value: 'white',
-                title: const Text('Fehér'),
-                subtitle: const Text('Letisztult fehér, mint a legtöbb app'),
-                secondary: _ThemeSwatch(dark: false, white: true),
-              ),
-              RadioListTile(
-                value: 'dark',
-                title: const Text('Sötét'),
-                subtitle: const Text('Klasszikus sötét mód, kíméli a szemet este'),
-                secondary: _ThemeSwatch(dark: true, white: false),
-              ),
-              if (store.themeMode == ThemeMode.system)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: Text(
-                    'Világos napszakban a ${store.whiteTheme ? 'fehér' : 'bézs'} alapot használja.',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                  ),
+              } else if (LightPalette.values.asNameMap()[v] case final palette?) {
+                store.setThemeMode(ThemeMode.light, palette: palette);
+              }
+              Navigator.pop(context);
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const RadioListTile(
+                  value: 'system',
+                  title: Text('A telefon beállítása szerint'),
+                  subtitle: Text('Világos vagy sötét, ahogy a telefonod'),
                 ),
-              const SizedBox(height: 8),
-            ],
+                for (final p in LightPalette.values)
+                  RadioListTile(
+                    value: p.name,
+                    title: Text(p.label),
+                    subtitle: Text(p.description),
+                    secondary: _ThemeSwatch(dark: false, palette: p),
+                  ),
+                const RadioListTile(
+                  value: 'dark',
+                  title: Text('Sötét'),
+                  subtitle: Text('Klasszikus sötét mód, kíméli a szemet este'),
+                  secondary: _ThemeSwatch(dark: true, palette: LightPalette.beige),
+                ),
+                if (store.themeMode == ThemeMode.system)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                    child: Text(
+                      'Világos napszakban a(z) ${store.palette.label} megjelenést használja.',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),
@@ -404,37 +399,45 @@ class HomeCardsScreen extends StatelessWidget {
 
 /// Kis minta egy megjelenésről: háttér, rajta egy kártya és egy márkaszínű pötty.
 class _ThemeSwatch extends StatelessWidget {
-  const _ThemeSwatch({required this.dark, required this.white});
+  const _ThemeSwatch({required this.dark, required this.palette});
 
   final bool dark;
-  final bool white;
+  final LightPalette palette;
 
   @override
   Widget build(BuildContext context) {
-    final border = AppColors.borderFor(dark, white: white);
+    final border = AppColors.borderFor(dark, palette: palette);
     return Container(
       width: 44,
       height: 44,
       padding: const EdgeInsets.all(7),
       decoration: BoxDecoration(
-        color: AppColors.backgroundFor(dark, white: white),
+        color: AppColors.backgroundFor(dark, palette: palette),
         borderRadius: BorderRadius.circular(Space.radiusSmall),
         border: Border.all(color: border),
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.cardFor(dark, white: white),
+          color: AppColors.cardFor(dark, palette: palette),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: border),
         ),
         alignment: Alignment.center,
-        child: Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            color: AppColors.primaryFor(dark, white: white),
-            shape: BoxShape.circle,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final c in {
+              AppColors.primaryFor(dark, palette: palette),
+              AppColors.highlightFor(dark, palette: palette),
+            })
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+              ),
+          ],
         ),
       ),
     );

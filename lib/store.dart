@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'availability.dart';
 import 'models.dart';
+import 'theme.dart' show LightPalette;
 import 'tips.dart' show tipEveryDays;
 
 export 'availability.dart' show AvailabilityShare, AvailabilityStatus, FreeWindow;
@@ -94,8 +95,8 @@ class AppStore extends ChangeNotifier {
   /// Megjelenés: a telefon beállítása szerint, mindig világos vagy mindig sötét.
   ThemeMode themeMode = ThemeMode.system;
 
-  /// Világos módban fehér alap a bézs (krém) helyett.
-  bool whiteTheme = false;
+  /// Melyik világos megjelenés (bézs, fehér, narancs, kobalt); sötét módban nincs hatása.
+  LightPalette palette = LightPalette.beige;
 
   /// Végigment-e már a bevezetőn.
   bool onboarded = false;
@@ -191,7 +192,7 @@ class AppStore extends ChangeNotifier {
     'memoryReminders': memoryReminders,
     'defaultReminderMin': defaultReminderMin,
     'themeMode': themeMode.name,
-    'whiteTheme': whiteTheme,
+    'palette': palette.name,
     'onboarded': onboarded,
     'tourDone': tourDone,
     'tipsOn': _tipsOn,
@@ -223,7 +224,8 @@ class AppStore extends ChangeNotifier {
     memoryReminders = s['memoryReminders'] as bool? ?? memoryReminders;
     if (s.containsKey('defaultReminderMin')) defaultReminderMin = (s['defaultReminderMin'] as num?)?.toInt();
     themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
-    whiteTheme = s['whiteTheme'] as bool? ?? whiteTheme;
+    // A régi mentésekben csak a „fehér” kapcsoló volt (whiteTheme).
+    palette = LightPalette.values.asNameMap()[s['palette']] ?? (s['whiteTheme'] == true ? LightPalette.white : palette);
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
     tourDone = s['tourDone'] as bool? ?? tourDone;
     _tipsOn = s['tipsOn'] as bool? ?? _tipsOn;
@@ -323,7 +325,7 @@ class AppStore extends ChangeNotifier {
     memoryReminders = true;
     defaultReminderMin = 30;
     themeMode = ThemeMode.system;
-    whiteTheme = false;
+    palette = LightPalette.beige;
     onboarded = false;
     tourDone = false;
     _tipsOn = true;
@@ -516,9 +518,9 @@ class AppStore extends ChangeNotifier {
     _save();
   }
 
-  void setThemeMode(ThemeMode mode, {bool? white}) {
+  void setThemeMode(ThemeMode mode, {LightPalette? palette}) {
     themeMode = mode;
-    if (white != null) whiteTheme = white;
+    if (palette != null) this.palette = palette;
     _save();
   }
 

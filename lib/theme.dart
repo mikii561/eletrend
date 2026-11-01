@@ -4,62 +4,167 @@ import 'package:google_fonts/google_fonts.dart';
 import 'availability.dart';
 import 'models.dart';
 
+/// A világos megjelenések (a sötét külön van): mindegyik egy teljes színkészlet.
+enum LightPalette {
+  /// Alap: „papírnapló”, meleg krém alap, mély burgundi márkaszín, zsálya kiemelés.
+  beige('Bézs', 'Krém és burgundi, a LIFEUP saját színei'),
+
+  /// A megszokott világos app: fehér kártyák, semleges szürkék, fekete kiemelés.
+  white('Fehér', 'Letisztult fehér, mint a legtöbb app'),
+
+  /// Égetett narancs márkaszín, meleg elefántcsont alap, puha fekete szöveg.
+  ember('Narancs', 'Égetett narancs, elefántcsont és puha fekete'),
+
+  /// Élénk kobaltkék márkaszín, mandarin-narancs kiemelés, krém alap.
+  cobalt('Kobalt', 'Kobaltkék, mandarin és krém');
+
+  const LightPalette(this.label, this.description);
+
+  final String label;
+  final String description;
+}
+
+/// Egy megjelenés színei.
+class _Scheme {
+  const _Scheme({
+    required this.background,
+    required this.card,
+    required this.border,
+    required this.text,
+    required this.muted,
+    required this.primary,
+    required this.onPrimary,
+    required this.accent,
+    required this.header,
+    Color? highlight,
+  }) : _highlight = highlight; // ignore: prefer_initializing_formals (a név nem kezdődhet aláhúzással)
+
+  final Color background;
+  final Color card;
+  final Color border;
+  final Color text;
+  final Color muted;
+  final Color primary;
+  final Color onPrimary;
+  final Color accent;
+  final List<Color> header;
+  final Color? _highlight;
+
+  /// Élénk kiegészítő szín (a kobaltnál a mandarin); ahol nincs, a márkaszín.
+  Color get highlight => _highlight ?? primary;
+}
+
+const _dark = _Scheme(
+  background: Color(0xFF111113),
+  card: Color(0xFF1C1C1F),
+  border: Color(0xFF2E2E33),
+  text: Color(0xFFF4F4F5),
+  muted: Color(0xFFA1A1AA),
+  primary: Color(0xFFF4F4F5),
+  onPrimary: Color(0xFF18181B),
+  accent: Color(0xFFA1A1AA),
+  header: [Color(0xFF3F3F46), Color(0xFF2A2A2F)],
+);
+
+const _schemes = {
+  LightPalette.beige: _Scheme(
+    background: Color(0xFFF4E9DA),
+    card: Color(0xFFFBF6EE),
+    border: Color(0xFFE8D7C1),
+    text: Color(0xFF2B1714),
+    muted: Color(0xFF7A6A5E),
+    primary: Color(0xFF590907),
+    onPrimary: Color(0xFFFBF6EE),
+    accent: Color(0xFF6B6E5D),
+    header: [Color(0xFF590907), Color(0xFF470705)],
+  ),
+  LightPalette.white: _Scheme(
+    background: Color(0xFFF4F4F5),
+    card: Color(0xFFFFFFFF),
+    border: Color(0xFFE4E4E7),
+    text: Color(0xFF18181B),
+    muted: Color(0xFF71717A),
+    primary: Color(0xFF18181B),
+    onPrimary: Color(0xFFFFFFFF),
+    accent: Color(0xFF52525B),
+    header: [Color(0xFF27272A), Color(0xFF18181B)],
+  ),
+  // Égetett narancs #D5360C, elefántcsont #E6D5BD (az alap), puha fekete #101010 (a szöveg).
+  LightPalette.ember: _Scheme(
+    background: Color(0xFFE6D5BD),
+    card: Color(0xFFF2E8D6),
+    border: Color(0xFFD2BE9E),
+    text: Color(0xFF101010),
+    muted: Color(0xFF5C5143),
+    primary: Color(0xFFD5360C),
+    onPrimary: Color(0xFFFFF8EC),
+    accent: Color(0xFF7A4B2E),
+    header: [Color(0xFFD5360C), Color(0xFFB02C09)],
+  ),
+  // Kobalt #0736BB, mandarin #FF7900 (kiemelés), krém #F5E6C8 (az alap).
+  LightPalette.cobalt: _Scheme(
+    background: Color(0xFFF5E6C8),
+    card: Color(0xFFFCF5E3),
+    border: Color(0xFFE3D2AC),
+    text: Color(0xFF0B1B4D),
+    muted: Color(0xFF4F5A80),
+    primary: Color(0xFF0736BB),
+    onPrimary: Color(0xFFFFF8EA),
+    accent: Color(0xFFD96500),
+    header: [Color(0xFF0736BB), Color(0xFF052A94)],
+    highlight: Color(0xFFFF7900),
+  ),
+};
+
 /// Az app színei és stílusa egy helyen.
 ///
-/// Három megjelenés:
-/// - **Bézs** (alap): „papírnapló” paletta, meleg krém alap, mély burgundi márkaszín, zsálya kiemelés;
-/// - **Fehér**: a megszokott világos app, fehér kártyák, semleges szürkék, fekete kiemelés;
-/// - **Sötét**: a megszokott sötét mód, semleges grafitszürkék, fehér kiemelés.
+/// Megjelenések: sötét (a megszokott, semleges), és négy világos: [LightPalette].
 /// A kategóriák és az állapotok színei mindegyikben ugyanazok (sötétben világosabb árnyalattal).
 class AppColors {
   /// Sötét módban vagyunk-e. A `MaterialApp.builder` állítja a téma alapján,
   /// így az alábbi getterek mindig az aktuális módhoz illő színt adják.
   static bool dark = false;
 
-  /// Fehér világos mód a bézs helyett. Sötét módban nincs hatása.
-  static bool white = false;
+  /// Melyik világos megjelenés. Sötét módban nincs hatása.
+  static LightPalette palette = LightPalette.beige;
 
-  /// Márkaszín: bézsben mély burgundi, fehérben majdnem fekete, sötétben majdnem fehér.
-  static Color get primary => primaryFor(dark, white: white);
-  static Color primaryFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFFF4F4F5) : (white ? const Color(0xFF18181B) : const Color(0xFF590907));
+  static _Scheme _of(bool dark, LightPalette palette) => dark ? _dark : _schemes[palette]!;
+
+  static _Scheme get _now => _of(dark, palette);
+
+  /// Márkaszín (gombok, kiemelések).
+  static Color get primary => _now.primary;
+  static Color primaryFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).primary;
 
   /// Szöveg/ikon a márkaszínű felületen.
-  static Color get onPrimary => onPrimaryFor(dark, white: white);
-  static Color onPrimaryFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF18181B) : (white ? const Color(0xFFFFFFFF) : const Color(0xFFFBF6EE));
+  static Color get onPrimary => _now.onPrimary;
+  static Color onPrimaryFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).onPrimary;
 
-  /// Kiemelés (sorozat, legjobb, hely): bézsben zsálya, a másik kettőben semleges szürke.
-  static Color get accent =>
-      dark ? const Color(0xFFA1A1AA) : (white ? const Color(0xFF52525B) : const Color(0xFF6B6E5D));
+  /// Kiemelés (sorozat, legjobb, hely).
+  static Color get accent => _now.accent;
 
-  static Color get background => backgroundFor(dark, white: white);
-  static Color get card => cardFor(dark, white: white);
-  static Color get text => textFor(dark, white: white);
-  static Color get textMuted => mutedFor(dark, white: white);
+  /// Élénk kiegészítő szín (a kobalt megjelenésben a mandarin); máshol a márkaszín.
+  static Color get highlight => _now.highlight;
+
+  static Color get background => _now.background;
+  static Color get card => _now.card;
+  static Color get text => _now.text;
+  static Color get textMuted => _now.muted;
 
   /// Vékony vonalak, keretek, üres karikák szegélye.
-  static Color get divider => borderFor(dark, white: white);
+  static Color get divider => _now.border;
 
-  static Color backgroundFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF111113) : (white ? const Color(0xFFF4F4F5) : const Color(0xFFF4E9DA));
-  static Color cardFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF1C1C1F) : (white ? const Color(0xFFFFFFFF) : const Color(0xFFFBF6EE));
-  static Color borderFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFF2E2E33) : (white ? const Color(0xFFE4E4E7) : const Color(0xFFE8D7C1));
-  static Color textFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFFF4F4F5) : (white ? const Color(0xFF18181B) : const Color(0xFF2B1714));
-  static Color mutedFor(bool dark, {bool white = false}) =>
-      dark ? const Color(0xFFA1A1AA) : (white ? const Color(0xFF71717A) : const Color(0xFF7A6A5E));
+  static Color backgroundFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).background;
+  static Color cardFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).card;
+  static Color borderFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).border;
+  static Color textFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).text;
+  static Color mutedFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).muted;
+  static Color highlightFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).highlight;
+  static Color accentFor(bool dark, {LightPalette palette = LightPalette.beige}) => _of(dark, palette).accent;
 
   /// Kiemelt felületek (fejléc, dátum, kész pipa): egyszínű, enyhe mélységgel; rajta fehér a szöveg.
-  static LinearGradient get headerGradient => LinearGradient(
-    colors: dark
-        ? const [Color(0xFF3F3F46), Color(0xFF2A2A2F)]
-        : (white ? const [Color(0xFF27272A), Color(0xFF18181B)] : const [Color(0xFF590907), Color(0xFF470705)]),
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
+  static LinearGradient get headerGradient =>
+      LinearGradient(colors: _now.header, begin: Alignment.topLeft, end: Alignment.bottomRight);
 
   /// Szín egy kategóriához; sötét módban világosabb árnyalat, hogy kiolvasható legyen.
   static Color category(EventCategory c) => switch (c) {
@@ -122,15 +227,15 @@ class Space {
   static const radiusSmall = 10.0;
 }
 
-/// Az app témája: sötét, vagy világos bézs ([white] = false) / fehér ([white] = true) alappal.
-ThemeData buildTheme({bool dark = false, bool white = false}) {
-  final background = AppColors.backgroundFor(dark, white: white);
-  final card = AppColors.cardFor(dark, white: white);
-  final border = AppColors.borderFor(dark, white: white);
-  final primary = AppColors.primaryFor(dark, white: white);
-  final onPrimary = AppColors.onPrimaryFor(dark, white: white);
-  final textColor = AppColors.textFor(dark, white: white);
-  final muted = AppColors.mutedFor(dark, white: white);
+/// Az app témája: sötét, vagy a választott világos [palette].
+ThemeData buildTheme({bool dark = false, LightPalette palette = LightPalette.beige}) {
+  final background = AppColors.backgroundFor(dark, palette: palette);
+  final card = AppColors.cardFor(dark, palette: palette);
+  final border = AppColors.borderFor(dark, palette: palette);
+  final primary = AppColors.primaryFor(dark, palette: palette);
+  final onPrimary = AppColors.onPrimaryFor(dark, palette: palette);
+  final textColor = AppColors.textFor(dark, palette: palette);
+  final muted = AppColors.mutedFor(dark, palette: palette);
   final font = GoogleFonts.inter().fontFamily;
 
   final scheme = ColorScheme.fromSeed(
@@ -138,8 +243,8 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
     brightness: dark ? Brightness.dark : Brightness.light,
     primary: primary,
     onPrimary: onPrimary,
-    secondary: dark || white ? muted : const Color(0xFFA5A79B),
-    onSecondary: const Color(0xFF2B2D24),
+    secondary: AppColors.highlightFor(dark, palette: palette),
+    onSecondary: dark ? const Color(0xFF18181B) : const Color(0xFF1B1B1B),
     surface: background,
     onSurface: textColor,
     outline: border,
@@ -247,7 +352,10 @@ ThemeData buildTheme({bool dark = false, bool white = false}) {
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: card,
       surfaceTintColor: Colors.transparent,
-      indicatorColor: primary.withValues(alpha: dark ? 0.22 : 0.10),
+      indicatorColor: AppColors.highlightFor(
+        dark,
+        palette: palette,
+      ).withValues(alpha: dark ? 0.22 : (palette == LightPalette.cobalt ? 0.28 : 0.10)),
       height: 64,
       elevation: 0,
       iconTheme: WidgetStateProperty.resolveWith(

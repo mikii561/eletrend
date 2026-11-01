@@ -15,6 +15,7 @@ import 'package:eletrend/memories.dart';
 import 'package:eletrend/nudges.dart';
 import 'package:image/image.dart' as img;
 import 'package:eletrend/store.dart';
+import 'package:eletrend/theme.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,13 @@ void main() {
     ]);
   });
 
-  for (final (mode, white) in [('vilagos', false), ('feher', true), ('sotet', false)]) {
+  for (final (mode, palette) in [
+    ('vilagos', LightPalette.beige),
+    ('feher', LightPalette.white),
+    ('narancs', LightPalette.ember),
+    ('kobalt', LightPalette.cobalt),
+    ('sotet', LightPalette.beige),
+  ]) {
     final dark = mode == 'sotet';
     testWidgets('képernyők $mode', (tester) async {
       if (out == null) return;
@@ -68,7 +75,7 @@ void main() {
       AvailabilityService.instance = AvailabilityService(db: db);
       SharedPreferences.setMockInitialValues({'onboarded': true, 'themeMode': dark ? 'dark' : 'light'});
       final store = await AppStore.load();
-      store.setThemeMode(dark ? ThemeMode.dark : ThemeMode.light, white: white);
+      store.setThemeMode(dark ? ThemeMode.dark : ThemeMode.light, palette: palette);
       store.setMyName('Gábriel');
       store.addHabit('Víz', target: 8, unit: 'pohár');
       store.addHabit('Edzés', perWeek: 3);
@@ -173,12 +180,18 @@ void main() {
         )..shareId = 'mem1',
       );
       Memories.instance = Memories(db: db, auth: Account.instance.auth);
-      for (final (i, color) in [(0, img.ColorRgb8(58, 110, 140)), (1, img.ColorRgb8(200, 150, 80)), (2, img.ColorRgb8(90, 120, 70))]) {
+      for (final (i, color) in [
+        (0, img.ColorRgb8(58, 110, 140)),
+        (1, img.ColorRgb8(200, 150, 80)),
+        (2, img.ColorRgb8(90, 120, 70)),
+      ]) {
         final picture = img.Image(width: 900, height: 700);
         img.fill(picture, color: color);
         img.fillCircle(picture, x: 300 + i * 150, y: 300, radius: 160, color: img.ColorRgb8(245, 230, 200));
         final prepared = Memories.prepare(Uint8List.fromList(img.encodePng(picture)));
-        await tester.runAsync(() => Memories.instance.upload('mem1', name: 'Anna', full: prepared.full, thumb: prepared.thumb));
+        await tester.runAsync(
+          () => Memories.instance.upload('mem1', name: 'Anna', full: prepared.full, thumb: prepared.thumb),
+        );
       }
 
       final key = GlobalKey();
@@ -216,7 +229,12 @@ void main() {
       await shot('00c-bemutato-6');
       await tester.tap(find.text('Tovább'));
       await tester.tap(find.text('Tovább'));
-      for (final (ms, name) in [(2000, '00d-feltoltes-1'), (2200, '00e-feltoltes-2'), (1700, '00f-feltoltes-3'), (1700, '00g-feltoltes-4')]) {
+      for (final (ms, name) in [
+        (2000, '00d-feltoltes-1'),
+        (2200, '00e-feltoltes-2'),
+        (1700, '00f-feltoltes-3'),
+        (1700, '00g-feltoltes-4'),
+      ]) {
         await tester.pump(Duration(milliseconds: ms));
         await shot(name, settle: false);
       }
