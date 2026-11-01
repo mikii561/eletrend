@@ -58,6 +58,13 @@ void main() {
 
     await tester.tap(find.text('Tovább'));
     await tester.pumpAndSettle();
+
+    // Rögtön az üdvözlés után a nyelv választása jön (a többi lépés már azon a nyelven).
+    expect(find.text('Choose your language'), findsOneWidget);
+    expect(find.text('English'), findsOneWidget);
+    expect(find.text('Magyar'), findsOneWidget);
+    await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
     expect(find.text('Első lépések'), findsOneWidget);
     expect(find.text('Beállítom később'), findsOneWidget);
     await tester.tap(find.text('Tovább'));
@@ -127,6 +134,8 @@ void main() {
     await tester.pumpWidget(LifeupApp(store: store));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Tovább'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tovább')); // nyelv
     await tester.pumpAndSettle();
     await tester.tap(find.text('Beállítom később'));
     await tester.pumpAndSettle();

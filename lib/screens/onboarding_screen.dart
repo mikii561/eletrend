@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../account.dart';
+import '../l10n/l10n.dart';
 import '../friends.dart';
 import '../notifications.dart';
 import '../store.dart';
@@ -22,7 +23,7 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-enum _Page { welcome, intro, birthday, friends, profile, done }
+enum _Page { welcome, language, intro, birthday, friends, profile, done }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   _Page _page = _Page.welcome;
@@ -71,6 +72,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _next() {
     switch (_page) {
       case _Page.welcome:
+        _go(_Page.language);
+      case _Page.language:
         _go(_Page.intro);
       case _Page.intro:
         _go(_Page.birthday);
@@ -87,13 +90,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _back() {
     switch (_page) {
+      case _Page.language:
+        _go(_Page.welcome);
+      case _Page.intro:
+        _go(_Page.language);
       case _Page.birthday:
         _go(_Page.intro);
       case _Page.friends:
         _go(_Page.birthday);
       case _Page.profile:
         _go(_Page.friends);
-      case _Page.welcome || _Page.intro || _Page.done:
+      case _Page.welcome || _Page.done:
         break;
     }
   }
@@ -196,6 +203,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                   children: switch (_page) {
                     _Page.welcome => _welcome(theme),
+                    _Page.language => _languagePage(theme),
                     _Page.intro => _intro(theme),
                     _Page.birthday => _birthdayPage(theme),
                     _Page.friends => _friendsPage(theme),
@@ -209,7 +217,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: Row(
                 children: [
-                  if (_page == _Page.birthday || _page == _Page.friends || _page == _Page.profile)
+                  if (_page != _Page.welcome && _page != _Page.done)
                     IconButton(tooltip: 'Vissza', icon: const Icon(Icons.arrow_back), onPressed: _back),
                   const Spacer(),
                   if (_page == _Page.intro)
@@ -286,6 +294,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       style: TextStyle(color: AppColors.textMuted, fontSize: 13),
     ),
   ];
+
+  /// Nyelv: rögtön az üdvözlés után, hogy a többi lépés már a választott nyelven jöjjön.
+  List<Widget> _languagePage(ThemeData theme) {
+    final store = StoreScope.of(context);
+    return [
+      // Kétnyelvű, mert itt még nem tudjuk, melyiket érti jobban.
+      Text('Choose your language', style: theme.textTheme.headlineMedium),
+      const SizedBox(height: 4),
+      Text('Válaszd ki a nyelvet', style: theme.textTheme.titleMedium?.copyWith(color: AppColors.textMuted)),
+      const SizedBox(height: 12),
+      const Text('You can change it any time in Profile → Language.', style: TextStyle(fontSize: 14)),
+      const SizedBox(height: 24),
+      for (final l in AppLanguage.values)
+        Card(
+          margin: const EdgeInsets.only(bottom: 10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: store.language == l ? AppColors.primary : AppColors.divider,
+              width: store.language == l ? 2 : 1,
+            ),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            leading: Text(l.flag, style: const TextStyle(fontSize: 30)),
+            title: Text(l.label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+            trailing: store.language == l ? Icon(Icons.check_circle, color: AppColors.primary) : null,
+            onTap: () => store.setLanguage(l),
+          ),
+        ),
+    ];
+  }
 
   List<Widget> _intro(ThemeData theme) => [
     ..._title(

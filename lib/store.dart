@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'availability.dart';
 import 'models.dart';
+import 'l10n/l10n.dart' show AppLanguage;
 import 'theme.dart' show LightPalette;
 import 'tips.dart' show tipEveryDays;
 
@@ -97,6 +98,10 @@ class AppStore extends ChangeNotifier {
 
   /// Melyik világos megjelenés (bézs, fehér, narancs, kobalt); sötét módban nincs hatása.
   LightPalette palette = LightPalette.beige;
+
+  /// Az app nyelve. Új telepítésnél az [defaultLanguage] (angol; a tesztek magyarra állítják).
+  static AppLanguage defaultLanguage = AppLanguage.en;
+  AppLanguage language = defaultLanguage;
 
   /// Végigment-e már a bevezetőn.
   bool onboarded = false;
@@ -193,6 +198,7 @@ class AppStore extends ChangeNotifier {
     'defaultReminderMin': defaultReminderMin,
     'themeMode': themeMode.name,
     'palette': palette.name,
+    'language': language.code,
     'onboarded': onboarded,
     'tourDone': tourDone,
     'tipsOn': _tipsOn,
@@ -226,6 +232,7 @@ class AppStore extends ChangeNotifier {
     themeMode = ThemeMode.values.asNameMap()[s['themeMode']] ?? themeMode;
     // A régi mentésekben csak a „fehér” kapcsoló volt (whiteTheme).
     palette = LightPalette.values.asNameMap()[s['palette']] ?? (s['whiteTheme'] == true ? LightPalette.white : palette);
+    language = AppLanguage.values.asNameMap()[s['language']] ?? language;
     onboarded = s['onboarded'] as bool? ?? (local ? onboarded : true);
     tourDone = s['tourDone'] as bool? ?? tourDone;
     _tipsOn = s['tipsOn'] as bool? ?? _tipsOn;
@@ -326,6 +333,7 @@ class AppStore extends ChangeNotifier {
     defaultReminderMin = 30;
     themeMode = ThemeMode.system;
     palette = LightPalette.beige;
+    language = defaultLanguage;
     onboarded = false;
     tourDone = false;
     _tipsOn = true;
@@ -515,6 +523,11 @@ class AppStore extends ChangeNotifier {
 
   void setTourDone(bool done) {
     tourDone = done;
+    _save();
+  }
+
+  void setLanguage(AppLanguage value) {
+    language = value;
     _save();
   }
 

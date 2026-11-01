@@ -12,6 +12,7 @@ import 'admin.dart';
 import 'app_navigator.dart';
 import 'firebase_options.dart';
 import 'friends.dart';
+import 'l10n/l10n.dart';
 import 'notifications.dart';
 import 'nudges.dart';
 import 'screens/auth_gate.dart';
@@ -43,6 +44,7 @@ Future<void> main() async {
     return false;
   };
   await initializeDateFormatting('hu');
+  await initializeDateFormatting('en');
   final store = await AppStore.load();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   // Böngészőben a bejelentkezés kis késéssel töltődik vissza; megvárjuk, hogy ne villanjon fel a regisztráció.
@@ -69,14 +71,25 @@ class LifeupApp extends StatelessWidget {
 
   final AppStore store;
 
-  /// Beállítja az [AppColors] módját. Ha váltott, minden képernyőt újrarajzol,
-  /// hogy a const-ként megmaradt widgetek is az új színeket kapják.
-  static void _applyBrightness(BuildContext context, {required LightPalette palette, required ThemeMode mode}) {
+  /// Beállítja az [AppColors] módját és a nyelvet. Ha váltott, minden képernyőt újrarajzol,
+  /// hogy a const-ként megmaradt widgetek is az új színeket és szövegeket kapják.
+  static void _applyLook(
+    BuildContext context, {
+    required LightPalette palette,
+    required ThemeMode mode,
+    required AppLanguage language,
+  }) {
     // A sima sötét mód: kérték, vagy a telefon sötét és követjük. A sötét alapú paletta (magenta) nem ez.
     final platformDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
     final plainDark = mode == ThemeMode.dark || (mode == ThemeMode.system && platformDark);
     final dark = plainDark || palette.isDark;
-    if (AppColors.dark == dark && AppColors.plainDark == plainDark && AppColors.palette == palette) return;
+    if (AppColors.dark == dark &&
+        AppColors.plainDark == plainDark &&
+        AppColors.palette == palette &&
+        L10n.lang == language) {
+      return;
+    }
+    L10n.lang = language;
     AppColors.dark = dark;
     AppColors.plainDark = plainDark;
     AppColors.palette = palette;
@@ -101,14 +114,14 @@ class LifeupApp extends StatelessWidget {
           title: 'LIFEUP',
           navigatorKey: appNavigatorKey,
           debugShowCheckedModeBanner: false,
-          locale: const Locale('hu'),
-          supportedLocales: const [Locale('hu')],
+          locale: Locale(store.language.code),
+          supportedLocales: const [Locale('en'), Locale('hu')],
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           theme: buildTheme(palette: store.palette),
           darkTheme: buildTheme(dark: true),
           themeMode: store.themeMode,
           builder: (context, child) {
-            _applyBrightness(context, palette: store.palette, mode: store.themeMode);
+            _applyLook(context, palette: store.palette, mode: store.themeMode, language: store.language);
             return PhoneFrame(child: child!);
           },
           home: AuthGate(child: store.needsOnboarding ? const OnboardingScreen() : const HomeShell()),

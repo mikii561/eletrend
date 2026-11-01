@@ -7,6 +7,7 @@ import '../backup.dart';
 import '../main.dart' show HomeShell;
 import '../formatting.dart';
 import '../friends.dart';
+import '../l10n/l10n.dart';
 import '../notifications.dart';
 import '../nudges.dart';
 import '../push.dart';
@@ -155,6 +156,12 @@ class ProfileScreen extends StatelessWidget {
                   title: 'Főoldal testreszabása',
                   subtitle: 'Kártyák sorrendje, elrejtése',
                   onTap: () => _push(context, const HomeCardsScreen()),
+                ),
+                SettingsTile(
+                  icon: Icons.language,
+                  title: 'Nyelv',
+                  subtitle: store.language.label,
+                  onTap: () => showLanguageSheet(context),
                 ),
                 SettingsTile(
                   icon: Icons.palette_outlined,
@@ -442,4 +449,30 @@ class _ThemeSwatch extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Nyelv választása (Profil → Nyelv). A váltás azonnal érvényes az egész appra.
+Future<void> showLanguageSheet(BuildContext context) {
+  final store = StoreScope.of(context);
+  return showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: RadioGroup<AppLanguage>(
+        groupValue: store.language,
+        onChanged: (l) {
+          if (l != null) store.setLanguage(l);
+          Navigator.pop(context);
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final l in AppLanguage.values)
+              RadioListTile<AppLanguage>(value: l, title: Text('${l.flag}  ${l.label}')),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    ),
+  );
 }

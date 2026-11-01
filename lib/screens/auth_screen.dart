@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../account.dart';
+import '../l10n/l10n.dart';
 import '../store.dart';
 import '../theme.dart';
 
@@ -139,6 +140,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                 ),
+                const SizedBox(height: 14),
+                _LanguageToggle(store: store),
               ],
             ),
           ),
@@ -265,6 +268,46 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Nyelvváltó a bejelentkezés tetején (a fiók létrehozása előtt is választható).
+class _LanguageToggle extends StatelessWidget {
+  const _LanguageToggle({required this.store});
+
+  final AppStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (final l in AppLanguage.values)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Semantics(
+              button: true,
+              selected: store.language == l,
+              label: l.label,
+              child: GestureDetector(
+                onTap: () => store.setLanguage(l),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: store.language == l ? 0.28 : 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withValues(alpha: store.language == l ? 0.9 : 0.3)),
+                  ),
+                  child: Text(
+                    '${l.flag} ${l.label}',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
