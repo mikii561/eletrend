@@ -8,6 +8,7 @@ import 'package:eletrend/account.dart';
 import 'package:eletrend/availability_service.dart';
 import 'package:eletrend/challenges.dart';
 import 'package:eletrend/friends.dart';
+import 'package:eletrend/l10n/l10n.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/admin.dart';
 import 'package:eletrend/models.dart';
@@ -36,6 +37,7 @@ Future<void> loadFont(String family, List<String> paths) async {
 
 void main() {
   final out = Platform.environment['ELETREND_SHOTS'];
+  AppStore.defaultLanguage = AppLanguage.hu; // a képernyőképek magyarul készülnek (a script magyar szövegekre koppint)
 
   setUpAll(() async {
     await initializeDateFormatting('hu');

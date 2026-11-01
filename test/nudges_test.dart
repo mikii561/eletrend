@@ -1,3 +1,4 @@
+import 'package:eletrend/l10n/l10n.dart';
 import 'package:eletrend/models.dart';
 import 'package:eletrend/notifications.dart';
 import 'package:eletrend/nudges.dart';
@@ -56,5 +57,20 @@ void main() {
 
     store.setReminders(events: false, tasks: false, birthdays: false);
     expect(Notifications.plan(store, now), isEmpty);
+  });
+
+  test('értesítések terve angolul: az emlékeztetők és a címek angolul szólnak', () async {
+    L10n.lang = AppLanguage.en;
+    SharedPreferences.setMockInitialValues({});
+    final store = await AppStore.load();
+    final now = DateTime(2026, 11, 3, 8);
+    store
+      ..saveEvent(Event(id: 'e', title: 'Dentist', start: DateTime(2026, 11, 3, 13), reminderMin: 30, place: 'Clinic'))
+      ..saveTask(TaskItem(id: 't', title: 'Bill', due: DateTime(2026, 11, 4, 12)))
+      ..setFriendsCache(const [FriendInfo(uid: 'a', name: 'Anna', birthday: '11-10')]);
+    final byTitle = {for (final p in Notifications.plan(store, now)) p.title: p};
+    expect(byTitle['in 30 min: Dentist']!.body, '13:00–14:00 · Clinic');
+    expect(byTitle['Due today: Bill'], isNotNull);
+    expect(byTitle['Today is Anna\'s birthday 🎂'], isNotNull);
   });
 }

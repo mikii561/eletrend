@@ -453,7 +453,7 @@ const Map<String, String> enStringsData = {
   'Közös cél: {0}': 'Shared goal: {0}',
   'Közös célok a barátaiddal, ranglistával': 'Shared goals with your friends, with a leaderboard',
   'Közös fotók': 'Shared photos',
-  'Közös idő': 'Shared time',
+  'Közös idő': 'Find time',
   'Közös időpont': 'Common time',
   'Közös időpont keresése': 'Find a common time',
   'Közös program': 'Shared event',

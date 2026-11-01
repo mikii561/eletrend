@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eletrend/account.dart';
+import 'package:eletrend/admin.dart';
+import 'package:eletrend/screens/admin_screen.dart';
 import 'package:eletrend/l10n/l10n.dart';
 import 'package:eletrend/main.dart';
 import 'package:eletrend/friends.dart';
@@ -60,6 +63,7 @@ void main() {
   setUp(signInFakeAccount);
   qaMore();
   qaSheets();
+  qaAdmin();
 
   testWidgets('angol módban a fő képernyők szövegei le vannak fordítva (nincs magyar ékezetes szöveg)', (tester) async {
     phone(tester);
@@ -79,8 +83,19 @@ void main() {
       ..finishOnboarding(name: 'Gabi')
       ..setTourDone(false)
       ..setLanguage(AppLanguage.en)
-      ..saveEvent(Event(id: 'a', title: 'Team meeting', start: at(0, 9, 30), durationMin: 60, category: EventCategory.work))
-      ..saveEvent(Event(id: 'b', title: 'Workout', start: at(0, 17), durationMin: 90, place: 'Gym', category: EventCategory.health))
+      ..saveEvent(
+        Event(id: 'a', title: 'Team meeting', start: at(0, 9, 30), durationMin: 60, category: EventCategory.work),
+      )
+      ..saveEvent(
+        Event(
+          id: 'b',
+          title: 'Workout',
+          start: at(0, 17),
+          durationMin: 90,
+          place: 'Gym',
+          category: EventCategory.health,
+        ),
+      )
       ..saveEvent(Event(id: 'c', title: 'Pizza night', start: at(1, 20), durationMin: 120, repeat: Repeat.weekly))
       ..saveTask(TaskItem(id: 't1', title: 'Pay the bill', due: at(0, 12)))
       ..saveTask(TaskItem(id: 't2', title: 'Old task', due: at(-3, 12)))
@@ -192,12 +207,22 @@ void main() {
     }
 
     // Létrehozás menü és szerkesztők
-    for (final option in ['Entry', 'Task', 'Shared event', 'Find a common time', 'Goal', 'Challenge', 'Add Google Calendar']) {
+    for (final option in [
+      'Entry',
+      'Task',
+      'Shared event',
+      'Find a common time',
+      'Goal',
+      'Challenge',
+      'Add Google Calendar',
+    ]) {
       await nav('Create');
       if (option == 'Entry') await dump('create sheet');
       if (await tapText(option)) {
         await dump('create → $option');
-        if (find.byType(Scrollable).evaluate().isNotEmpty) await tester.drag(find.byType(Scrollable).first, const Offset(0, -600), warnIfMissed: false);
+        if (find.byType(Scrollable).evaluate().isNotEmpty) {
+          await tester.drag(find.byType(Scrollable).first, const Offset(0, -600), warnIfMissed: false);
+        }
         await dump('create → $option 2');
         await back();
         if (find.text('Create').evaluate().isEmpty) await back();
@@ -227,11 +252,23 @@ void main() {
 
     // Profil és aloldalai
     await nav('Profile');
-    for (final tile in ['My goals', 'Challenges', 'Nudges received', 'Privacy', 'Notifications', 'Customise Home', 'Appearance', 'Language', 'Google Calendar']) {
+    for (final tile in [
+      'My goals',
+      'Challenges',
+      'Nudges received',
+      'Privacy',
+      'Notifications',
+      'Customise Home',
+      'Appearance',
+      'Language',
+      'Google Calendar',
+    ]) {
       await nav('Profile');
       if (await tapText(tile, scroll: true)) {
         await dump('profile → $tile');
-        if (find.byType(Scrollable).evaluate().isNotEmpty) await tester.drag(find.byType(Scrollable).first, const Offset(0, -600), warnIfMissed: false);
+        if (find.byType(Scrollable).evaluate().isNotEmpty) {
+          await tester.drag(find.byType(Scrollable).first, const Offset(0, -600), warnIfMissed: false);
+        }
         await dump('profile → $tile 2');
         await back();
       }
@@ -380,7 +417,16 @@ void qaSheets() {
       ..finishOnboarding(name: 'Gabi')
       ..setTourDone(true)
       ..setLanguage(AppLanguage.en)
-      ..saveEvent(Event(id: 'e1', title: 'Dinner', start: DateTime(now.year, now.month, now.day + 1, 19), durationMin: 90, place: 'Home', repeat: Repeat.weekly))
+      ..saveEvent(
+        Event(
+          id: 'e1',
+          title: 'Dinner',
+          start: DateTime(now.year, now.month, now.day + 1, 19),
+          durationMin: 90,
+          place: 'Home',
+          repeat: Repeat.weekly,
+        ),
+      )
       ..saveTask(TaskItem(id: 't1', title: 'Write report', due: DateTime(now.year, now.month, now.day + 1)))
       ..saveTask(TaskItem(id: 't2', title: 'Old task', due: DateTime(now.year, now.month, now.day - 4)));
     store.addHabit('Read', perWeek: 3);
@@ -408,11 +454,20 @@ void qaSheets() {
     // Ha valami végtelen animáció fut (töltésjelző), néhány képkocka után továbblépünk.
     Future<void> settleSafe() async {
       try {
-        await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 2));
+        await tester.pumpAndSettle(
+          const Duration(milliseconds: 100),
+          EnginePhase.sendSemanticsUpdate,
+          const Duration(seconds: 2),
+        );
       } catch (_) {}
     }
 
-    Future<void> check(String name, Future<void> Function(BuildContext) open, {bool scroll = true, bool settle = true}) async {
+    Future<void> check(
+      String name,
+      Future<void> Function(BuildContext) open, {
+      bool scroll = true,
+      bool settle = true,
+    }) async {
       unawaited(open(hostContext));
       if (settle) {
         await settleSafe();
@@ -478,5 +533,59 @@ void qaSheets() {
     }
     expect(bad, isEmpty);
     stopServices();
+  });
+}
+
+void qaAdmin() {
+  testWidgets('angol mód: az admin felület fülei', (tester) async {
+    phone(tester);
+    L10n.lang = AppLanguage.en;
+    final onError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      if (details.exceptionAsString().contains('overflowed')) return;
+      onError?.call(details);
+    };
+    addTearDown(() => FlutterError.onError = onError);
+    final db = FakeFirebaseFirestore();
+    Admin.instance = Admin(db: db);
+    await db.collection('profiles').doc('u1').set({
+      'name': 'Anna',
+      'email': 'a@b.hu',
+      'platform': 'web',
+      'lastSeen': Timestamp.now(),
+      'createdAt': Timestamp.now(),
+    });
+    await db.collection('errors').add({'message': 'boom', 'at': Timestamp.now(), 'platform': 'web'});
+    await db.collection('feedback').add({
+      'uid': 'u1',
+      'name': 'Anna',
+      'email': 'a@b.hu',
+      'text': 'Great',
+      'done': false,
+      'at': Timestamp.now(),
+    });
+    await db.collection('reports').add({'reporterUid': 'u1', 'userUid': 'u2', 'reason': 'spam', 'at': Timestamp.now()});
+    await tester.pumpWidget(const MaterialApp(locale: Locale('en'), home: AdminScreen()));
+    await tester.pumpAndSettle();
+    final bad = <String>[];
+    final report = StringBuffer();
+    for (final tab in ['Overview', 'Users', 'Errors', 'Feedback', 'Events', 'Reports']) {
+      if (find.text(tab).evaluate().isEmpty) {
+        bad.add('hiányzik a fül: $tab');
+        continue;
+      }
+      await tester.tap(find.text(tab).first);
+      await tester.pumpAndSettle();
+      final t = visibleTexts(tester);
+      report.writeln('== admin $tab\n${(t.toList()..sort()).map((x) => '  $x').join('\n')}');
+      bad.addAll(hungarianIn('admin $tab', t));
+    }
+    final path = Platform.environment['ELETREND_QA6'];
+    if (path != null) File(path).writeAsStringSync(report.toString());
+    for (final b in bad) {
+      // ignore: avoid_print
+      print('HIBA: $b');
+    }
+    expect(bad, isEmpty);
   });
 }
