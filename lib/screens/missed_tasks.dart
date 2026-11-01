@@ -162,7 +162,7 @@ class _MissedTile extends StatelessWidget {
               ],
             ),
             Text(
-              'Eredetileg: ${formatDay(day, now: now)}',
+              trf('Eredetileg: {0}', [formatDay(day, now: now)]),
               style: TextStyle(color: AppColors.textMuted, fontSize: 13),
             ),
             const SizedBox(height: 8),

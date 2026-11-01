@@ -221,7 +221,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: Row(
                 children: [
                   if (_page != _Page.welcome && _page != _Page.done)
-                    IconButton(tooltip: 'Vissza', icon: const Icon(Icons.arrow_back), onPressed: _back),
+                    IconButton(tooltip: tr('Vissza'), icon: const Icon(Icons.arrow_back), onPressed: _back),
                   const Spacer(),
                   if (_page == _Page.intro)
                     Flexible(
@@ -400,7 +400,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           textCapitalization: TextCapitalization.characters,
           decoration: InputDecoration(
             labelText: tr('Barátod kódja'),
-            hintText: 'pl. AQX2VA',
+            hintText: tr('pl. AQX2VA'),
             prefixIcon: Icon(Icons.person_add_alt_outlined),
             counterText: '',
           ),
@@ -463,7 +463,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       maxLength: 40,
       textCapitalization: TextCapitalization.words,
       decoration: InputDecoration(
-        labelText: 'Neved',
+        labelText: tr('Neved'),
         prefixIcon: const Icon(Icons.person_outline),
         errorText: _nameError,
       ),

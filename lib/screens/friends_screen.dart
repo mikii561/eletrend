@@ -408,7 +408,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
               title: Text('Letiltás', style: TextStyle(color: AppColors.danger)),
               subtitle: const Text('Nem lesztek barátok, és nem jelölhet, hívhat meg, bökhet meg.'),
               onTap: () async {
-                if (!await confirm(context, title: 'Letiltod ${f.name}-t?', action: tr('Letiltás'), danger: true)) {
+                if (!await confirm(context, title: trf('Letiltod {0}-t?', [f.name]), action: tr('Letiltás'), danger: true)) {
                   return;
                 }
                 navigator.pop();
@@ -460,7 +460,7 @@ Future<void> _pickGroups(BuildContext context, Friend f) {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('${f.name} csoportjai', style: Theme.of(context).textTheme.titleLarge),
+            Text(trf('{0} csoportjai', [f.name]), style: Theme.of(context).textTheme.titleLarge),
             for (final g in store.groups)
               CheckboxListTile(
                 title: Text(g.name),

@@ -165,7 +165,7 @@ class _AuthGateState extends State<AuthGate> {
       SnackBar(
         duration: const Duration(seconds: 6),
         content: Text(n.headline),
-        action: SnackBarAction(label: 'Megnyitom', onPressed: () => openNudge(nav.context, n)),
+        action: SnackBarAction(label: tr('Megnyitom'), onPressed: () => openNudge(nav.context, n)),
       ),
     );
     // Olvasottá csak akkor válik, ha megnyitja (a számláló addig mutatja).
@@ -184,7 +184,7 @@ class _AuthGateState extends State<AuthGate> {
         duration: const Duration(seconds: 6),
         content: Text('${a.title}\n${a.body}'),
         action: SnackBarAction(
-          label: 'Megnyitom',
+          label: tr('Megnyitom'),
           onPressed: () => nav.push(MaterialPageRoute(builder: (_) => ChallengeDetail(challenge: a.challenge))),
         ),
       ),

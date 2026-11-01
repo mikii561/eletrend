@@ -429,7 +429,7 @@ class _TimelineState extends State<_Timeline> {
                         left: _gutter + i * colWidth - 4,
                         width: colWidth + 4,
                         child: Semantics(
-                          label: 'Most: ${formatTime(now)}',
+                          label: trf('Most: {0}', [formatTime(now)]),
                           child: Row(
                             children: [
                               Container(
@@ -782,7 +782,7 @@ class _MonthView extends StatelessWidget {
       children: [
         Row(
           children: [
-            for (final w in ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'])
+            for (final w in weekdayLetters())
               Expanded(
                 child: Center(
                   child: Text(

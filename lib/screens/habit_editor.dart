@@ -108,7 +108,7 @@ class _HabitEditorState extends State<_HabitEditor> {
     mainAxisSize: MainAxisSize.min,
     children: [
       IconButton.outlined(
-        tooltip: 'Kevesebb',
+        tooltip: tr('Kevesebb'),
         onPressed: value > min ? () => onChanged(value - 1) : null,
         icon: const Icon(Icons.remove),
       ),
@@ -273,7 +273,7 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                         [
                           '• ${h.name}',
                           if (h.target > 1) '(${h.target} ${h.unit})',
-                          if (h.perWeek != null) '(hetente ${h.perWeek}×)',
+                          if (h.perWeek != null) trf('(hetente {0}×)', [h.perWeek]),
                         ].join(' '),
                       ),
                     const SizedBox(height: 8),

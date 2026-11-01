@@ -76,7 +76,7 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
     final people = [
       Participant(
         uid: 'me',
-        name: 'Te',
+        name: tr('Te'),
         known: true,
         busy: store.busyIntervals(from, to),
         windows: store.freeWindows,
@@ -263,7 +263,7 @@ class _SlotCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: slot.confirmed
                 ? Pill(tr('Mindenki ráér'), icon: Icons.check, color: AppColors.status(AvailabilityStatus.available))
-                : Pill('Nem tudjuk: ${slot.unknown.join(', ')}', icon: Icons.help_outline, color: AppColors.textMuted),
+                : Pill(trf('Nem tudjuk: {0}', [slot.unknown.join(', ')]), icon: Icons.help_outline, color: AppColors.textMuted),
           ),
         ),
         trailing: FilledButton.tonal(

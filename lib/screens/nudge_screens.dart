@@ -273,7 +273,7 @@ class _NudgeComposerState extends State<_NudgeComposer> {
           if (widget.eventTitle != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Program: ${widget.eventTitle}', style: TextStyle(color: AppColors.textMuted)),
+              child: Text(trf('Program: {0}', [widget.eventTitle]), style: TextStyle(color: AppColors.textMuted)),
             ),
           const SizedBox(height: 12),
           Wrap(
@@ -471,7 +471,7 @@ class NudgeDetailScreen extends StatelessWidget {
               onPressed: () =>
                   Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => InviteScreen(eventId: eventId))),
               icon: const Icon(Icons.event_outlined),
-              label: Text(n.eventTitle == null ? tr('Program megnyitása') : 'Program: ${n.eventTitle}'),
+              label: Text(n.eventTitle == null ? tr('Program megnyitása') : trf('Program: {0}', [n.eventTitle])),
             ),
           ],
         ],

@@ -254,8 +254,8 @@ class MemoryPick {
 String agoLabel(DateTime then, DateTime now) {
   final days = startOfDay(now).difference(startOfDay(then)).inDays;
   if (days < 1) return 'ma';
-  if (days < 7) return '$days napja';
-  if (days < 30) return '${days ~/ 7} hete';
+  if (days < 7) return trf('{0} napja', [days]);
+  if (days < 30) return trf('{0} hete', [days ~/ 7]);
   final months = (now.year - then.year) * 12 + now.month - then.month - (now.day < then.day ? 1 : 0);
   if (months < 12) return trf('{0} hónapja', [months < 1 ? 1 : months]);
   return trf('{0} éve', [months ~/ 12]);

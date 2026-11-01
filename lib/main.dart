@@ -247,10 +247,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
             selectedIcon: _FriendsTabIcon(selected: true),
             label: tr('Barátok'),
           ),
-          const NavigationDestination(
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
-            label: 'Profil',
+            label: tr('Profil'),
           ),
         ],
       ),

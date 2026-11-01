@@ -25,7 +25,7 @@ class Backup {
         dialogTitle: 'Hova mentsem?',
       );
       if (saved == null) return;
-      messenger.showSnackBar(SnackBar(content: Text('Elmentve: $name')));
+      messenger.showSnackBar(SnackBar(content: Text(trf('Elmentve: {0}', [name]))));
     } catch (_) {
       messenger.showSnackBar(const SnackBar(content: Text('Nem sikerült a mentés. Próbáld újra.')));
     }

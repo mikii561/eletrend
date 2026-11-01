@@ -57,7 +57,7 @@ class HomeScreen extends StatelessWidget {
     final rest = store.occurrencesOn(now).where((o) => o.end.isAfter(now)).length;
     final tasks = store.tasksOn(now, now: now).where((t) => !t.done).length;
     final parts = <String>[
-      if (rest > 0) '$rest programod',
+      if (rest > 0) trf('{0} programod', [rest]),
       if (tasks > 0) trf('{0} teendőd', [tasks]),
     ];
     var text = parts.isEmpty ? tr('Ma nincs több dolgod a naptárban.') : trf('Ma még {0} van.', [parts.join(tr(' és '))]);
@@ -250,7 +250,7 @@ class _NextUp extends StatelessWidget {
   /// Mennyi idő múlva, pl. „40 perc múlva”, „17:00-kor · 2 óra múlva”, „Most tart · 15:00-ig”.
   static String whenLabel(DateTime start, DateTime end, DateTime now) {
     final minutes = start.difference(now).inMinutes;
-    if (!start.isAfter(now)) return 'Most tart · ${formatTime(end)}-ig';
+    if (!start.isAfter(now)) return trf('Most tart · {0}-ig', [formatTime(end)]);
     if (minutes < 60) return trf('{0} perc múlva', [minutes < 1 ? 1 : minutes]);
     if (sameDay(start, now)) return trf('{0}-kor · {1} múlva', [formatTime(start), formatDuration(minutes)]);
     return '${formatDay(start)} ${formatTime(start)}';
@@ -366,7 +366,7 @@ class _TasksCard extends StatelessWidget {
 
   /// A „1 ma · 2 holnap” felirat (csak a még nyitottakat számolja; ha nincs, null).
   static String? countLabel(int today, int tomorrow) {
-    final parts = [if (today > 0) '$today ma', if (tomorrow > 0) '$tomorrow holnap'];
+    final parts = [if (today > 0) trf('{0} ma', [today]), if (tomorrow > 0) trf('{0} holnap', [tomorrow])];
     return parts.isEmpty ? null : parts.join(' · ');
   }
 

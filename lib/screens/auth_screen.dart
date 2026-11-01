@@ -195,8 +195,8 @@ class _AuthScreenState extends State<AuthScreen> {
                       textCapitalization: TextCapitalization.words,
                       autofillHints: const [AutofillHints.name],
                       maxLength: 40,
-                      decoration: const InputDecoration(
-                        labelText: 'Neved',
+                      decoration: InputDecoration(
+                        labelText: tr('Neved'),
                         prefixIcon: Icon(Icons.person_outline),
                         counterText: '',
                       ),

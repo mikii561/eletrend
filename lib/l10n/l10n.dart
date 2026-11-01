@@ -41,7 +41,9 @@ class L10n {
     final template = tr(hu);
     return template.replaceAllMapped(RegExp(r'\{(\d+)(?:\?([^:}]*):([^}]*))?\}'), (m) {
       final i = int.parse(m[1]!);
-      final value = i < args.length ? args[i] : null;
+      var value = i < args.length ? args[i] : null;
+      // A behelyettesített szöveg (pl. az állapot neve) is fordítódik, ha ismert szöveg.
+      if (value is String && lang != AppLanguage.hu) value = enStrings[value] ?? value;
       if (m[2] != null) {
         final n = value is num ? value : num.tryParse('$value');
         return n == 1 ? m[2]! : m[3]!;

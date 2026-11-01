@@ -77,3 +77,8 @@ String reminderLabel(int? minutes) => switch (minutes) {
   1440 => tr('1 nappal előtte'),
   _ => trf('{0} perccel előtte', [minutes]),
 };
+
+/// A hét napjainak rövid jelölése hétfőtől: magyarul H K Sze Cs P Szo V, angolul M T W T F S S.
+List<String> weekdayLetters() => L10n.isHungarian
+    ? const ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V']
+    : const ['M', 'T', 'W', 'T', 'F', 'S', 'S'];

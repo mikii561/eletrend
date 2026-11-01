@@ -133,7 +133,7 @@ class HabitsScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             IconButton.outlined(
-                              tooltip: 'Egy kevesebb',
+                              tooltip: tr('Egy kevesebb'),
                               onPressed: h.countOn(today) > 0 ? () => store.decrementHabit(h) : null,
                               icon: const Icon(Icons.remove),
                             ),

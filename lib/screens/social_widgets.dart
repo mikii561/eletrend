@@ -45,7 +45,7 @@ void showSocialError(BuildContext context, Object e) {
 /// Meghívólink megosztása: telefonon a megosztás menü, egyébként vágólapra másolás.
 Future<void> shareInvite(BuildContext context, String title, String link) async {
   final messenger = ScaffoldMessenger.of(context);
-  final text = 'Gyere el: $title! Jelezz vissza itt: $link';
+  final text = trf('Gyere el: {0}! Jelezz vissza itt: {1}', [title, link]);
   try {
     final result = await SharePlus.instance.share(ShareParams(text: text, subject: title));
     if (result.status != ShareResultStatus.unavailable) return;
@@ -775,7 +775,7 @@ class _SharedEventSectionState extends State<SharedEventSection> {
               children: [
                 SectionTitle(
                   tr('Résztvevők'),
-                  trailing: shared.limit == null ? '$going megy' : '$going / ${shared.limit} hely',
+                  trailing: shared.limit == null ? trf('{0} megy', [going]) : trf('{0} / {1} hely', [going, shared.limit]),
                 ),
                 Card(
                   child: Column(

@@ -148,7 +148,7 @@ class Notifications {
     if (!_ready) return;
     await _plugin.show(
       id: _testId,
-      title: 'Szia! 👋',
+      title: tr('Szia! 👋'),
       body: tr('Így fognak kinézni a LIFEUP emlékeztetői.'),
       notificationDetails: NotificationDetails(android: _channels['events']),
     );
@@ -191,7 +191,7 @@ class Notifications {
           title = o.event.title;
         } else {
           when = o.start.subtract(Duration(minutes: before));
-          title = before == 0 ? 'Most: ${o.event.title}' : '${_inText(before)}: ${o.event.title}';
+          title = before == 0 ? trf('Most: {0}', [o.event.title]) : '${_inText(before)}: ${o.event.title}';
         }
         if (!when.isAfter(now)) continue;
         final body = o.event.allDay ? tr('Egész napos') : '${time.format(o.start)}–${time.format(o.end)}';
@@ -220,7 +220,7 @@ class Notifications {
             when,
             s == null
                 ? trf('Ma a határidő: {0}', [t.title])
-                : (before == 0 ? 'Most: ${t.title}' : '${_inText(before)}: ${t.title}'),
+                : (before == 0 ? trf('Most: {0}', [t.title]) : '${_inText(before)}: ${t.title}'),
             s == null
                 ? tr('Pipáld ki, ha megvan. ✅')
                 : trf('{0}-kor, {1} percet szántál rá.', [formatTime(s), t.durationMin]),

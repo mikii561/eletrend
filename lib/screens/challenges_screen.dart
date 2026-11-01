@@ -202,7 +202,7 @@ class _NewChallengeState extends State<_NewChallenge> {
                 Expanded(
                   child: TextField(
                     controller: _emojiField,
-                    decoration: const InputDecoration(labelText: 'Emoji', hintText: '🏆', counterText: ''),
+                    decoration: InputDecoration(labelText: tr('Emoji'), hintText: '🏆', counterText: ''),
                     onChanged: (v) => setState(() {
                       // Egyetlen emoji kell: az utolsónak beírtat tartjuk meg.
                       _emoji = v.characters.isEmpty ? '' : v.characters.last;
@@ -266,7 +266,7 @@ class _NewChallengeState extends State<_NewChallenge> {
               decoration: InputDecoration(
                 labelText: tr('Vagy írd be a napok számát'),
                 helperText: trf('Például 10 vagy 100 (legfeljebb {0})', [maxChallengeDays]),
-                suffixText: 'nap',
+                suffixText: tr('nap'),
               ),
               onChanged: (v) => setState(() => _days = int.tryParse(v) ?? 0),
             ),

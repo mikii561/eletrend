@@ -36,7 +36,7 @@ class AdminScreen extends StatelessWidget {
               Tab(text: tr('Felhasználók')),
               Tab(text: tr('Hibák')),
               Tab(text: tr('Visszajelzések')),
-              Tab(text: 'Programok'),
+              Tab(text: tr('Programok')),
               Tab(text: tr('Jelentések')),
             ],
           ),
@@ -795,7 +795,7 @@ class _Reports extends StatelessWidget {
                   subtitle: SelectableText(
                     [
                       if (r.userUid != null) trf('Felhasználó: {0}', [r.userUid]),
-                      if (r.eventId != null) 'Program: ${r.eventId}',
+                      if (r.eventId != null) trf('Program: {0}', [r.eventId]),
                       trf('Bejelentő: {0} • {1}', [r.reporterUid, _when(r.at)]),
                     ].join('\n'),
                   ),

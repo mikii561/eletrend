@@ -8,6 +8,7 @@ import '../availability.dart';
 import '../friends.dart';
 import '../nudges.dart';
 import '../store.dart';
+import '../formatting.dart';
 import '../theme.dart';
 import '../widgets/pickers.dart';
 import '../widgets/common.dart';
@@ -281,7 +282,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
 /// Egy saját sáv kiírása, pl. „H, Sze, P 18:00–21:00”.
 String windowLabel(FreeWindow w) {
-  const names = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
+  final names = weekdayLetters();
   final days = (w.days.toList()..sort()).map((d) => names[d - 1]).join(', ');
   String t(int m) => '${(m ~/ 60).toString().padLeft(2, '0')}:${(m % 60).toString().padLeft(2, '0')}';
   return '$days ${t(w.fromMin)}–${t(w.toMin)}';
@@ -302,7 +303,7 @@ class _WindowEditorState extends State<_WindowEditor> {
 
   @override
   Widget build(BuildContext context) {
-    const names = ['H', 'K', 'Sze', 'Cs', 'P', 'Szo', 'V'];
+    final names = weekdayLetters();
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
