@@ -415,12 +415,8 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                   ),
                 ),
               ),
-              if (c.isActive() &&
-                  c.members.any(
-                    (m) =>
-                        m != me &&
-                        !(progress.where((p) => p.uid == m).firstOrNull?.done.contains(dayKey(today)) ?? false),
-                  ))
+              // Csak azt lehet megbuzdítani, akinek már van haladása (akit a szabály enged); a még nem kezdőt nem.
+              if (c.isActive() && progress.any((p) => p.uid != me && !p.done.contains(dayKey(today))))
                 FilledButton.tonalIcon(
                   onPressed: _cheeredAll
                       ? null

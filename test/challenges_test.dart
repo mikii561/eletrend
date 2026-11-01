@@ -143,6 +143,23 @@ void main() {
     bela.stop();
   });
 
+  test('közös buzdítás: aki még nem kezdte el (nincs haladása), kimarad, és nincs hiba', () async {
+    final db = FakeFirebaseFirestore();
+    final gabi = Challenges(db: db)..start('gabi', await device('Gabi'));
+    final today = DateTime.now();
+    await gabi.create(title: 'Futás', emoji: '🏃', days: 10, start: today, friends: {'kata': 'Kata', 'bela': 'Béla'});
+    final c = (await gabi.watchMine().first).single;
+    // Csak Béla kezdte el (van haladás-dokumentuma), Kata még nem.
+    await db.collection('challenges').doc(c.id).collection('progress').doc('bela').set({
+      'name': 'Béla',
+      'done': <String>[],
+      'cheers': 0,
+    });
+    expect(await gabi.cheerAll(c), 1);
+    expect((await gabi.watchProgress(c.id).first).firstWhere((p) => p.uid == 'bela').cheers, 1);
+    gabi.stop();
+  });
+
   test('közös cél: megosztás, csatlakozás saját céllal, pipák átmennek, a kihívások közt nincs', () async {
     final db = FakeFirebaseFirestore();
     final gabiStore = await device('Gabi');

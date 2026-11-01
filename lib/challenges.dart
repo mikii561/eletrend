@@ -250,22 +250,22 @@ class Challenges {
   }
 
   /// Megbuzdítja mindazokat, akik ma még nem csinálták meg. Hányan voltak?
+  /// Aki még nem kezdte el (nincs haladás-dokumentuma), azt a szabály miatt nem lehet megbuzdítani: ő kimarad.
   Future<int> cheerAll(Challenge c) async {
     final me = _uid!;
     final today = dayKey(DateTime.now());
     final progress = await _col.doc(c.id).collection('progress').get();
-    final waiting =
-        {
-          for (final m in c.members)
-            if (m != me) m,
-        }..removeAll([
-          for (final d in progress.docs)
-            if ((d.data()['done'] as List? ?? []).contains(today)) d.id,
-        ]);
-    for (final uid in waiting) {
-      await cheer(c.id, uid);
+    var cheered = 0;
+    for (final d in progress.docs) {
+      if (d.id == me || (d.data()['done'] as List? ?? []).contains(today)) continue;
+      try {
+        await cheer(c.id, d.id);
+        cheered++;
+      } on FirebaseException catch (e) {
+        debugPrint('Buzdítás sikertelen (${d.id}): ${e.code}');
+      }
     }
-    return waiting.length;
+    return cheered;
   }
 
   Stream<List<Challenge>> watchMine() => _col
