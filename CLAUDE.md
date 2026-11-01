@@ -46,6 +46,7 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - Elérhetőség: `availability/{uid}` (kézi állapot, foglalt időszakok 28 napra UTC-ben **cím nélkül**, „ráérek” sávok, időzóna-eltérés, `viewers`). Alapból senki nem látja (`AvailabilityShare.nobody`); barátok vagy kiválasztott csoportok. Csoportok csak az eszközön/fiókban (`users/{uid}/groups`).
 - Közös időpont: `FindTimeScreen` → `findCommonTime`; akiről nincs adat, „nem tudjuk”.
 - Bökés: `lib/nudges.dart`, `nudges/{címzett}/items/{küldő}_{ÉÉÉÉHHNN}_{0–2}` (napi 3, a szabály kényszeríti: meglévőt nem lehet felülírni), `nudgeSettings/{uid}` (`off`, `muted`).
+- Bökés képpel és hangüzenettel: a `nudges/…` dokumentumban `image` (fotó 800 px-re kicsinyítve JPEG, vagy GIF ≤ 450 KB; base64), `audio` + `audioMime` (≤ 20 mp, 24 kbps AAC/Opus, base64); szöveg nélkül is elmehet, ha van csatolmány. Előkészítés/felvétel: `lib/voice.dart` (`record` csomag, Androidon RECORD_AUDIO), lejátszás: `widgets/voice_player.dart` (`audioplayers`); képes/hangos bökésnél az `openNudge` a `NudgeDetailScreen`-t nyitja. **Szabályváltozás kell** (image/audio/audioMime mezők, méretkorlátok); addig a küldés a „napi keret” hibával elbukik, mert a `send` minden elutasítást sorszám-foglaltságnak vesz.
 
 ## Közös programok
 

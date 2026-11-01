@@ -1,7 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import '../nudges.dart';
+import '../voice.dart';
+import '../widgets/voice_player.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -38,22 +44,109 @@ class _NudgeComposerState extends State<_NudgeComposer> {
   String _emoji = nudgeTemplates.first.$1;
   bool _sending = false;
   String? _error;
+  String? _image;
+  ({String audio, String mime})? _voice;
+  VoiceRecorder? _recorder;
+  Timer? _ticker;
 
   @override
   void dispose() {
+    _ticker?.cancel();
+    _recorder?.cancel();
     _text.dispose();
     super.dispose();
   }
 
-  Future<void> _send() async {
-    final text = _text.text.trim();
-    if (text.isEmpty) {
-      setState(() => _error = 'Válassz egy szöveget, vagy írj sajátot.');
+  /// Kép a bökéshez: fotó a kamerával vagy a galériából (kicsinyítve, hogy beférjen).
+  Future<void> _pickImage() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Fotó készítése'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Kép vagy GIF a galériából'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+    try {
+      final picked = await ImagePicker().pickImage(source: source, maxWidth: 1600, maxHeight: 1600);
+      if (picked == null) return;
+      final image = prepareAttachmentImage(await picked.readAsBytes(), name: picked.name);
+      if (mounted) {
+        setState(() {
+          _image = image;
+          _error = null;
+        });
+      }
+    } on AttachmentException catch (e) {
+      if (mounted) setState(() => _error = e.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Nem sikerült a képet megnyitni. Engedélyezted az appnak a kamerát vagy a képeket?');
+      }
+    }
+  }
+
+  /// Hangüzenet: koppintásra indul, újabb koppintásra (vagy 20 mp után) megáll.
+  Future<void> _toggleRecording() async {
+    if (_recorder != null) return _stopRecording();
+    final rec = VoiceRecorder();
+    try {
+      if (!await rec.start()) {
+        setState(() => _error = 'Nincs engedély a mikrofonhoz. Engedélyezd, és próbáld újra.');
+        return;
+      }
+    } catch (_) {
+      setState(() => _error = 'A hangfelvétel most nem indítható.');
       return;
     }
+    setState(() {
+      _recorder = rec;
+      _error = null;
+    });
+    _ticker = Timer.periodic(const Duration(milliseconds: 250), (_) {
+      if (!mounted) return;
+      if (rec.elapsed >= maxVoiceDuration) {
+        _stopRecording();
+      } else {
+        setState(() {});
+      }
+    });
+  }
+
+  Future<void> _stopRecording() async {
+    _ticker?.cancel();
+    final rec = _recorder;
+    if (rec == null) return;
+    setState(() => _recorder = null);
+    final voice = await rec.stop();
+    await rec.dispose();
+    if (mounted) setState(() => _voice = voice);
+  }
+
+  Future<void> _send() async {
     final store = StoreScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    if (_recorder != null) await _stopRecording();
+    final text = _text.text.trim();
+    if (text.isEmpty && _image == null && _voice == null) {
+      if (mounted) setState(() => _error = 'Válassz egy szöveget, írj sajátot, vagy csatolj képet vagy hangot.');
+      return;
+    }
     setState(() {
       _sending = true;
       _error = null;
@@ -68,6 +161,9 @@ class _NudgeComposerState extends State<_NudgeComposer> {
           emoji: _emoji,
           eventId: widget.eventId,
           eventTitle: widget.eventTitle,
+          image: _image,
+          audio: _voice?.audio,
+          audioMime: _voice?.mime,
         );
       } catch (err) {
         failed.add(e.value);
@@ -76,7 +172,9 @@ class _NudgeComposerState extends State<_NudgeComposer> {
     if (!mounted) return;
     setState(() => _sending = false);
     if (failed.length == widget.to.length) {
-      setState(() => _error = 'Nem ment ki. Lehet, hogy ma már elég bökést küldtél, vagy kikapcsolta őket.');
+      setState(
+        () => _error = 'Nem ment ki. Lehet, hogy ma már elég bökést küldtél, kikapcsolta őket, vagy nincs internet.',
+      );
       return;
     }
     navigator.pop();
@@ -86,6 +184,68 @@ class _NudgeComposerState extends State<_NudgeComposer> {
           failed.isEmpty ? 'Elküldve.' : 'Elküldve, kivéve: ${failed.join(', ')} (napi keret vagy kikapcsolta).',
         ),
       ),
+    );
+  }
+
+  Widget _attachments(BuildContext context) {
+    final recording = _recorder != null;
+    final seconds = _recorder?.elapsed.inSeconds ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: recording ? null : _pickImage,
+                icon: const Icon(Icons.add_photo_alternate_outlined),
+                label: Text(_image == null ? 'Kép' : 'Másik kép'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                style: recording ? OutlinedButton.styleFrom(foregroundColor: AppColors.danger) : null,
+                onPressed: _toggleRecording,
+                icon: Icon(recording ? Icons.stop_circle_outlined : Icons.mic_none),
+                label: Text(recording ? 'Leállítás ($seconds mp)' : (_voice == null ? 'Hangüzenet' : 'Új hangüzenet')),
+              ),
+            ),
+          ],
+        ),
+        if (_image != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.memory(
+                    base64Decode(_image!),
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton(onPressed: () => setState(() => _image = null), child: const Text('Kép törlése')),
+              ],
+            ),
+          ),
+        if (_voice != null && !recording)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Row(
+              children: [
+                VoicePlayer(audio: _voice!.audio, mime: _voice!.mime),
+                const SizedBox(width: 8),
+                TextButton(onPressed: () => setState(() => _voice = null), child: const Text('Törlés')),
+              ],
+            ),
+          ),
+        const SizedBox(height: 4),
+      ],
     );
   }
 
@@ -127,6 +287,8 @@ class _NudgeComposerState extends State<_NudgeComposer> {
             decoration: InputDecoration(hintText: 'Vagy írd meg a sajátodat…', errorText: _error),
             onChanged: (_) => setState(() => _error = null),
           ),
+          const SizedBox(height: 4),
+          _attachments(context),
           Text(
             'Naponta legfeljebb ${Nudges.dailyLimit} bökés mehet ugyanannak a barátnak, hogy ne legyen tolakodó.',
             style: TextStyle(color: AppColors.textMuted, fontSize: 12),
@@ -169,7 +331,10 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
               stream: Nudges.instance.watchAll(),
               builder: (context, snap) {
                 if (snap.hasError) {
-                  return const Padding(padding: EdgeInsets.all(16), child: ErrorState(text: 'Nem töltődtek be. Van internet?'));
+                  return const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: ErrorState(text: 'Nem töltődtek be. Van internet?'),
+                  );
                 }
                 if (!snap.hasData) return const Center(child: LoadingState());
                 final list = snap.data!;
@@ -185,13 +350,28 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
                     for (final n in list)
                       Card(
                         child: ListTile(
-                          leading: Text(n.emoji, style: const TextStyle(fontSize: 26)),
-                          title: Text(n.text, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          leading: n.image != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.memory(
+                                    base64Decode(n.image!),
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
+                                    gaplessPlayback: true,
+                                  ),
+                                )
+                              : Text(n.emoji, style: const TextStyle(fontSize: 26)),
+                          title: Text(
+                            n.text.isNotEmpty ? n.text : (n.image != null ? 'Képet küldött' : 'Hangüzenetet küldött'),
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
                           subtitle: Text(
                             [
                               n.fromName,
                               if (n.at != null) DateFormat('MMM d. HH:mm', 'hu').format(n.at!),
                               if (n.eventTitle != null) n.eventTitle!,
+                              if (n.audio != null) '🎙️ hangüzenet',
                             ].join(' · '),
                           ),
                           onTap: () => openNudge(context, n),
@@ -221,10 +401,65 @@ Future<void> openNudge(BuildContext context, Nudge n) async {
   try {
     Nudges.instance.markSeen(n.id).catchError((_) {});
     final id = n.eventId;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => id == null ? const NudgeInboxScreen() : InviteScreen(eventId: id)));
+    // Képes vagy hangos bökésnél először a tartalom jön (a programot onnan lehet megnyitni).
+    final Widget page = n.hasMedia
+        ? NudgeDetailScreen(nudge: n)
+        : (id == null ? const NudgeInboxScreen() : InviteScreen(eventId: id));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
   } finally {
     _nudgeOpen = false;
+  }
+}
+
+/// Egy kapott bökés képpel vagy hanggal: a kép, a szöveg, a hangüzenet lejátszása és a program.
+class NudgeDetailScreen extends StatelessWidget {
+  const NudgeDetailScreen({super.key, required this.nudge, this.autoplay = false});
+
+  final Nudge nudge;
+
+  /// Megnyitáskor magától lejátssza a hangot.
+  final bool autoplay;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = nudge;
+    final eventId = n.eventId;
+    return Scaffold(
+      appBar: AppBar(title: Text(n.fromName)),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          if (n.image != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.memory(base64Decode(n.image!), fit: BoxFit.contain, gaplessPlayback: true),
+            ),
+          if (n.text.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Text('${n.emoji} ${n.text}', style: Theme.of(context).textTheme.titleLarge),
+          ],
+          if (n.audio != null) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: VoicePlayer(audio: n.audio!, mime: n.audioMime ?? 'audio/mp4', autoplay: autoplay),
+            ),
+          ],
+          if (n.at != null) ...[
+            const SizedBox(height: 12),
+            Text(DateFormat('MMM d. HH:mm', 'hu').format(n.at!), style: TextStyle(color: AppColors.textMuted)),
+          ],
+          if (eventId != null) ...[
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () =>
+                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => InviteScreen(eventId: eventId))),
+              icon: const Icon(Icons.event_outlined),
+              label: Text(n.eventTitle == null ? 'Program megnyitása' : 'Program: ${n.eventTitle}'),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

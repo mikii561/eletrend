@@ -182,7 +182,7 @@ service cloud.firestore {
         && request.resource.data.title is string && request.resource.data.title.size() <= 100;
     }
 
-    // Bökés: csak barát küldhet, naponta legfeljebb 3-at ugyanannak (az azonosító: küldő_nap_0–2,
+    // Bökés (szöveggel, és ha akar, képpel vagy hangüzenettel): csak barát küldhet, naponta legfeljebb 3-at ugyanannak (az azonosító: küldő_nap_0–2,
     // és meglévőt nem lehet felülírni), és csak ha a címzett nem kapcsolta ki / nem némította.
     match /nudges/{to}/items/{id} {
       allow read, delete: if realUser() && request.auth.uid == to;
@@ -196,11 +196,14 @@ service cloud.firestore {
         && (!exists(/databases/$(database)/documents/nudgeSettings/$(to))
           || (get(/databases/$(database)/documents/nudgeSettings/$(to)).data.get('off', false) != true
             && !(request.auth.uid in get(/databases/$(database)/documents/nudgeSettings/$(to)).data.get('muted', []))))
-        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'text', 'emoji', 'eventId', 'eventTitle', 'seen', 'at'])
+        && request.resource.data.keys().hasOnly(['fromUid', 'fromName', 'text', 'emoji', 'eventId', 'eventTitle', 'seen', 'at', 'image', 'audio', 'audioMime'])
         && request.resource.data.seen == false
         && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
         && request.resource.data.text.size() <= 120
+        && (request.resource.data.text.size() > 0 || 'image' in request.resource.data || 'audio' in request.resource.data)
+        && (!('image' in request.resource.data) || (request.resource.data.image is string && request.resource.data.image.size() <= 700000))
+        && (!('audio' in request.resource.data) || (request.resource.data.audio is string && request.resource.data.audio.size() <= 200000))
+        && (!('audioMime' in request.resource.data) || (request.resource.data.audioMime is string && request.resource.data.audioMime.size() <= 40))
         && request.resource.data.emoji is string && request.resource.data.emoji.size() <= 16;
     }
 

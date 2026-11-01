@@ -26,6 +26,9 @@ class Nudge {
     this.eventTitle,
     this.at,
     this.seen = false,
+    this.image,
+    this.audio,
+    this.audioMime,
   });
 
   final String id;
@@ -34,14 +37,27 @@ class Nudge {
   final String text;
   final String emoji;
 
+  /// Csatolt kép vagy GIF (base64), ha van.
+  final String? image;
+
+  /// Csatolt hangüzenet (base64) és a formátuma (pl. audio/mp4), ha van.
+  final String? audio;
+  final String? audioMime;
+
+  bool get hasMedia => image != null || audio != null;
+
   /// A közös program azonosítója, ha programhoz kötött.
   final String? eventId;
   final String? eventTitle;
   final DateTime? at;
   final bool seen;
 
-  /// Az értesítés szövege, pl. „👋 Gabi: Szervezzünk valamit!”
-  String get headline => '$emoji $fromName: $text';
+  /// Az értesítés szövege, pl. „👋 Gabi: Szervezzünk valamit!”; csatolmánynál ezt is jelzi.
+  String get headline {
+    final media = [if (image != null) '📷 kép', if (audio != null) '🎙️ hangüzenet'].join(' + ');
+    final body = text.isEmpty ? media : (media.isEmpty ? text : '$text ($media)');
+    return '$emoji $fromName: $body';
+  }
 
   factory Nudge.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) {
     final d = doc.data()!;
@@ -55,6 +71,9 @@ class Nudge {
       eventTitle: d['eventTitle'] as String?,
       at: (d['at'] as Timestamp?)?.toDate(),
       seen: d['seen'] as bool? ?? false,
+      image: d['image'] as String?,
+      audio: d['audio'] as String?,
+      audioMime: d['audioMime'] as String?,
     );
   }
 }
@@ -169,11 +188,16 @@ class Nudges {
     String emoji = '👋',
     String? eventId,
     String? eventTitle,
+    String? image,
+    String? audio,
+    String? audioMime,
     DateTime? now,
   }) async {
     final me = _uid ?? (throw const NudgeException('Előbb jelentkezz be.'));
     final clean = text.trim();
-    if (clean.isEmpty) throw const NudgeException('Írj valamit a bökésbe.');
+    if (clean.isEmpty && image == null && audio == null) {
+      throw const NudgeException('Írj valamit, vagy csatolj képet vagy hangot a bökéshez.');
+    }
     final day = dayKey(now ?? DateTime.now()).replaceAll('-', '');
     for (var n = 0; n < dailyLimit; n++) {
       final ref = _inbox(toUid).doc('${me}_${day}_$n');
@@ -186,6 +210,9 @@ class Nudges {
           'emoji': emoji,
           'eventId': eventId,
           'eventTitle': eventTitle,
+          'image': ?image,
+          'audio': ?audio,
+          if (audio != null) 'audioMime': audioMime ?? 'audio/mp4',
           'seen': false,
           'at': FieldValue.serverTimestamp(),
         });
