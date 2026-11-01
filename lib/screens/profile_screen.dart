@@ -11,6 +11,7 @@ import '../main.dart' show HomeShell;
 import '../formatting.dart';
 import '../friends.dart';
 import '../l10n/l10n.dart';
+import '../legal.dart';
 import '../notifications.dart';
 import '../nudges.dart';
 import '../push.dart';
@@ -89,7 +90,9 @@ class ProfileScreen extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.cake_outlined),
                   title: Text(
-                    birthday == null ? tr('Születésnap megadása') : DateFormat(tr('yyyy. MMMM d.'), L10n.code).format(birthday),
+                    birthday == null
+                        ? tr('Születésnap megadása')
+                        : DateFormat(tr('yyyy. MMMM d.'), L10n.code).format(birthday),
                   ),
                   subtitle: Text(store.shareBirthday ? tr('A barátaid látják (év nélkül)') : tr('Csak te látod')),
                   onTap: () => _editBirthday(context),
@@ -195,6 +198,25 @@ class ProfileScreen extends StatelessWidget {
                   title: tr('Bemutató újra'),
                   subtitle: tr('Végigvezet az app fő részein'),
                   onTap: () => HomeShell.startTour(context),
+                ),
+              ],
+            ),
+          ),
+          SectionTitle(tr('Jogi')),
+          Card(
+            child: Column(
+              children: [
+                SettingsTile(
+                  icon: Icons.privacy_tip_outlined,
+                  title: tr('Adatvédelmi tájékoztató'),
+                  subtitle: tr('Milyen adatot kezelünk és miért'),
+                  onTap: () => openLegal(LegalPage.privacy),
+                ),
+                SettingsTile(
+                  icon: Icons.description_outlined,
+                  title: tr('Felhasználási feltételek'),
+                  subtitle: tr('A használat szabályai'),
+                  onTap: () => openLegal(LegalPage.terms),
                 ),
               ],
             ),

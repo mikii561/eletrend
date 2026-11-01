@@ -987,4 +987,10 @@ const Map<String, String> enStringsData = {
   'oldal': 'pages',
   'senki': 'nobody',
   'Hetente, {0}': 'Weekly, {0}',
+  'Jogi': 'Legal',
+  'Adatvédelmi tájékoztató': 'Privacy policy',
+  'Felhasználási feltételek': 'Terms of use',
+  'Milyen adatot kezelünk és miért': 'What data we handle and why',
+  'A használat szabályai': 'The rules for using the app',
+  'A folytatással elfogadod:': 'By continuing you accept:',
 };

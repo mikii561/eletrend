@@ -164,7 +164,8 @@ void main() {
 
     await tester.tap(find.text('Profil'));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView).last, const Offset(0, -1500));
+    await tester.scrollUntilVisible(find.text('Bemutató újra'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(find.text('Bemutató újra'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Bemutató újra'));
     await tester.pumpAndSettle();

@@ -107,6 +107,11 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - Nyelvváltáskor az `_applyLook` (main.dart) a teljes fát újraépíti, így a `const` szövegek is átváltanak.
 - Ellenőrzés: `test/l10n_qa_test.dart` (angol módban végigjárja a fő képernyőket, lapokat, bejelentkezést, bevezetőt, admint; ékezetes = lefordítatlan szöveget és `L10n.missing`-et jelez; `ELETREND_QA=<fájl>` stb. kiírja az összes látható szöveget átnézéshez) és `test/l10n_test.dart` (a táblázatok teljes fordítása, nyelvváltás). **Ékezet nélküli** magyar szöveget (pl. „Szabad”, „Hetente”) a teszt nem tud felismerni: ilyenkor a kiírt szövegeket kell átnézni.
 
+## Jogi oldalak és fióktörlés
+
+- Az Adatvédelmi tájékoztató és a Felhasználási feltételek **statikus, kétnyelvű oldalak** a `web/privacy.html` és `web/terms.html` (magyar + angol, nyelvváltóval, `?lang=hu|en`); a GitHub Pages a webes build mellé kiszolgálja: `https://mikii561.github.io/eletrend/privacy.html`. Az appban: Profil → Jogi, és a bejelentkezés alján „A folytatással elfogadod” (`lib/legal.dart`, `openLegal`). **Ha az app működése változik (új adat, új szolgáltató, törlés), a tájékoztatót is frissíteni kell** (és a tetején a dátumot). Az adatkezelő neve/elérhetősége nincs benne: az appbeli visszajelzési űrlapra hivatkozik; ha cégként/névvel üzemel, ide be kell írni.
+- Fióktörlés (`Account.deleteAccount`): fotók, a `users/{uid}` adatok, és a társas adatok (`lib/erase.dart`: barátságok mindkét oldalon, jelölések, tiltások, bökések, meghívók, elérhetőség, kihívások, saját megosztott programok, barátkód, névjegy, adatlap), végül a fiók. **A szabályokat ehhez bővíteni kellett** (`profiles`, `people`, `codes` törlése a tulajdonosnak). Ami másoknál már megérkezett (bökés, hozzászólás), marad.
+
 ## Bemutató és tippek
 
 - `lib/widgets/app_tour.dart`: 9 lépéses bemutató a Főoldalon (kiemelés + kártya); első megnyitáskor magától (`store.tourDone`), a Profilból újraindítható (`HomeShell.startTour`). Az alsó menü fülét a `TourKeys.navBar` öt egyforma részéből számolja.

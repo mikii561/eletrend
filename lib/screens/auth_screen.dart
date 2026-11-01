@@ -4,6 +4,7 @@ import '../l10n/text.dart';
 
 import '../account.dart';
 import '../l10n/l10n.dart';
+import '../legal.dart';
 import '../store.dart';
 import '../theme.dart';
 
@@ -248,6 +249,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   if (!_register)
                     TextButton(onPressed: _busy ? null : _forgot, child: const Text('Elfelejtettem a jelszavam')),
+                  const SizedBox(height: 8),
+                  const _LegalNote(),
                   if (hasLocalData) ...[
                     const SizedBox(height: 12),
                     Card(
@@ -312,6 +315,39 @@ class _LanguageToggle extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// „A folytatással elfogadod…” és a két jogi oldal linkje (a regisztrációnál és a belépésnél is látszik).
+class _LegalNote extends StatelessWidget {
+  const _LegalNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          'A folytatással elfogadod:',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+        ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          children: [
+            TextButton(
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+              onPressed: () => openLegal(LegalPage.terms),
+              child: const Text('Felhasználási feltételek', style: TextStyle(fontSize: 13)),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+              onPressed: () => openLegal(LegalPage.privacy),
+              child: const Text('Adatvédelmi tájékoztató', style: TextStyle(fontSize: 13)),
+            ),
+          ],
+        ),
       ],
     );
   }

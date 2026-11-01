@@ -10,6 +10,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../account.dart';
 import '../admin.dart';
+import '../availability_service.dart';
+import '../challenges.dart';
+import '../friends.dart';
+import '../nudges.dart';
 import '../store.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -89,8 +93,18 @@ class AccountSection extends StatelessWidget {
                   : () async {
                       setState(() => busy = true);
                       try {
+                        final store = StoreScope.of(context);
+                        final sharedEventIds = [
+                          for (final e in store.events)
+                            if (e.shareId != null) e.shareId!,
+                        ];
+                        // A figyelők leállnak, hogy a törölt névjegy és elérhetőség ne íródjon vissza.
                         Account.instance.sync?.stop();
-                        await Account.instance.deleteAccount(google ? null : password.text);
+                        Friends.instance.stop();
+                        Challenges.instance.stop();
+                        Nudges.instance.stop();
+                        AvailabilityService.instance.stop();
+                        await Account.instance.deleteAccount(google ? null : password.text, sharedEventIds: sharedEventIds);
                         if (context.mounted) Navigator.pop(context, true);
                       } on AccountException catch (e) {
                         setState(() {

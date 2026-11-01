@@ -9,6 +9,7 @@ import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+import 'erase.dart';
 import 'memories.dart';
 import 'models.dart';
 import 'store.dart';
@@ -179,7 +180,8 @@ class Account {
 
   /// A fiók és minden felhőbeli adat végleges törlése. Biztonsági okból újra azonosítani kell:
   /// jelszóval, vagy Google-fióknál a Google bejelentkezéssel.
-  Future<void> deleteAccount(String? password) => _guard(() async {
+  /// [sharedEventIds]: a saját megosztott programok azonosítói (ezek is törlődnek, ha a felhasználó a szervezőjük).
+  Future<void> deleteAccount(String? password, {List<String> sharedEventIds = const []}) => _guard(() async {
     final u = user!;
     if (usesGoogle) {
       final provider = GoogleAuthProvider();
@@ -188,6 +190,7 @@ class Account {
       await u.reauthenticateWithCredential(EmailAuthProvider.credential(email: u.email!, password: password ?? ''));
     }
     await Memories(db: db, auth: auth).deleteAllOf(u.uid);
+    await eraseSocialData(db, u.uid, sharedEventIds: sharedEventIds);
     await CloudSync(store: null, uid: u.uid, db: db).deleteAll();
     await u.delete();
   });

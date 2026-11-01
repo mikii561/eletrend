@@ -69,7 +69,9 @@ service cloud.firestore {
     // Adatlap az admin felülethez: név, e-mail, utolsó aktivitás, darabszámok (tartalom nélkül).
     match /profiles/{uid} {
       allow get: if isAdmin() || (realUser() && request.auth.uid == uid);
-      allow list, delete: if isAdmin();
+      allow list: if isAdmin();
+      // Fióktörléskor a felhasználó a saját adatlapját is törli.
+      allow delete: if isAdmin() || (realUser() && request.auth.uid == uid);
       allow write: if realUser() && request.auth.uid == uid && !banned()
         && request.resource.data.keys().hasOnly(['name', 'email', 'createdAt', 'lastSeen', 'platform', 'version', 'counts', 'activeDays'])
         && (!('activeDays' in request.resource.data) || request.resource.data.activeDays is list)
@@ -111,10 +113,12 @@ service cloud.firestore {
     // Barátkód → felhasználó. Aki ismeri a kódot, megnézheti; mindenki csak a sajátját hozhatja létre.
     match /codes/{code} {
       allow get: if realUser();
-      allow list, update, delete: if false;
+      allow list, update: if false;
       allow create: if realUser()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid']);
+      // Fióktörléskor a saját kód is törlődik.
+      allow delete: if realUser() && resource.data.uid == request.auth.uid;
     }
 
     // Névjegy (név, kód, és amit megoszt: sorozatok, születésnap év nélkül): saját maga és a barátai olvashatják.
@@ -128,7 +132,7 @@ service cloud.firestore {
         && request.resource.data.streaks is list && request.resource.data.streaks.size() <= 5
         && (request.resource.data.get('birthday', null) == null
           || (request.resource.data.birthday is string && request.resource.data.birthday.matches('[0-9]{2}-[0-9]{2}')));
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (realUser() && request.auth.uid == uid);
     }
 
     // Elérhetőség: csak foglalt időszakok (cím nélkül) és „mikor szoktam ráérni” sávok.
