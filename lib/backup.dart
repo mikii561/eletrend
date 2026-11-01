@@ -1,7 +1,12 @@
+import 'l10n/l10n.dart';
+
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import 'l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import 'store.dart';
@@ -50,8 +55,11 @@ class Backup {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            'Visszatöltve: ${store.events.length} bejegyzés, ${store.tasks.length} feladat, '
-            '${store.habits.length} cél.',
+            trf('Visszatöltve: {0} bejegyzés, {1} feladat, {2} cél.', [
+              store.events.length,
+              store.tasks.length,
+              store.habits.length,
+            ]),
           ),
         ),
       );

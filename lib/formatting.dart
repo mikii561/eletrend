@@ -1,6 +1,8 @@
 /// Dátumok, időtartamok és ismétlődések magyar kiírása.
 library;
 
+import 'l10n/l10n.dart';
+
 import 'package:intl/intl.dart';
 
 import 'models.dart';
@@ -25,7 +27,7 @@ String formatDay(DateTime d, {DateTime? now, bool short = false}) {
 String formatRange(DateTime start, DateTime end, {bool allDay = false}) {
   if (allDay) {
     final last = end.subtract(const Duration(minutes: 1));
-    return sameDay(start, last) ? 'Egész nap' : '${_dayShort.format(start)} – ${_dayShort.format(last)}';
+    return sameDay(start, last) ? tr('Egész nap') : '${_dayShort.format(start)} – ${_dayShort.format(last)}';
   }
   if (sameDay(start, end) || (end.hour == 0 && end.minute == 0 && end.difference(start).inHours < 24)) {
     return '${formatTime(start)}–${formatTime(end)}';
@@ -37,18 +39,18 @@ String formatRange(DateTime start, DateTime end, {bool allDay = false}) {
 String formatDuration(int minutes) {
   if (minutes < 60) return '$minutes perc';
   final h = minutes ~/ 60, m = minutes % 60;
-  return m == 0 ? '$h óra' : '$h óra $m perc';
+  return m == 0 ? trf('{0} óra', [h]) : trf('{0} óra {1} perc', [h, m]);
 }
 
 /// „minden csütörtökön” alakhoz: hétfőnként, keddenként…
-String weekdayEvery(int weekday) => const [
-  'hétfőnként',
-  'keddenként',
-  'szerdánként',
-  'csütörtökönként',
-  'péntekenként',
-  'szombatonként',
-  'vasárnaponként',
+String weekdayEvery(int weekday) => [
+  tr('hétfőnként'),
+  tr('keddenként'),
+  tr('szerdánként'),
+  tr('csütörtökönként'),
+  tr('péntekenként'),
+  tr('szombatonként'),
+  tr('vasárnaponként'),
 ][weekday - 1];
 
 /// Az ismétlődés olvasható leírása, pl. „Hetente, csütörtökönként”.
@@ -56,8 +58,8 @@ String repeatLabel(Repeat repeat, DateTime start) => switch (repeat) {
   Repeat.none => '',
   Repeat.daily => 'Minden nap',
   Repeat.weekly => 'Hetente, ${weekdayEvery(start.weekday)}',
-  Repeat.biweekly => 'Kéthetente, ${weekdayEvery(start.weekday)}',
-  Repeat.monthly => 'Havonta, minden hónap ${start.day}. napján',
+  Repeat.biweekly => trf('Kéthetente, {0}', [weekdayEvery(start.weekday)]),
+  Repeat.monthly => trf('Havonta, minden hónap {0}. napján', [start.day]),
   Repeat.yearly => 'Évente, ${DateFormat('MMMM d.', 'hu').format(start)}',
 };
 
@@ -65,8 +67,8 @@ String repeatLabel(Repeat repeat, DateTime start) => switch (repeat) {
 const reminderOptions = <int?>[null, 0, 10, 30, 60, 120, 1440];
 
 String reminderLabel(int? minutes) => switch (minutes) {
-  null => 'Nincs értesítés',
-  0 => 'Amikor kezdődik',
-  1440 => '1 nappal előtte',
-  _ => '${formatDuration(minutes)}cel előtte'.replaceAll('óracel', 'órával'),
+  null => tr('Nincs értesítés'),
+  0 => tr('Amikor kezdődik'),
+  1440 => tr('1 nappal előtte'),
+  _ => trf('{0}cel előtte', [formatDuration(minutes)]).replaceAll(tr('óracel'), tr('órával')),
 };

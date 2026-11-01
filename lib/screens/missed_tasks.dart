@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../formatting.dart';
 import '../models.dart';
@@ -15,7 +19,7 @@ class MissedTasksBanner extends StatelessWidget {
   final AppStore store;
   final DateTime now;
 
-  static String countText(int n) => n == 1 ? 'Van egy elmaradt teendőd' : 'Van $n elmaradt teendőd';
+  static String countText(int n) => n == 1 ? tr('Van egy elmaradt teendőd') : trf('Van {0} elmaradt teendőd', [n]);
 
   @override
   Widget build(BuildContext context) {
@@ -68,9 +72,11 @@ class MissedTasksBanner extends StatelessWidget {
   Future<void> _discard(BuildContext context, List<TaskItem> missed) async {
     final ok = await confirm(
       context,
-      title: missed.length == 1 ? 'Töröljem ezt a teendőt?' : 'Töröljem az elmaradt teendőket?',
-      text: missed.length == 1 ? missed.first.title : '${missed.length} teendő törlődik, nem lehet visszahozni.',
-      action: 'Törlés',
+      title: missed.length == 1 ? tr('Töröljem ezt a teendőt?') : tr('Töröljem az elmaradt teendőket?'),
+      text: missed.length == 1
+          ? missed.first.title
+          : trf('{0} teendő törlődik, nem lehet visszahozni.', [missed.length]),
+      action: tr('Törlés'),
       danger: true,
     );
     if (!ok) return;
@@ -144,12 +150,12 @@ class _MissedTile extends StatelessWidget {
                   child: Text(task.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
                 IconButton(
-                  tooltip: 'Kész',
+                  tooltip: tr('Kész'),
                   icon: Icon(Icons.check_circle_outline, color: AppColors.status(AvailabilityStatus.available)),
                   onPressed: () => store.toggleTask(task),
                 ),
                 IconButton(
-                  tooltip: 'Törlés',
+                  tooltip: tr('Törlés'),
                   icon: Icon(Icons.delete_outline, color: AppColors.danger),
                   onPressed: () => store.removeTask(task),
                 ),
@@ -178,7 +184,7 @@ class _MissedTile extends StatelessWidget {
                       initial: DateTime(now.year, now.month, now.day + 1),
                       first: DateTime(now.year, now.month, now.day),
                       last: DateTime(now.year + 5, 12, 31),
-                      title: 'Melyik napra tegyük át?',
+                      title: tr('Melyik napra tegyük át?'),
                     );
                     if (picked != null) store.moveTask(task, picked);
                   },

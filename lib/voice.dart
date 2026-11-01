@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -30,13 +32,13 @@ String prepareAttachmentImage(Uint8List bytes, {String? name}) {
       (bytes.length > 3 && bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46);
   if (isGif) {
     if (bytes.length > maxAttachmentImageBytes) {
-      throw const AttachmentException('Ez a GIF túl nagy (legfeljebb kb. 450 KB lehet).');
+      throw AttachmentException(tr('Ez a GIF túl nagy (legfeljebb kb. 450 KB lehet).'));
     }
     return base64Encode(bytes);
   }
   final decoded = img.decodeImage(bytes);
   if (decoded == null) {
-    throw const AttachmentException('Ezt a képet nem tudom megnyitni. Próbálj JPG-t, PNG-t vagy GIF-et.');
+    throw AttachmentException(tr('Ezt a képet nem tudom megnyitni. Próbálj JPG-t, PNG-t vagy GIF-et.'));
   }
   final oriented = img.bakeOrientation(decoded);
   final resized = oriented.width > 800 ? img.copyResize(oriented, width: 800) : oriented;

@@ -1,7 +1,12 @@
+import '../l10n/l10n.dart';
+
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -25,7 +30,7 @@ Future<void> uploadMemoryPhotos(BuildContext context, String eventId) async {
     // A telefon/böngésző már itt kicsinyít, hogy a feldolgozás gyors legyen.
     files = await ImagePicker().pickMultiImage(maxWidth: 1600, maxHeight: 1600, imageQuality: 85, limit: 10);
   } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text('Nem sikerült megnyitni a képeket: $e')));
+    messenger.showSnackBar(SnackBar(content: Text(trf('Nem sikerült megnyitni a képeket: {0}', [e]))));
     return;
   }
   if (files.isEmpty || !context.mounted) return;
@@ -48,7 +53,7 @@ Future<void> uploadMemoryPhotos(BuildContext context, String eventId) async {
           children: [
             const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 3)),
             const SizedBox(width: 16),
-            Expanded(child: Text('Feltöltés: $done / ${files.length}')),
+            Expanded(child: Text(trf('Feltöltés: {0} / {1}', [done, files.length]))),
           ],
         ),
       ),
@@ -72,11 +77,18 @@ Future<void> uploadMemoryPhotos(BuildContext context, String eventId) async {
     progress.value++;
   }
   navigator.pop();
-  messenger.showSnackBar(SnackBar(
-    content: Text(failed == 0
-        ? 'Feltöltve: ${files.length} fotó.'
-        : '${files.length - failed} fotó feltöltve, $failed nem sikerült (túl nagy vagy nincs internet).'),
-  ));
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        failed == 0
+            ? trf('Feltöltve: {0} fotó.', [files.length])
+            : trf('{0} fotó feltöltve, {1} nem sikerült (túl nagy vagy nincs internet).', [
+                files.length - failed,
+                failed,
+              ]),
+      ),
+    ),
+  );
 }
 
 class _UploadOptions extends StatefulWidget {
@@ -101,9 +113,12 @@ class _UploadOptionsState extends State<_UploadOptions> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('${widget.count} fotó feltöltése', style: Theme.of(context).textTheme.titleLarge),
+            Text(trf('{0} fotó feltöltése', [widget.count]), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
-            Text('Ki láthatja?', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+            Text(
+              'Ki láthatja?',
+              style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600),
+            ),
             RadioGroup<PhotoAudience>(
               groupValue: _audience,
               onChanged: (v) => setState(() => _audience = v ?? _audience),
@@ -165,14 +180,21 @@ class _MemoryStripState extends State<MemoryStrip> {
                     children: [
                       Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
                       const SizedBox(height: 2),
-                      Text('Fotó', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                      Text(
+                        'Fotó',
+                        style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
                 ),
               if (snap.hasError)
-                Center(child: Text('  A fotók nem töltődtek be.', style: TextStyle(color: AppColors.textMuted))),
+                Center(
+                  child: Text('  A fotók nem töltődtek be.', style: TextStyle(color: AppColors.textMuted)),
+                ),
               if (!snap.hasError && photos.isEmpty && snap.hasData)
-                Center(child: Text('  Még nincs fotó. Oszd meg az elsőt!', style: TextStyle(color: AppColors.textMuted))),
+                Center(
+                  child: Text('  Még nincs fotó. Oszd meg az elsőt!', style: TextStyle(color: AppColors.textMuted)),
+                ),
               for (final p in photos.take(12))
                 _Tile(
                   onTap: widget.onOpen,
@@ -253,7 +275,11 @@ class _MemoryScreenState extends State<MemoryScreen> {
       appBar: AppBar(
         title: const Text('Emlékek'),
         actions: [
-          IconButton(tooltip: 'Hogyan működik?', icon: const Icon(Icons.help_outline), onPressed: () => showMemoriesExample(context)),
+          IconButton(
+            tooltip: tr('Hogyan működik?'),
+            icon: const Icon(Icons.help_outline),
+            onPressed: () => showMemoriesExample(context),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -269,24 +295,26 @@ class _MemoryScreenState extends State<MemoryScreen> {
               contentPadding: const EdgeInsets.all(16),
               leading: IconTile(Icons.photo_library_outlined, color: AppColors.category(EventCategory.shared)),
               title: Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
-              subtitle: Text([
-                if (past) agoLabel(widget.start, now),
-                DateFormat('yyyy. MMMM d., EEEE', 'hu').format(widget.start),
-                if (widget.place.isNotEmpty) widget.place,
-              ].join(' · ')),
+              subtitle: Text(
+                [
+                  if (past) agoLabel(widget.start, now),
+                  DateFormat('yyyy. MMMM d., EEEE', 'hu').format(widget.start),
+                  if (widget.place.isNotEmpty) widget.place,
+                ].join(' · '),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           StreamBuilder<List<MemoryPhoto>>(
             stream: _photos,
             builder: (context, snap) {
-              if (snap.hasError) return const ErrorState(text: 'A fotók nem töltődtek be. Van internet?');
+              if (snap.hasError) return ErrorState(text: tr('A fotók nem töltődtek be. Van internet?'));
               if (!snap.hasData) return const LoadingState();
               final photos = snap.data!;
               if (photos.isEmpty) {
-                return const EmptyState(
+                return EmptyState(
                   emoji: '📸',
-                  text: 'Még nincs fotó erről a programról.\nTölts fel párat, és a résztvevők is láthatják.',
+                  text: tr('Még nincs fotó erről a programról.\nTölts fel párat, és a résztvevők is láthatják.'),
                 );
               }
               return GridView.count(
@@ -298,9 +326,11 @@ class _MemoryScreenState extends State<MemoryScreen> {
                 children: [
                   for (final p in photos)
                     GestureDetector(
-                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => _PhotoViewer(eventId: widget.eventId, photo: p, ownerUid: widget.ownerUid),
-                      )),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => _PhotoViewer(eventId: widget.eventId, photo: p, ownerUid: widget.ownerUid),
+                        ),
+                      ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
                         child: Image.memory(p.thumbBytes, fit: BoxFit.cover, gaplessPlayback: true),
@@ -361,9 +391,15 @@ class _PhotoViewerState extends State<_PhotoViewer> {
               RadioGroup<PhotoAudience>(
                 groupValue: audience,
                 onChanged: (v) => setSheet(() => audience = v ?? audience),
-                child: Column(children: [for (final a in PhotoAudience.values) RadioListTile(value: a, title: Text(a.label))]),
+                child: Column(
+                  children: [for (final a in PhotoAudience.values) RadioListTile(value: a, title: Text(a.label))],
+                ),
               ),
-              SwitchListTile(title: const Text('Mások is letölthetik'), value: download, onChanged: (v) => setSheet(() => download = v)),
+              SwitchListTile(
+                title: const Text('Mások is letölthetik'),
+                value: download,
+                onChanged: (v) => setSheet(() => download = v),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Mentés')),
@@ -383,7 +419,7 @@ class _PhotoViewerState extends State<_PhotoViewer> {
   }
 
   Future<void> _delete() async {
-    if (!await confirm(context, title: 'Törlöd a fotót?', action: 'Törlés', danger: true)) return;
+    if (!await confirm(context, title: tr('Törlöd a fotót?'), action: tr('Törlés'), danger: true)) return;
     try {
       await Memories.instance.delete(widget.eventId, widget.photo.id);
       if (mounted) Navigator.pop(context);
@@ -404,10 +440,13 @@ class _PhotoViewerState extends State<_PhotoViewer> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: Text(mine ? (store.myName.isEmpty ? 'Te' : store.myName) : p.name, style: const TextStyle(color: Colors.white, fontSize: 18)),
+        title: Text(
+          mine ? (store.myName.isEmpty ? 'Te' : store.myName) : p.name,
+          style: const TextStyle(color: Colors.white, fontSize: 18),
+        ),
         actions: [
-          if (mine) IconButton(tooltip: 'Ki láthatja?', icon: const Icon(Icons.lock_outline), onPressed: _settings),
-          if (canDelete) IconButton(tooltip: 'Törlés', icon: const Icon(Icons.delete_outline), onPressed: _delete),
+          if (mine) IconButton(tooltip: tr('Ki láthatja?'), icon: const Icon(Icons.lock_outline), onPressed: _settings),
+          if (canDelete) IconButton(tooltip: tr('Törlés'), icon: const Icon(Icons.delete_outline), onPressed: _delete),
         ],
       ),
       body: FutureBuilder<Uint8List?>(
@@ -436,7 +475,7 @@ class _PhotoViewerState extends State<_PhotoViewer> {
                         child: Text(
                           [
                             if (p.at != null) formatDay(p.at!),
-                            if (p.audience == PhotoAudience.going) 'csak a résztvevőknek',
+                            if (p.audience == PhotoAudience.going) tr('csak a résztvevőknek'),
                           ].join(' · '),
                           style: const TextStyle(color: Colors.white70),
                         ),

@@ -1,4 +1,9 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../models.dart';
@@ -50,7 +55,7 @@ class _HabitHistoryScreenState extends State<HabitHistoryScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              IconButton(tooltip: 'Előző', icon: const Icon(Icons.chevron_left), onPressed: () => _shift(-1)),
+              IconButton(tooltip: tr('Előző'), icon: const Icon(Icons.chevron_left), onPressed: () => _shift(-1)),
               Expanded(
                 child: Text(
                   _year ? '${_month.year}' : DateFormat('y. MMMM', 'hu').format(_month),
@@ -59,7 +64,7 @@ class _HabitHistoryScreenState extends State<HabitHistoryScreen> {
                 ),
               ),
               IconButton(
-                tooltip: 'Következő',
+                tooltip: tr('Következő'),
                 icon: const Icon(Icons.chevron_right),
                 onPressed: isCurrent ? null : () => _shift(1),
               ),
@@ -137,7 +142,7 @@ class _Stats extends StatelessWidget {
         weeks++;
         if (habit.doneInWeek(m) >= habit.perWeek!) met++;
       }
-      rate = '$met/$weeks hét';
+      rate = trf('{0}/{1} hét', [met, weeks]);
     } else {
       rate = elapsed == 0 ? '–' : '${(done * 100 / elapsed).round()}%';
     }
@@ -145,8 +150,8 @@ class _Stats extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _Stat(value: '$done', label: 'nap kész'),
-          _Stat(value: rate, label: habit.isWeekly ? 'heti cél' : 'teljesítés'),
+          _Stat(value: '$done', label: tr('nap kész')),
+          _Stat(value: rate, label: habit.isWeekly ? tr('heti cél') : tr('teljesítés')),
           _Stat(value: '${habit.streak()}', label: 'sorozat'),
           _Stat(value: '${habit.longestStreak()}', label: 'rekord'),
         ],

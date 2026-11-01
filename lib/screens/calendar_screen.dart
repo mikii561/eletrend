@@ -1,7 +1,12 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../formatting.dart';
@@ -52,21 +57,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   /// A megjelenített időszak azonosítója; ha változik, az új tartalom becsúszik.
   String get _periodKey => switch (_view) {
-        CalendarView.day => 'nap-${dayKey(_focus)}',
-        CalendarView.week => 'het-${dayKey(_monday(_focus))}',
-        CalendarView.month => 'ho-${_focus.year}-${_focus.month}',
-        CalendarView.list => 'lista-${dayKey(_focus)}',
-      };
+    CalendarView.day => 'nap-${dayKey(_focus)}',
+    CalendarView.week => 'het-${dayKey(_monday(_focus))}',
+    CalendarView.month => 'ho-${_focus.year}-${_focus.month}',
+    CalendarView.list => 'lista-${dayKey(_focus)}',
+  };
 
   /// Előre/hátra a nézetnek megfelelő lépéssel.
   void _step(int dir) => setState(() {
-        _dir = dir;
-        _focus = switch (_view) {
-          CalendarView.day => DateTime(_focus.year, _focus.month, _focus.day + dir),
-          CalendarView.week || CalendarView.list => DateTime(_focus.year, _focus.month, _focus.day + 7 * dir),
-          CalendarView.month => DateTime(_focus.year, _focus.month + dir, 1),
-        };
-      });
+    _dir = dir;
+    _focus = switch (_view) {
+      CalendarView.day => DateTime(_focus.year, _focus.month, _focus.day + dir),
+      CalendarView.week || CalendarView.list => DateTime(_focus.year, _focus.month, _focus.day + 7 * dir),
+      CalendarView.month => DateTime(_focus.year, _focus.month + dir, 1),
+    };
+  });
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -125,12 +130,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: 'Google Naptár',
+            tooltip: tr('Google Naptár'),
             icon: Icon(store.googleConnected ? Icons.sync : Icons.add_link),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GoogleCalendarScreen())),
+            onPressed: () =>
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const GoogleCalendarScreen())),
           ),
-          IconButton(tooltip: 'Előző', icon: const Icon(Icons.chevron_left), onPressed: () => _step(-1)),
-          IconButton(tooltip: 'Következő', icon: const Icon(Icons.chevron_right), onPressed: () => _step(1)),
+          IconButton(tooltip: tr('Előző'), icon: const Icon(Icons.chevron_left), onPressed: () => _step(-1)),
+          IconButton(tooltip: tr('Következő'), icon: const Icon(Icons.chevron_right), onPressed: () => _step(1)),
           TextButton(
             onPressed: () => setState(() {
               _dir = 0;
@@ -157,7 +163,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        tooltip: 'Új bejegyzés',
+        tooltip: tr('Új bejegyzés'),
         onPressed: () => _create(),
         child: const Icon(Icons.add),
       ),
@@ -178,7 +184,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
             final dx = _dir == 0 ? 0.0 : (incoming ? 0.08 * _dir : -0.08 * _dir);
             return FadeTransition(
               opacity: animation,
-              child: SlideTransition(position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation), child: child),
+              child: SlideTransition(
+                position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+                child: child,
+              ),
             );
           },
           child: KeyedSubtree(
@@ -423,7 +432,11 @@ class _TimelineState extends State<_Timeline> {
                           label: 'Most: ${formatTime(now)}',
                           child: Row(
                             children: [
-                              Container(width: 8, height: 8, decoration: BoxDecoration(color: _nowColor, shape: BoxShape.circle)),
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(color: _nowColor, shape: BoxShape.circle),
+                              ),
                               Expanded(child: Container(height: 2, color: _nowColor)),
                             ],
                           ),
@@ -698,7 +711,10 @@ class _DayView extends StatelessWidget {
                 if (unscheduled.length > 4)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                    child: Text('és még ${unscheduled.length - 4}', style: TextStyle(color: AppColors.textMuted)),
+                    child: Text(
+                      trf('és még {0}', [unscheduled.length - 4]),
+                      style: TextStyle(color: AppColors.textMuted),
+                    ),
                   ),
               ],
             ),
@@ -920,7 +936,7 @@ class _ListView extends StatelessWidget {
     if (sections.isEmpty) {
       return ListView(
         padding: const EdgeInsets.all(16),
-        children: const [EmptyState(emoji: '🗓️', text: 'A következő 60 napban nincs semmi a naptáradban.')],
+        children: [EmptyState(emoji: '🗓️', text: tr('A következő 60 napban nincs semmi a naptáradban.'))],
       );
     }
     return ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 96), children: sections);

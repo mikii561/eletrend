@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:math';
 
@@ -179,18 +181,18 @@ class Friends {
   /// Be van-e kapcsolódva (bejelentkezett felhasználóval).
   bool get ready => _uid != null;
 
-  String get _me => _uid ?? (throw const FriendException('Előbb jelentkezz be.'));
+  String get _me => _uid ?? (throw FriendException(tr('Előbb jelentkezz be.')));
 
   /// Barátjelölés kóddal.
   Future<String> addByCode(String code) async {
     final clean = code.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
-    if (clean.length != 6) throw const FriendException('A kód 6 karakterből áll.');
-    if (clean == myCode) throw const FriendException('Ez a saját kódod. 🙂');
+    if (clean.length != 6) throw FriendException(tr('A kód 6 karakterből áll.'));
+    if (clean == myCode) throw FriendException(tr('Ez a saját kódod. 🙂'));
     final target = await _db.collection('codes').doc(clean).get();
-    if (!target.exists) throw const FriendException('Nincs ilyen kód. Nézd meg, jól írtad-e be.');
+    if (!target.exists) throw FriendException(tr('Nincs ilyen kód. Nézd meg, jól írtad-e be.'));
     final uid = target.data()!['uid'] as String;
     if ((await _db.collection('friendships').doc(_me).collection('list').doc(uid).get()).exists) {
-      throw const FriendException('Ő már a barátod.');
+      throw FriendException(tr('Ő már a barátod.'));
     }
     await _db.collection('requests').doc(uid).collection('items').doc(_me).set({
       'fromName': _store!.myName,

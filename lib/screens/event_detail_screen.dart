@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -169,7 +174,7 @@ class EventDetailScreen extends StatelessWidget {
         return;
       }
     } else if (!context.mounted ||
-        !await confirm(context, title: 'Törlöd?', text: e.title, action: 'Törlés', danger: true)) {
+        !await confirm(context, title: tr('Törlöd?'), text: e.title, action: tr('Törlés'), danger: true)) {
       return;
     }
     // A közös példányt is töröljük, ha én szerveztem (ha nincs internet, a felhőben marad, de nem baj).
@@ -190,7 +195,7 @@ class EventDetailScreen extends StatelessWidget {
         appBar: AppBar(),
         body: ListView(
           padding: const EdgeInsets.all(16),
-          children: const [EmptyState(emoji: '🗓️', text: 'Ez a bejegyzés már nem létezik.')],
+          children: [EmptyState(emoji: '🗓️', text: tr('Ez a bejegyzés már nem létezik.'))],
         ),
       );
     }
@@ -204,13 +209,13 @@ class EventDetailScreen extends StatelessWidget {
         actions: [
           if (!joined && !external)
             IconButton(
-              tooltip: 'Szerkesztés',
+              tooltip: tr('Szerkesztés'),
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EventEditor(existing: e))),
             ),
           if (!external)
             IconButton(
-              tooltip: joined ? 'Kiveszem a naptáramból' : 'Törlés',
+              tooltip: joined ? tr('Kiveszem a naptáramból') : tr('Törlés'),
               icon: const Icon(Icons.delete_outline),
               onPressed: () => _delete(context, e, occurrence),
             ),
@@ -238,7 +243,7 @@ class EventDetailScreen extends StatelessWidget {
             runSpacing: 6,
             children: [
               if (external)
-                Pill('Google Naptárból', color: AppColors.ofEvent(e), icon: Icons.calendar_month_outlined)
+                Pill(tr('Google Naptárból'), color: AppColors.ofEvent(e), icon: Icons.calendar_month_outlined)
               else ...[
                 Pill(e.category.label, color: AppColors.ofEvent(e), icon: categoryIcon(e.category)),
                 Pill(reminderLabel(e.reminderMin), color: AppColors.textMuted, icon: Icons.notifications_none),
@@ -258,7 +263,7 @@ class EventDetailScreen extends StatelessWidget {
           else if (e.shareId != null)
             SharedEventSection(shareId: e.shareId!, ownEvent: joined ? null : e)
           else ...[
-            const SectionTitle('Barátokkal'),
+            SectionTitle(tr('Barátokkal')),
             Card(
               child: ListTile(
                 leading: IconTile(Icons.group_add_outlined, color: AppColors.category(EventCategory.shared)),

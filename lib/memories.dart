@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
@@ -74,9 +76,7 @@ class MemoryException implements Exception {
 /// előnézeteket töltse le. A képek a Firestore-ban vannak, összenyomva (a Firebase Storage
 /// fizetős csomagot kérne), ezért egy kép legfeljebb kb. 700 KB lehet.
 class Memories {
-  Memories({FirebaseFirestore? db, FirebaseAuth? auth})
-      : _dbOverride = db,
-        _authOverride = auth;
+  Memories({FirebaseFirestore? db, FirebaseAuth? auth}) : _dbOverride = db, _authOverride = auth;
 
   static Memories instance = Memories();
 
@@ -96,10 +96,14 @@ class Memories {
   /// Kép előkészítése: legfeljebb 1600 px, JPEG; plusz egy 320 px-es előnézet.
   static ({Uint8List full, Uint8List thumb}) prepare(Uint8List bytes) {
     final decoded = img.decodeImage(bytes);
-    if (decoded == null) throw const MemoryException('Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.');
+    if (decoded == null) throw MemoryException(tr('Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.'));
     final oriented = img.bakeOrientation(decoded);
     final big = oriented.width > 1600 || oriented.height > 1600
-        ? img.copyResize(oriented, width: oriented.width >= oriented.height ? 1600 : null, height: oriented.height > oriented.width ? 1600 : null)
+        ? img.copyResize(
+            oriented,
+            width: oriented.width >= oriented.height ? 1600 : null,
+            height: oriented.height > oriented.width ? 1600 : null,
+          )
         : oriented;
     var quality = 78;
     var full = Uint8List.fromList(img.encodeJpg(big, quality: quality));
@@ -109,8 +113,12 @@ class Memories {
       final smaller = img.copyResize(big, width: (big.width * 0.8).round());
       full = Uint8List.fromList(img.encodeJpg(smaller, quality: quality));
     }
-    if (full.length > maxBytes) throw const MemoryException('Ez a kép túl nagy.');
-    final small = img.copyResize(oriented, width: oriented.width >= oriented.height ? 320 : null, height: oriented.height > oriented.width ? 320 : null);
+    if (full.length > maxBytes) throw MemoryException(tr('Ez a kép túl nagy.'));
+    final small = img.copyResize(
+      oriented,
+      width: oriented.width >= oriented.height ? 320 : null,
+      height: oriented.height > oriented.width ? 320 : null,
+    );
     return (full: full, thumb: Uint8List.fromList(img.encodeJpg(small, quality: 60)));
   }
 
@@ -128,7 +136,10 @@ class Memories {
     final subs = <StreamSubscription<void>>[];
     void emit() {
       if (latest.any((l) => l == null)) return;
-      final byId = {for (final list in latest) for (final p in list!) p.id: p};
+      final byId = {
+        for (final list in latest)
+          for (final p in list!) p.id: p,
+      };
       final list = byId.values.toList()..sort((a, b) => (a.at ?? DateTime(3000)).compareTo(b.at ?? DateTime(3000)));
       controller.add(list);
     }
@@ -136,10 +147,12 @@ class Memories {
     controller = StreamController<List<MemoryPhoto>>(
       onListen: () {
         for (var i = 0; i < queries.length; i++) {
-          subs.add(queries[i].snapshots().listen((q) {
-            latest[i] = [for (final d in q.docs) MemoryPhoto.fromDoc(d)];
-            emit();
-          }, onError: controller.addError));
+          subs.add(
+            queries[i].snapshots().listen((q) {
+              latest[i] = [for (final d in q.docs) MemoryPhoto.fromDoc(d)];
+              emit();
+            }, onError: controller.addError),
+          );
         }
       },
       onCancel: () async {
@@ -160,7 +173,7 @@ class Memories {
     PhotoAudience audience = PhotoAudience.all,
     bool allowDownload = true,
   }) async {
-    final me = uid ?? (throw const MemoryException('Előbb jelentkezz be.'));
+    final me = uid ?? (throw MemoryException(tr('Előbb jelentkezz be.')));
     final id = newId();
     // Előbb a teljes kép, hogy a listában ne jelenjen meg olyan, aminek nincs képe.
     await _data(eventId).doc(id).set({'uid': me, 'audience': audience.name, 'data': base64Encode(full)});
@@ -187,7 +200,12 @@ class Memories {
   }
 
   /// Ki láthatja és letöltheti (csak a feltöltő módosíthatja).
-  Future<void> update(String eventId, MemoryPhoto photo, {required PhotoAudience audience, required bool allowDownload}) async {
+  Future<void> update(
+    String eventId,
+    MemoryPhoto photo, {
+    required PhotoAudience audience,
+    required bool allowDownload,
+  }) async {
     await _photos(eventId).doc(photo.id).update({'audience': audience.name, 'allowDownload': allowDownload});
     await _data(eventId).doc(photo.id).update({'audience': audience.name});
   }
@@ -239,8 +257,8 @@ String agoLabel(DateTime then, DateTime now) {
   if (days < 7) return '$days napja';
   if (days < 30) return '${days ~/ 7} hete';
   final months = (now.year - then.year) * 12 + now.month - then.month - (now.day < then.day ? 1 : 0);
-  if (months < 12) return '${months < 1 ? 1 : months} hónapja';
-  return '${months ~/ 12} éve';
+  if (months < 12) return trf('{0} hónapja', [months < 1 ? 1 : months]);
+  return trf('{0} éve', [months ~/ 12]);
 }
 
 /// A közös programjaim közül egy emlék mára.
@@ -260,7 +278,9 @@ MemoryPick? pickMemory(List<Event> events, DateTime now) {
     final days = today.difference(d).inDays;
     final sameDayOfMonth = d.day == today.day;
     final months = (today.year - d.year) * 12 + today.month - d.month;
-    final anniversary = days == 7 || (sameDayOfMonth && (months == 1 || months == 3 || months == 6 || (months > 0 && months % 12 == 0)));
+    final anniversary =
+        days == 7 ||
+        (sameDayOfMonth && (months == 1 || months == 3 || months == 6 || (months > 0 && months % 12 == 0)));
     if (anniversary) return MemoryPick(event: e, occurredAt: e.start, ago: agoLabel(e.start, now), anniversary: true);
   }
 

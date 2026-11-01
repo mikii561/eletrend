@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -23,16 +28,16 @@ class AdminScreen extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Admin'),
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
             tabs: [
-              Tab(text: 'Áttekintés'),
-              Tab(text: 'Felhasználók'),
-              Tab(text: 'Hibák'),
-              Tab(text: 'Visszajelzések'),
+              Tab(text: tr('Áttekintés')),
+              Tab(text: tr('Felhasználók')),
+              Tab(text: tr('Hibák')),
+              Tab(text: tr('Visszajelzések')),
               Tab(text: 'Programok'),
-              Tab(text: 'Jelentések'),
+              Tab(text: tr('Jelentések')),
             ],
           ),
         ),
@@ -76,8 +81,8 @@ class _LoaderState<T> extends State<_Loader<T>> {
             children: [
               EmptyState(
                 emoji: '⚠️',
-                text: 'Nem sikerült betölteni.\n${snap.error}',
-                action: 'Újra',
+                text: trf('Nem sikerült betölteni.\n{0}', [snap.error]),
+                action: tr('Újra'),
                 onAction: _reload,
               ),
             ],
@@ -126,18 +131,18 @@ class _OverviewState extends State<_Overview> {
             Padding(
               padding: const EdgeInsets.only(left: 2),
               child: Text(
-                'A változás az előző ${_range.previousLabel} képest.',
+                trf('A változás az előző {0} képest.', [_range.previousLabel]),
                 style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ),
             const SizedBox(height: 10),
             Row(
               children: [
-                _Tile('Felhasználó', '${s.total}', delta: newUsers.total, goodWhenUp: true),
+                _Tile(tr('Felhasználó'), '${s.total}', delta: newUsers.total, goodWhenUp: true),
                 const SizedBox(width: 8),
-                _Tile('Aktív', '${active.total}', delta: active.delta, goodWhenUp: true),
+                _Tile(tr('Aktív'), '${active.total}', delta: active.delta, goodWhenUp: true),
                 const SizedBox(width: 8),
-                _Tile('Új', '${newUsers.total}', delta: newUsers.delta, goodWhenUp: true),
+                _Tile(tr('Új'), '${newUsers.total}', delta: newUsers.delta, goodWhenUp: true),
               ],
             ),
             const SizedBox(height: 8),
@@ -145,17 +150,17 @@ class _OverviewState extends State<_Overview> {
               children: [
                 _Tile('Hiba', '${errors.total}', delta: errors.delta, goodWhenUp: false),
                 const SizedBox(width: 8),
-                _Tile('Visszajelzés', '${feedback.total}', delta: feedback.delta, goodWhenUp: true),
+                _Tile(tr('Visszajelzés'), '${feedback.total}', delta: feedback.delta, goodWhenUp: true),
                 const SizedBox(width: 8),
-                _Tile('Nyitott visszajelzés', '${s.openFeedback}'),
+                _Tile(tr('Nyitott visszajelzés'), '${s.openFeedback}'),
               ],
             ),
-            const SectionTitle('Alakulás'),
-            _ChartCard('Új felhasználók', newUsers, _range),
-            _ChartCard('Aktív felhasználók', active, _range),
-            _ChartCard('Hibák száma', errors, _range, goodWhenUp: false, color: AppColors.danger),
-            _ChartCard('Beérkezett visszajelzések', feedback, _range),
-            const SectionTitle('Tartalom összesen'),
+            SectionTitle(tr('Alakulás')),
+            _ChartCard(tr('Új felhasználók'), newUsers, _range),
+            _ChartCard(tr('Aktív felhasználók'), active, _range),
+            _ChartCard(tr('Hibák száma'), errors, _range, goodWhenUp: false, color: AppColors.danger),
+            _ChartCard(tr('Beérkezett visszajelzések'), feedback, _range),
+            SectionTitle(tr('Tartalom összesen')),
             Card(
               child: Column(
                 children: [
@@ -406,14 +411,11 @@ class _UsersState extends State<_Users> {
           padding: const EdgeInsets.all(16),
           children: [
             TextField(
-              decoration: const InputDecoration(
-                hintText: 'Keresés névre vagy e-mailre',
-                prefixIcon: Icon(Icons.search),
-              ),
+              decoration: InputDecoration(hintText: tr('Keresés névre vagy e-mailre'), prefixIcon: Icon(Icons.search)),
               onChanged: (v) => setState(() => _query = v),
             ),
             const SizedBox(height: 8),
-            Text('${shown.length} felhasználó', style: TextStyle(color: AppColors.textMuted)),
+            Text(trf('{0} felhasználó', [shown.length]), style: TextStyle(color: AppColors.textMuted)),
             for (final u in shown)
               Card(
                 child: ListTile(
@@ -422,7 +424,9 @@ class _UsersState extends State<_Users> {
                     '${u.name.isEmpty ? '(névtelen)' : u.name}${u.banned ? '  ⛔' : ''}',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
-                  subtitle: Text('${u.email}\nUtoljára: ${_when(u.lastSeen)} • ${u.platform} ${u.version}'),
+                  subtitle: Text(
+                    trf('{0}\nUtoljára: {1} • {2} {3}', [u.email, _when(u.lastSeen), u.platform, u.version]),
+                  ),
                   isThreeLine: true,
                   onTap: () async {
                     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => _UserDetail(user: u)));
@@ -456,7 +460,7 @@ class _UserDetailState extends State<_UserDetail> {
       await action();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(done)));
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Nem sikerült: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(trf('Nem sikerült: {0}', [e]))));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -484,7 +488,7 @@ class _UserDetailState extends State<_UserDetail> {
   Widget build(BuildContext context) {
     final u = widget.user;
     return Scaffold(
-      appBar: AppBar(title: Text(u.name.isEmpty ? 'Felhasználó' : u.name)),
+      appBar: AppBar(title: Text(u.name.isEmpty ? tr('Felhasználó') : u.name)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -496,7 +500,7 @@ class _UserDetailState extends State<_UserDetail> {
                   title: const Text('Azonosító (UID)'),
                   subtitle: Text(u.uid),
                   trailing: IconButton(
-                    tooltip: 'Másolás',
+                    tooltip: tr('Másolás'),
                     icon: const Icon(Icons.copy),
                     onPressed: () => Clipboard.setData(ClipboardData(text: u.uid)),
                   ),
@@ -520,7 +524,7 @@ class _UserDetailState extends State<_UserDetail> {
               style: TextStyle(color: AppColors.textMuted, fontSize: 12),
             ),
           ),
-          const SectionTitle('Kezelés'),
+          SectionTitle(tr('Kezelés')),
           Card(
             child: Column(
               children: [
@@ -534,7 +538,7 @@ class _UserDetailState extends State<_UserDetail> {
                       : (on) => _run(() async {
                           await Admin.instance.setBanned(u.uid, on);
                           setState(() => _banned = on);
-                        }, on ? 'Felfüggesztve' : 'Felfüggesztés feloldva'),
+                        }, on ? tr('Felfüggesztve') : tr('Felfüggesztés feloldva')),
                 ),
                 ListTile(
                   leading: Icon(Icons.delete_forever_outlined, color: Colors.red.shade400),
@@ -543,11 +547,11 @@ class _UserDetailState extends State<_UserDetail> {
                   enabled: !_busy,
                   onTap: () async {
                     final ok = await _confirm(
-                      'Törlöd ${u.name} összes adatát?',
-                      'Naptár, feladatok, célok. Nem vonható vissza.',
+                      trf('Törlöd {0} összes adatát?', [u.name]),
+                      tr('Naptár, feladatok, célok. Nem vonható vissza.'),
                     );
                     if (!ok) return;
-                    await _run(() => Admin.instance.deleteUserData(u.uid), 'Adatok törölve');
+                    await _run(() => Admin.instance.deleteUserData(u.uid), tr('Adatok törölve'));
                   },
                 ),
               ],
@@ -638,7 +642,7 @@ class _FeedbackList extends StatelessWidget {
         if (items.isEmpty) {
           return ListView(
             padding: const EdgeInsets.all(16),
-            children: const [EmptyState(emoji: '📭', text: 'Még nincs visszajelzés.')],
+            children: [EmptyState(emoji: '📭', text: tr('Még nincs visszajelzés.'))],
           );
         }
         return ListView(
@@ -667,7 +671,7 @@ class _FeedbackList extends StatelessWidget {
                             for (final (i, image) in f.images.indexed)
                               Semantics(
                                 button: true,
-                                label: '${i + 1}. képernyőkép megnyitása',
+                                label: trf('{0}. képernyőkép megnyitása', [i + 1]),
                                 child: GestureDetector(
                                   onTap: () => _showScreenshot(context, base64Decode(image)),
                                   child: ClipRRect(
@@ -687,10 +691,10 @@ class _FeedbackList extends StatelessWidget {
                               await Admin.instance.setFeedbackDone(f.id, !f.done);
                               reload();
                             },
-                            child: Text(f.done ? 'Újranyitás' : 'Kész'),
+                            child: Text(f.done ? tr('Újranyitás') : tr('Kész')),
                           ),
                           IconButton(
-                            tooltip: 'Törlés',
+                            tooltip: tr('Törlés'),
                             icon: const Icon(Icons.delete_outline),
                             onPressed: () async {
                               await Admin.instance.deleteFeedback(f.id);
@@ -733,7 +737,7 @@ class _SharedEvents extends StatelessWidget {
                   title: Text(e['title'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
                   subtitle: Text('Szervező: ${e['ownerName'] ?? '?'} • ${e['date'] ?? ''}'),
                   trailing: IconButton(
-                    tooltip: 'Törlés (moderálás)',
+                    tooltip: tr('Törlés (moderálás)'),
                     icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
                     onPressed: () async {
                       final ok = await showDialog<bool>(
@@ -774,7 +778,7 @@ class _Reports extends StatelessWidget {
         if (reports.isEmpty) {
           return ListView(
             padding: const EdgeInsets.all(16),
-            children: const [EmptyState(emoji: '🚩', text: 'Nincs jelentés.')],
+            children: [EmptyState(emoji: '🚩', text: tr('Nincs jelentés.'))],
           );
         }
         return ListView(
@@ -784,16 +788,16 @@ class _Reports extends StatelessWidget {
               Card(
                 child: ListTile(
                   leading: const IconTile(Icons.flag_outlined),
-                  title: Text(r.reason.isEmpty ? '(indoklás nélkül)' : r.reason),
+                  title: Text(r.reason.isEmpty ? tr('(indoklás nélkül)') : r.reason),
                   subtitle: SelectableText(
                     [
-                      if (r.userUid != null) 'Felhasználó: ${r.userUid}',
+                      if (r.userUid != null) trf('Felhasználó: {0}', [r.userUid]),
                       if (r.eventId != null) 'Program: ${r.eventId}',
-                      'Bejelentő: ${r.reporterUid} • ${_when(r.at)}',
+                      trf('Bejelentő: {0} • {1}', [r.reporterUid, _when(r.at)]),
                     ].join('\n'),
                   ),
                   trailing: IconButton(
-                    tooltip: 'Kezelve (törlés)',
+                    tooltip: tr('Kezelve (törlés)'),
                     icon: const Icon(Icons.done),
                     onPressed: () async {
                       await Admin.instance.deleteReport(r.id);
@@ -821,7 +825,7 @@ Future<void> _showScreenshot(BuildContext context, Uint8List bytes) => showDialo
           right: 4,
           top: 4,
           child: IconButton.filledTonal(
-            tooltip: 'Bezárás',
+            tooltip: tr('Bezárás'),
             icon: const Icon(Icons.close),
             onPressed: () => Navigator.pop(context),
           ),

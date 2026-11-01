@@ -1,7 +1,12 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -95,7 +100,9 @@ class _NudgeComposerState extends State<_NudgeComposer> {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
       if (mounted) {
-        setState(() => _error = 'Nem sikerült a képet megnyitni. Engedélyezted az appnak a kamerát vagy a képeket?');
+        setState(
+          () => _error = tr('Nem sikerült a képet megnyitni. Engedélyezted az appnak a kamerát vagy a képeket?'),
+        );
       }
     }
   }
@@ -106,11 +113,11 @@ class _NudgeComposerState extends State<_NudgeComposer> {
     final rec = VoiceRecorder();
     try {
       if (!await rec.start()) {
-        setState(() => _error = 'Nincs engedély a mikrofonhoz. Engedélyezd, és próbáld újra.');
+        setState(() => _error = tr('Nincs engedély a mikrofonhoz. Engedélyezd, és próbáld újra.'));
         return;
       }
     } catch (_) {
-      setState(() => _error = 'A hangfelvétel most nem indítható.');
+      setState(() => _error = tr('A hangfelvétel most nem indítható.'));
       return;
     }
     setState(() {
@@ -144,7 +151,7 @@ class _NudgeComposerState extends State<_NudgeComposer> {
     if (_recorder != null) await _stopRecording();
     final text = _text.text.trim();
     if (text.isEmpty && _image == null && _voice == null) {
-      if (mounted) setState(() => _error = 'Válassz egy szöveget, írj sajátot, vagy csatolj képet vagy hangot.');
+      if (mounted) setState(() => _error = tr('Válassz egy szöveget, írj sajátot, vagy csatolj képet vagy hangot.'));
       return;
     }
     setState(() {
@@ -173,7 +180,8 @@ class _NudgeComposerState extends State<_NudgeComposer> {
     setState(() => _sending = false);
     if (failed.length == widget.to.length) {
       setState(
-        () => _error = 'Nem ment ki. Lehet, hogy ma már elég bökést küldtél, kikapcsolta őket, vagy nincs internet.',
+        () =>
+            _error = tr('Nem ment ki. Lehet, hogy ma már elég bökést küldtél, kikapcsolta őket, vagy nincs internet.'),
       );
       return;
     }
@@ -181,7 +189,7 @@ class _NudgeComposerState extends State<_NudgeComposer> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          failed.isEmpty ? 'Elküldve.' : 'Elküldve, kivéve: ${failed.join(', ')} (napi keret vagy kikapcsolta).',
+          failed.isEmpty ? tr('Elküldve.') : 'Elküldve, kivéve: ${failed.join(', ')} (napi keret vagy kikapcsolta).',
         ),
       ),
     );
@@ -199,7 +207,7 @@ class _NudgeComposerState extends State<_NudgeComposer> {
               child: OutlinedButton.icon(
                 onPressed: recording ? null : _pickImage,
                 icon: const Icon(Icons.add_photo_alternate_outlined),
-                label: Text(_image == null ? 'Kép' : 'Másik kép'),
+                label: Text(_image == null ? tr('Kép') : tr('Másik kép')),
               ),
             ),
             const SizedBox(width: 8),
@@ -208,7 +216,11 @@ class _NudgeComposerState extends State<_NudgeComposer> {
                 style: recording ? OutlinedButton.styleFrom(foregroundColor: AppColors.danger) : null,
                 onPressed: _toggleRecording,
                 icon: Icon(recording ? Icons.stop_circle_outlined : Icons.mic_none),
-                label: Text(recording ? 'Leállítás ($seconds mp)' : (_voice == null ? 'Hangüzenet' : 'Új hangüzenet')),
+                label: Text(
+                  recording
+                      ? trf('Leállítás ({0} mp)', [seconds])
+                      : (_voice == null ? tr('Hangüzenet') : tr('Új hangüzenet')),
+                ),
               ),
             ),
           ],
@@ -284,20 +296,22 @@ class _NudgeComposerState extends State<_NudgeComposer> {
             controller: _text,
             maxLength: 120,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(hintText: 'Vagy írd meg a sajátodat…', errorText: _error),
+            decoration: InputDecoration(hintText: tr('Vagy írd meg a sajátodat…'), errorText: _error),
             onChanged: (_) => setState(() => _error = null),
           ),
           const SizedBox(height: 4),
           _attachments(context),
           Text(
-            'Naponta legfeljebb ${Nudges.dailyLimit} bökés mehet ugyanannak a barátnak, hogy ne legyen tolakodó.',
+            trf('Naponta legfeljebb {0} bökés mehet ugyanannak a barátnak, hogy ne legyen tolakodó.', [
+              Nudges.dailyLimit,
+            ]),
             style: TextStyle(color: AppColors.textMuted, fontSize: 12),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _sending ? null : _send,
             icon: const Icon(Icons.waving_hand_outlined),
-            label: Text(_sending ? 'Küldés…' : 'Bökés küldése'),
+            label: Text(_sending ? tr('Küldés…') : tr('Bökés küldése')),
           ),
         ],
       ),
@@ -331,9 +345,9 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
               stream: Nudges.instance.watchAll(),
               builder: (context, snap) {
                 if (snap.hasError) {
-                  return const Padding(
+                  return Padding(
                     padding: EdgeInsets.all(16),
-                    child: ErrorState(text: 'Nem töltődtek be. Van internet?'),
+                    child: ErrorState(text: tr('Nem töltődtek be. Van internet?')),
                   );
                 }
                 if (!snap.hasData) return const Center(child: LoadingState());
@@ -341,7 +355,7 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
                 if (list.isEmpty) {
                   return ListView(
                     padding: const EdgeInsets.all(16),
-                    children: const [EmptyState(emoji: '👋', text: 'Még nem bökött meg senki.')],
+                    children: [EmptyState(emoji: '👋', text: tr('Még nem bökött meg senki.'))],
                   );
                 }
                 return ListView(
@@ -363,7 +377,9 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
                                 )
                               : Text(n.emoji, style: const TextStyle(fontSize: 26)),
                           title: Text(
-                            n.text.isNotEmpty ? n.text : (n.image != null ? 'Képet küldött' : 'Hangüzenetet küldött'),
+                            n.text.isNotEmpty
+                                ? n.text
+                                : (n.image != null ? tr('Képet küldött') : tr('Hangüzenetet küldött')),
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           subtitle: Text(
@@ -371,12 +387,12 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
                               n.fromName,
                               if (n.at != null) DateFormat('MMM d. HH:mm', 'hu').format(n.at!),
                               if (n.eventTitle != null) n.eventTitle!,
-                              if (n.audio != null) '🎙️ hangüzenet',
+                              if (n.audio != null) tr('🎙️ hangüzenet'),
                             ].join(' · '),
                           ),
                           onTap: () => openNudge(context, n),
                           trailing: IconButton(
-                            tooltip: 'Törlés',
+                            tooltip: tr('Törlés'),
                             icon: const Icon(Icons.close),
                             onPressed: () => Nudges.instance.delete(n.id),
                           ),
@@ -455,7 +471,7 @@ class NudgeDetailScreen extends StatelessWidget {
               onPressed: () =>
                   Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => InviteScreen(eventId: eventId))),
               icon: const Icon(Icons.event_outlined),
-              label: Text(n.eventTitle == null ? 'Program megnyitása' : 'Program: ${n.eventTitle}'),
+              label: Text(n.eventTitle == null ? tr('Program megnyitása') : 'Program: ${n.eventTitle}'),
             ),
           ],
         ],

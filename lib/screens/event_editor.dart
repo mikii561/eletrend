@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -101,13 +106,13 @@ class _EventEditorState extends State<EventEditor> {
   }
 
   Future<void> _pickStart() async {
-    final t = await pickTime(context, initial: TimeOfDay.fromDateTime(_start), title: 'Mikor kezdődik?');
+    final t = await pickTime(context, initial: TimeOfDay.fromDateTime(_start), title: tr('Mikor kezdődik?'));
     if (t != null) setState(() => _start = DateTime(_start.year, _start.month, _start.day, t.hour, t.minute));
   }
 
   /// A befejezés választásakor az időtartam változik (a kezdés marad).
   Future<void> _pickEnd() async {
-    final t = await pickTime(context, initial: TimeOfDay.fromDateTime(_end), title: 'Mikor ér véget?');
+    final t = await pickTime(context, initial: TimeOfDay.fromDateTime(_end), title: tr('Mikor ér véget?'));
     if (t == null) return;
     var end = DateTime(_start.year, _start.month, _start.day, t.hour, t.minute);
     if (!end.isAfter(_start)) end = end.add(const Duration(days: 1)); // éjfélen átnyúló
@@ -121,7 +126,7 @@ class _EventEditorState extends State<EventEditor> {
   }
 
   Future<void> _pickFriends() async {
-    final picked = await showFriendPicker(context, action: 'Kész', initial: {..._invite});
+    final picked = await showFriendPicker(context, action: tr('Kész'), initial: {..._invite});
     if (picked == null) return;
     setState(
       () => _invite
@@ -145,9 +150,9 @@ class _EventEditorState extends State<EventEditor> {
     final limitText = _limit.text.trim();
     final limit = limitText.isEmpty ? null : int.tryParse(limitText);
     setState(() {
-      _titleError = title.isEmpty ? 'Adj neki címet.' : null;
+      _titleError = title.isEmpty ? tr('Adj neki címet.') : null;
       _limitError = limitText.isNotEmpty && (limit == null || limit < 2 || limit > 500)
-          ? '2 és 500 közötti szám legyen.'
+          ? tr('2 és 500 közötti szám legyen.')
           : null;
     });
     if (_titleError != null || _limitError != null) return;
@@ -192,13 +197,15 @@ class _EventEditorState extends State<EventEditor> {
     final color = _color != null ? Color(_color!) : AppColors.category(_category);
     final social = widget.social || _invite.isNotEmpty || _e?.shareId != null;
     return Scaffold(
-      appBar: AppBar(title: Text(_e == null ? (widget.social ? 'Közös program' : 'Új bejegyzés') : 'Szerkesztés')),
+      appBar: AppBar(
+        title: Text(_e == null ? (widget.social ? tr('Közös program') : tr('Új bejegyzés')) : tr('Szerkesztés')),
+      ),
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           child: FilledButton(
             onPressed: _saving ? null : _save,
-            child: Text(_saving ? 'Mentés…' : (_invite.isNotEmpty ? 'Mentés és meghívás' : 'Mentés')),
+            child: Text(_saving ? tr('Mentés…') : (_invite.isNotEmpty ? tr('Mentés és meghívás') : tr('Mentés'))),
           ),
         ),
       ),
@@ -212,7 +219,7 @@ class _EventEditorState extends State<EventEditor> {
             maxLength: 100,
             style: Theme.of(context).textTheme.titleMedium,
             decoration: InputDecoration(
-              hintText: widget.social ? 'Mi a program? (pl. Mozi, foci, vacsora)' : 'Cím (pl. Fogorvos, Edzés)',
+              hintText: widget.social ? 'Mi a program? (pl. Mozi, foci, vacsora)' : tr('Cím (pl. Fogorvos, Edzés)'),
               prefixIcon: Icon(categoryIcon(_category), color: color),
               errorText: _titleError,
               counterText: '',
@@ -271,7 +278,7 @@ class _EventEditorState extends State<EventEditor> {
                       Expanded(
                         child: ListTile(
                           title: Text(formatTime(_end)),
-                          subtitle: Text('Vége · ${formatDuration(_duration)}'),
+                          subtitle: Text(trf('Vége · {0}', [formatDuration(_duration)])),
                           onTap: _pickEnd,
                         ),
                       ),
@@ -321,13 +328,13 @@ class _EventEditorState extends State<EventEditor> {
                 ListTile(
                   leading: const Icon(Icons.location_on_outlined),
                   title: Text(
-                    _place?.name ?? 'Helyszín',
+                    _place?.name ?? tr('Helyszín'),
                     style: TextStyle(color: _place == null ? AppColors.textMuted : null),
                   ),
                   trailing: _place == null
                       ? const Icon(Icons.map_outlined)
                       : IconButton(
-                          tooltip: 'Helyszín törlése',
+                          tooltip: tr('Helyszín törlése'),
                           icon: const Icon(Icons.close),
                           onPressed: () => setState(() => _place = null),
                         ),
@@ -346,8 +353,8 @@ class _EventEditorState extends State<EventEditor> {
                     maxLines: 5,
                     maxLength: 1000,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(
-                      hintText: 'Jegyzet, leírás',
+                    decoration: InputDecoration(
+                      hintText: tr('Jegyzet, leírás'),
                       prefixIcon: Icon(Icons.notes),
                       counterText: '',
                     ),
@@ -356,7 +363,7 @@ class _EventEditorState extends State<EventEditor> {
               ],
             ),
           ),
-          const SectionTitle('Megjelenés és adatvédelem'),
+          SectionTitle(tr('Megjelenés és adatvédelem')),
           Card(
             margin: EdgeInsets.zero,
             child: Column(
@@ -370,7 +377,7 @@ class _EventEditorState extends State<EventEditor> {
                       _Swatch(
                         color: AppColors.category(_category),
                         selected: _color == null,
-                        label: 'Kategória',
+                        label: tr('Kategória'),
                         onTap: () => setState(() => _color = null),
                       ),
                       for (final c in AppColors.customColors)
@@ -389,7 +396,7 @@ class _EventEditorState extends State<EventEditor> {
             ),
           ),
           if (social || Friends.instance.ready) ...[
-            const SectionTitle('Barátokkal'),
+            SectionTitle(tr('Barátokkal')),
             Card(
               margin: EdgeInsets.zero,
               child: Column(
@@ -398,7 +405,7 @@ class _EventEditorState extends State<EventEditor> {
                   ListTile(
                     leading: Icon(Icons.group_add_outlined, color: AppColors.primary),
                     title: Text(
-                      _invite.isEmpty ? 'Barátok meghívása' : 'Meghívod: ${_invite.map(store.nameOf).join(', ')}',
+                      _invite.isEmpty ? tr('Barátok meghívása') : 'Meghívod: ${_invite.map(store.nameOf).join(', ')}',
                       style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
                     subtitle: _e?.shareId != null
@@ -420,7 +427,7 @@ class _EventEditorState extends State<EventEditor> {
                         controller: _limit,
                         keyboardType: TextInputType.number,
                         decoration: InputDecoration(
-                          labelText: 'Létszámkorlát (nem kötelező)',
+                          labelText: tr('Létszámkorlát (nem kötelező)'),
                           prefixIcon: const Icon(Icons.groups_outlined),
                           errorText: _limitError,
                         ),
@@ -450,7 +457,7 @@ class _Swatch extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: label ?? 'Szín',
+      label: label ?? tr('Szín'),
       child: GestureDetector(
         onTap: onTap,
         child: Container(

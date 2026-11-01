@@ -1,5 +1,10 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/cupertino.dart' hide Text;
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../theme.dart';
@@ -51,7 +56,7 @@ Future<DateTime?> pickBirthday(BuildContext context, {DateTime? initial}) => pic
   initial: initial ?? DateTime(2000, 1, 1),
   first: DateTime(1920),
   last: DateTime.now(),
-  title: 'Mikor van a születésnapod?',
+  title: tr('Mikor van a születésnapod?'),
 );
 
 class _WheelSheet extends StatefulWidget {

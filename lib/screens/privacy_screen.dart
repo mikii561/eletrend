@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../availability.dart';
 import '../friends.dart';
@@ -36,7 +40,9 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   Future<void> _setNudgesOff(bool off) async {
     setState(() => _nudges = (off: off, muted: _nudges?.muted ?? {}));
     await Nudges.instance.setOff(off).catchError((Object e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Nem sikerült menteni: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(trf('Nem sikerült menteni: {0}', [e]))));
+      }
     });
   }
 
@@ -102,7 +108,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ),
             ),
           ),
-          const SectionTitle('Elérhetőségem'),
+          SectionTitle(tr('Elérhetőségem')),
           Card(
             child: RadioGroup<AvailabilityShare>(
               groupValue: store.shareAvailability,
@@ -146,7 +152,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ),
             ),
           ),
-          const SectionTitle('Mikor szoktam ráérni?'),
+          SectionTitle(tr('Mikor szoktam ráérni?')),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -189,7 +195,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ),
             ),
           ),
-          const SectionTitle('Meghívások és bökések'),
+          SectionTitle(tr('Meghívások és bökések')),
           Card(
             child: Column(
               children: [
@@ -201,7 +207,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 ),
                 SwitchListTile(
                   title: const Text('Bökések fogadása'),
-                  subtitle: Text('Egy barát naponta legfeljebb ${Nudges.dailyLimit}-at küldhet.'),
+                  subtitle: Text(trf('Egy barát naponta legfeljebb {0}-at küldhet.', [Nudges.dailyLimit])),
                   value: !(_nudges?.off ?? false),
                   onChanged: Nudges.instance.ready && _nudges != null ? (v) => _setNudgesOff(!v) : null,
                 ),
@@ -215,14 +221,16 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ],
             ),
           ),
-          const SectionTitle('Névjegyem'),
+          SectionTitle(tr('Névjegyem')),
           Card(
             child: Column(
               children: [
                 SwitchListTile(
                   title: const Text('Születésnapom (év nélkül)'),
                   subtitle: Text(
-                    store.birthday == null ? 'Előbb add meg a Profilban.' : 'A barátaid emlékeztetőt kaphatnak.',
+                    store.birthday == null
+                        ? tr('Előbb add meg a Profilban.')
+                        : tr('A barátaid emlékeztetőt kaphatnak.'),
                   ),
                   value: store.shareBirthday,
                   onChanged: store.birthday == null ? null : (v) => store.setPrivacy(shareBirthday: v),
@@ -236,7 +244,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ],
             ),
           ),
-          const SectionTitle('Letiltott felhasználók'),
+          SectionTitle(tr('Letiltott felhasználók')),
           StreamBuilder<Map<String, String>>(
             stream: _blocked,
             builder: (context, snap) {
@@ -322,7 +330,7 @@ class _WindowEditorState extends State<_WindowEditor> {
                     title: Text(_from.format(context)),
                     subtitle: const Text('Ettől'),
                     onTap: () async {
-                      final t = await pickTime(context, initial: _from, title: 'Ettől');
+                      final t = await pickTime(context, initial: _from, title: tr('Ettől'));
                       if (t != null) setState(() => _from = t);
                     },
                   ),
@@ -347,8 +355,8 @@ class _WindowEditorState extends State<_WindowEditor> {
                 if (_days.isEmpty || to <= from) {
                   setState(
                     () => _error = _days.isEmpty
-                        ? 'Válassz legalább egy napot.'
-                        : 'A vége legyen később, mint a kezdete.',
+                        ? tr('Válassz legalább egy napot.')
+                        : tr('A vége legyen később, mint a kezdete.'),
                   );
                   return;
                 }

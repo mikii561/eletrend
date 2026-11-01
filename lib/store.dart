@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'availability.dart';
 import 'models.dart';
-import 'l10n/l10n.dart' show AppLanguage;
+import 'l10n/l10n.dart';
 import 'theme.dart' show LightPalette;
 import 'tips.dart' show tipEveryDays;
 
@@ -376,7 +376,7 @@ class AppStore extends ChangeNotifier {
       final g = list('groups').map(FriendGroup.fromJson).toList();
       applyCloud(events: e, tasks: t, habits: h, groups: g, settings: root['settings'] as Map<String, dynamic>?);
     } catch (_) {
-      throw const FormatException('Ez nem LIFEUP-export, vagy a fájl sérült.');
+      throw FormatException(tr('Ez nem LIFEUP-export, vagy a fájl sérült.'));
     }
   }
 

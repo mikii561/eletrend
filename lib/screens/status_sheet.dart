@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../store.dart';
 import '../theme.dart';
@@ -25,8 +29,10 @@ Future<void> showStatusSheet(BuildContext context) {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
               child: Text(
                 store.shareAvailability == AvailabilityShare.nobody
-                    ? 'Most senki sem látja: az elérhetőséged megosztása ki van kapcsolva.'
-                    : 'A barátaid ezt látják ma éjfélig. Utána újra a naptárad alapján: foglalt, ha épp tart valami.',
+                    ? tr('Most senki sem látja: az elérhetőséged megosztása ki van kapcsolva.')
+                    : tr(
+                        'A barátaid ezt látják ma éjfélig. Utána újra a naptárad alapján: foglalt, ha épp tart valami.',
+                      ),
                 style: TextStyle(color: AppColors.textMuted),
               ),
             ),

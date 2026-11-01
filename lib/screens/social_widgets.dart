@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -22,9 +27,9 @@ Future<String?> ensureMyName(BuildContext context) async {
   if (store.myName.isNotEmpty) return store.myName;
   final name = await showTextInputSheet(
     context,
-    title: 'Hogy hívnak?',
-    hint: 'Így látnak a barátaid (pl. Gabi)',
-    action: 'Mentés',
+    title: tr('Hogy hívnak?'),
+    hint: tr('Így látnak a barátaid (pl. Gabi)'),
+    action: tr('Mentés'),
   );
   if (name == null || name.trim().isEmpty) return null;
   store.setMyName(name);
@@ -33,7 +38,7 @@ Future<String?> ensureMyName(BuildContext context) async {
 
 /// Hálózati hiba egységes kiírása.
 void showSocialError(BuildContext context, Object e) {
-  final text = e is SocialException || e is FriendException ? '$e' : 'Nem sikerült. Van internet? ($e)';
+  final text = e is SocialException || e is FriendException ? '$e' : trf('Nem sikerült. Van internet? ({0})', [e]);
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text, maxLines: 3)));
 }
 
@@ -95,12 +100,13 @@ class _FriendPickerState extends State<_FriendPicker> {
             children: [
               Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
               if (friends.isEmpty)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.only(top: 16),
                   child: EmptyState(
                     emoji: '👥',
-                    text:
-                        'Még nincs barátod az appban.\nA Barátok fülön add meg a kódjukat, vagy küldd el a sajátodat.',
+                    text: tr(
+                      'Még nincs barátod az appban.\nA Barátok fülön add meg a kódjukat, vagy küldd el a sajátodat.',
+                    ),
                   ),
                 ),
               if (store.groups.isNotEmpty && friends.isNotEmpty) ...[
@@ -136,7 +142,7 @@ class _FriendPickerState extends State<_FriendPicker> {
               const SizedBox(height: 12),
               FilledButton(
                 onPressed: _picked.isEmpty ? null : () => Navigator.pop(context, _picked.toList()),
-                child: Text(_picked.isEmpty ? 'Válassz barátot' : '${widget.action} (${_picked.length})'),
+                child: Text(_picked.isEmpty ? tr('Válassz barátot') : '${widget.action} (${_picked.length})'),
               ),
             ],
           ),
@@ -171,7 +177,7 @@ Future<int> inviteFriendsTo(BuildContext context, Event event, List<String> uids
       ),
     );
   } else if (sent > 0) {
-    messenger.showSnackBar(SnackBar(content: Text('Meghívtad: $sent barát.')));
+    messenger.showSnackBar(SnackBar(content: Text(trf('Meghívtad: {0} barát.', [sent]))));
   }
   return sent;
 }
@@ -318,7 +324,7 @@ class PollCard extends StatelessWidget {
                       ],
                     ),
                     subtitle: Text(
-                      voters.isEmpty ? 'Még senkinek' : '${voters.length}: ${voters.map((r) => r.name).join(', ')}',
+                      voters.isEmpty ? tr('Még senkinek') : '${voters.length}: ${voters.map((r) => r.name).join(', ')}',
                     ),
                     secondary: onChoose == null
                         ? null
@@ -363,7 +369,7 @@ class _PollEditorState extends State<_PollEditor> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (day == null || !mounted) return;
-    final time = await pickTime(context, initial: TimeOfDay.fromDateTime(base), title: 'Hánykor?');
+    final time = await pickTime(context, initial: TimeOfDay.fromDateTime(base), title: tr('Hánykor?'));
     if (time == null) return;
     final option = DateTime(day.year, day.month, day.day, time.hour, time.minute);
     if (_options.contains(option)) return;
@@ -394,7 +400,7 @@ class _PollEditorState extends State<_PollEditor> {
                   leading: Icon(Icons.event, color: AppColors.primary),
                   title: Text(formatOption(o), style: const TextStyle(fontWeight: FontWeight.w600)),
                   trailing: IconButton(
-                    tooltip: 'Eltávolítás',
+                    tooltip: tr('Eltávolítás'),
                     icon: const Icon(Icons.close),
                     onPressed: () => setState(() => _options.remove(o)),
                   ),
@@ -547,12 +553,16 @@ class _ChatPanelState extends State<ChatPanel> {
                     controller: _text,
                     maxLength: 500,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: const InputDecoration(hintText: 'Hozzászólás…', counterText: ''),
+                    decoration: InputDecoration(hintText: tr('Hozzászólás…'), counterText: ''),
                     onSubmitted: (_) => _send(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                IconButton.filled(tooltip: 'Küldés', onPressed: _sending ? null : _send, icon: const Icon(Icons.send)),
+                IconButton.filled(
+                  tooltip: tr('Küldés'),
+                  onPressed: _sending ? null : _send,
+                  icon: const Icon(Icons.send),
+                ),
               ],
             ),
           ],
@@ -579,7 +589,7 @@ class _Bubble extends StatelessWidget {
         onLongPress: onDelete == null
             ? null
             : () async {
-                final ok = await confirm(context, title: 'Törlöd a hozzászólást?', action: 'Törlés');
+                final ok = await confirm(context, title: tr('Törlöd a hozzászólást?'), action: tr('Törlés'));
                 if (ok) onDelete!();
               },
         child: Container(
@@ -661,7 +671,7 @@ class _SharedEventSectionState extends State<SharedEventSection> {
 
   Future<void> _nudge(SharedEvent shared) async {
     final store = StoreScope.of(context);
-    final picked = await showFriendPicker(context, title: 'Kit böksz meg?', action: 'Tovább');
+    final picked = await showFriendPicker(context, title: tr('Kit böksz meg?'), action: tr('Tovább'));
     if (picked == null || picked.isEmpty || !mounted) return;
     await showNudgeComposer(
       context,
@@ -691,7 +701,8 @@ class _SharedEventSectionState extends State<SharedEventSection> {
         store.saveEvent(own);
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Az időpont: ${formatOption(date)}')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(trf('Az időpont: {0}', [formatOption(date)]))));
       }
     } catch (e) {
       if (mounted) showSocialError(context, e);
@@ -726,9 +737,9 @@ class _SharedEventSectionState extends State<SharedEventSection> {
   Future<void> _report(SharedEvent shared) async {
     final reason = await showTextInputSheet(
       context,
-      title: 'Program jelentése',
+      title: tr('Program jelentése'),
       hint: 'Mi a gond vele?',
-      action: 'Jelentés',
+      action: tr('Jelentés'),
     );
     if (reason == null || !mounted) return;
     try {
@@ -745,12 +756,12 @@ class _SharedEventSectionState extends State<SharedEventSection> {
       stream: _event,
       builder: (context, eventSnap) {
         if (eventSnap.hasError) {
-          return const ErrorState(text: 'Nem sikerült betölteni a közös részt. Van internet?');
+          return ErrorState(text: tr('Nem sikerült betölteni a közös részt. Van internet?'));
         }
         if (eventSnap.connectionState == ConnectionState.waiting) return const LoadingState();
         final shared = eventSnap.data;
         if (shared == null) {
-          return const EmptyState(emoji: '🤷', text: 'Ez a közös program már nem létezik.');
+          return EmptyState(emoji: '🤷', text: tr('Ez a közös program már nem létezik.'));
         }
         final isOwner = shared.ownerUid == Social.instance.uid;
         return StreamBuilder<List<Rsvp>>(
@@ -763,7 +774,7 @@ class _SharedEventSectionState extends State<SharedEventSection> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SectionTitle(
-                  'Résztvevők',
+                  tr('Résztvevők'),
                   trailing: shared.limit == null ? '$going megy' : '$going / ${shared.limit} hely',
                 ),
                 Card(
@@ -787,29 +798,29 @@ class _SharedEventSectionState extends State<SharedEventSection> {
                       if (isOwner && widget.ownEvent != null && Friends.instance.ready)
                         _ActionTile(
                           icon: Icons.group_add_outlined,
-                          title: 'Barátok meghívása',
+                          title: tr('Barátok meghívása'),
                           onTap: _busy ? null : _invite,
                         ),
                       if (isOwner && !shared.inviteOnly)
                         _ActionTile(
                           icon: Icons.link,
-                          title: 'Meghívólink küldése',
-                          subtitle: 'Az app nélkül is visszajelezhetnek.',
+                          title: tr('Meghívólink küldése'),
+                          subtitle: tr('Az app nélkül is visszajelezhetnek.'),
                           onTap: () => shareInvite(context, shared.title, Social.instance.linkFor(shared.id)),
                         ),
                       if (Friends.instance.ready)
                         _ActionTile(
                           icon: Icons.waving_hand_outlined,
-                          title: 'Bökés a barátoknak',
-                          subtitle: 'Rövid, barátságos emlékeztető erről a programról.',
+                          title: tr('Bökés a barátoknak'),
+                          subtitle: tr('Rövid, barátságos emlékeztető erről a programról.'),
                           onTap: () => _nudge(shared),
                         ),
                     ],
                   ),
                 ),
-                const SectionTitle('Reakciók'),
+                SectionTitle(tr('Reakciók')),
                 ReactionBar(eventId: shared.id),
-                SectionTitle('Emlékek', onMore: () => _openMemories(shared)),
+                SectionTitle(tr('Emlékek'), onMore: () => _openMemories(shared)),
                 if (shared.date.isAfter(DateTime.now()))
                   Text(
                     'A program után itt oszthatjátok meg egymással a fotókat.',
@@ -829,7 +840,7 @@ class _SharedEventSectionState extends State<SharedEventSection> {
                     label: const Text('Hogyan működik? (példa)'),
                   ),
                 ),
-                if (shared.pollOpen || isOwner) const SectionTitle('Időpont-szavazás'),
+                if (shared.pollOpen || isOwner) SectionTitle(tr('Időpont-szavazás')),
                 if (shared.pollOpen)
                   PollCard(
                     event: shared,
@@ -842,16 +853,16 @@ class _SharedEventSectionState extends State<SharedEventSection> {
                   Card(
                     child: ListTile(
                       leading: Icon(Icons.how_to_vote_outlined, color: AppColors.primary),
-                      title: Text(shared.pollOpen ? 'Lehetőségek módosítása' : 'Szavazás indítása'),
+                      title: Text(shared.pollOpen ? tr('Lehetőségek módosítása') : tr('Szavazás indítása')),
                       subtitle: Text(
                         shared.pollOpen
-                            ? 'Az „Ez lesz” gombbal választod ki a végleges időpontot.'
-                            : 'Ajánlj fel 2–3 időpontot, a barátaid megszavazzák.',
+                            ? tr('Az „Ez lesz” gombbal választod ki a végleges időpontot.')
+                            : tr('Ajánlj fel 2–3 időpontot, a barátaid megszavazzák.'),
                       ),
                       onTap: () => _poll(shared),
                     ),
                   ),
-                const SectionTitle('Hozzászólások'),
+                SectionTitle(tr('Hozzászólások')),
                 ChatPanel(eventId: shared.id, isOwner: isOwner),
                 if (!isOwner)
                   Align(

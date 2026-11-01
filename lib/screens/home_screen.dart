@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../availability_service.dart';
@@ -41,19 +46,22 @@ class HomeScreen extends StatelessWidget {
   final ValueChanged<int> onNavigate;
 
   static String greeting(DateTime now) => switch (now.hour) {
-    >= 5 && < 10 => 'Jó reggelt',
+    >= 5 && < 10 => tr('Jó reggelt'),
     >= 10 && < 18 => 'Szia',
-    >= 18 && < 22 => 'Jó estét',
-    _ => 'Szép éjszakát',
+    >= 18 && < 22 => tr('Jó estét'),
+    _ => tr('Szép éjszakát'),
   };
 
   /// Az összefoglaló mondat, pl. „Ma 3 programod és 2 teendőd van.”
   static String summary(AppStore store, DateTime now, {int? freeFriends}) {
     final rest = store.occurrencesOn(now).where((o) => o.end.isAfter(now)).length;
     final tasks = store.tasksOn(now, now: now).where((t) => !t.done).length;
-    final parts = <String>[if (rest > 0) '$rest programod', if (tasks > 0) '$tasks teendőd'];
-    var text = parts.isEmpty ? 'Ma nincs több dolgod a naptárban.' : 'Ma még ${parts.join(' és ')} van.';
-    if (freeFriends != null && freeFriends > 0) text += ' $freeFriends barátod most ráér.';
+    final parts = <String>[
+      if (rest > 0) '$rest programod',
+      if (tasks > 0) trf('{0} teendőd', [tasks]),
+    ];
+    var text = parts.isEmpty ? tr('Ma nincs több dolgod a naptárban.') : 'Ma még ${parts.join(' és ')} van.';
+    if (freeFriends != null && freeFriends > 0) text += trf(' {0} barátod most ráér.', [freeFriends]);
     return text;
   }
 
@@ -79,8 +87,10 @@ class HomeScreen extends StatelessWidget {
                 _TipCard(tip: tip, onNavigate: onNavigate),
             if (pendingInvites.isNotEmpty) ...[
               SectionTitle(
-                'Meghívásaim',
-                trailing: store.unseenInvites(now).isEmpty ? '${pendingInvites.length}' : '${store.unseenInvites(now).length} új',
+                tr('Meghívásaim'),
+                trailing: store.unseenInvites(now).isEmpty
+                    ? '${pendingInvites.length}'
+                    : trf('{0} új', [store.unseenInvites(now).length]),
               ),
               Card(
                 child: Column(
@@ -97,7 +107,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                         trailing: store.seenInvites.contains(i.id)
                             ? const Icon(Icons.chevron_right)
-                            : Pill('Új', color: AppColors.danger),
+                            : Pill(tr('Új'), color: AppColors.danger),
                         onTap: () =>
                             Navigator.of(context).push(MaterialPageRoute(builder: (_) => InviteScreen(eventId: i.id))),
                       ),
@@ -164,7 +174,7 @@ class _Header extends StatelessWidget {
             ),
           ),
           Tooltip(
-            message: 'Az állapotod a barátaidnak',
+            message: tr('Az állapotod a barátaidnak'),
             child: ActionChip(
               key: TourKeys.status,
               avatar: Icon(statusIcon(status), size: 16, color: AppColors.status(status)),
@@ -189,15 +199,24 @@ class _NextUp extends StatelessWidget {
   final DateTime now;
 
   /// A következő teendő: időpontos bejegyzés vagy a naptárba beosztott (még nyitott) feladat.
-  static ({String title, DateTime start, DateTime end, Color color, IconData icon, String place, VoidCallback Function(BuildContext) open})?
-      pick(AppStore store, DateTime now) {
+  static ({
+    String title,
+    DateTime start,
+    DateTime end,
+    Color color,
+    IconData icon,
+    String place,
+    VoidCallback Function(BuildContext) open,
+  })?
+  pick(AppStore store, DateTime now) {
     final event = store.upcoming(days: 7, now: now).where((o) => !o.event.allDay).firstOrNull;
     final task = (store.tasks.where((t) {
       final s = t.scheduled;
-      return !t.done && s != null && s.add(Duration(minutes: t.durationMin)).isAfter(now) && s.isBefore(now.add(const Duration(days: 7)));
-    }).toList()
-          ..sort((a, b) => a.scheduled!.compareTo(b.scheduled!)))
-        .firstOrNull;
+      return !t.done &&
+          s != null &&
+          s.add(Duration(minutes: t.durationMin)).isAfter(now) &&
+          s.isBefore(now.add(const Duration(days: 7)));
+    }).toList()..sort((a, b) => a.scheduled!.compareTo(b.scheduled!))).firstOrNull;
     if (task != null && (event == null || task.scheduled!.isBefore(event.start))) {
       final s = task.scheduled!;
       return (
@@ -207,7 +226,8 @@ class _NextUp extends StatelessWidget {
         color: AppColors.category(task.category),
         icon: Icons.task_alt,
         place: '',
-        open: (context) => () => showTaskEditor(context, task: task),
+        open: (context) =>
+            () => showTaskEditor(context, task: task),
       );
     }
     if (event == null) return null;
@@ -218,8 +238,11 @@ class _NextUp extends StatelessWidget {
       color: AppColors.ofEvent(event.event),
       icon: categoryIcon(event.event.category),
       place: event.event.place,
-      open: (context) => () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => EventDetailScreen(eventId: event.event.id, start: event.start)),
+      open: (context) =>
+          () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => EventDetailScreen(eventId: event.event.id, start: event.start),
+            ),
           ),
     );
   }
@@ -228,8 +251,8 @@ class _NextUp extends StatelessWidget {
   static String whenLabel(DateTime start, DateTime end, DateTime now) {
     final minutes = start.difference(now).inMinutes;
     if (!start.isAfter(now)) return 'Most tart · ${formatTime(end)}-ig';
-    if (minutes < 60) return '${minutes < 1 ? 1 : minutes} perc múlva';
-    if (sameDay(start, now)) return '${formatTime(start)}-kor · ${formatDuration(minutes)} múlva';
+    if (minutes < 60) return trf('{0} perc múlva', [minutes < 1 ? 1 : minutes]);
+    if (sameDay(start, now)) return trf('{0}-kor · {1} múlva', [formatTime(start), formatDuration(minutes)]);
     return '${formatDay(start)} ${formatTime(start)}';
   }
 
@@ -248,7 +271,7 @@ class _NextUp extends StatelessWidget {
         contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
         leading: Icon(next.icon, color: next.color),
         title: Text(
-          running ? 'Most' : 'Következő',
+          running ? 'Most' : tr('Következő'),
           style: TextStyle(fontSize: 12, color: AppColors.textMuted, fontWeight: FontWeight.w600),
         ),
         subtitle: Column(
@@ -288,7 +311,7 @@ class _QuickActions extends StatelessWidget {
       children: [
         button(
           Icons.event_outlined,
-          'Bejegyzés',
+          tr('Bejegyzés'),
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const EventEditor())),
         ),
         const SizedBox(width: 8),
@@ -296,7 +319,7 @@ class _QuickActions extends StatelessWidget {
         const SizedBox(width: 8),
         button(
           Icons.group_outlined,
-          'Közös idő',
+          tr('Közös idő'),
           () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FindTimeScreen())),
         ),
       ],
@@ -358,12 +381,15 @@ class _TasksCard extends StatelessWidget {
     final tomorrowLeft = tomorrow.where((t) => !t.done).length;
 
     Widget group(String label) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text(label, style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600)),
-          ),
-        );
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          label,
+          style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -382,7 +408,7 @@ class _TasksCard extends StatelessWidget {
               if (tomorrow.isNotEmpty) ...[group('Holnap'), for (final t in tomorrow.take(6)) TaskTile(task: t)],
               // Ha erre a két napra nincs semmi, a határidő nélküliekből pár.
               if (today.isEmpty && tomorrow.isEmpty && anytime.isNotEmpty) ...[
-                group('Bármikor'),
+                group(tr('Bármikor')),
                 for (final t in anytime) TaskTile(task: t),
               ],
               ListTile(
@@ -508,8 +534,8 @@ class _FriendsCardState extends State<_FriendsCard> {
                         title: const Text('Most senki sem jelezte, hogy ráér.'),
                         subtitle: Text(
                           data.values.every((a) => a == null)
-                              ? 'A barátaid még nem osztják meg az elérhetőségüket.'
-                              : 'Nézd meg, mikor lesz közös szabad időtök.',
+                              ? tr('A barátaid még nem osztják meg az elérhetőségüket.')
+                              : tr('Nézd meg, mikor lesz közös szabad időtök.'),
                         ),
                       ),
                     for (final (f, status) in free.take(5))
@@ -573,7 +599,7 @@ class _BirthdaysCard extends StatelessWidget {
                   subtitle: Text(
                     sameDay(day, now)
                         ? 'Ma! 🎉'
-                        : '${formatDay(day)} · ${day.difference(startOfDay(now)).inDays} nap múlva',
+                        : trf('{0} · {1} nap múlva', [formatDay(day), day.difference(startOfDay(now)).inDays]),
                   ),
                 ),
             ],
@@ -617,7 +643,7 @@ class _ChallengesCardState extends State<_ChallengesCard> {
                     ListTile(
                       leading: ChallengeIcon(c, size: 32),
                       title: Text(c.title),
-                      subtitle: Text('${c.dayNumber()}. nap a ${c.days}-ból · ${c.members.length} fő'),
+                      subtitle: Text(trf('{0}. nap a {1}-ból · {2} fő', [c.dayNumber(), c.days, c.members.length])),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () =>
                           Navigator.of(context).push(MaterialPageRoute(builder: (_) => ChallengeDetail(challenge: c))),
@@ -645,10 +671,10 @@ class _MemoryCard extends StatelessWidget {
     if (pick == null) return const SizedBox.shrink();
     final e = pick.event;
     void open() => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => MemoryScreen(eventId: e.shareId!, title: e.title, start: pick.occurredAt, place: e.place),
-          ),
-        );
+      MaterialPageRoute(
+        builder: (_) => MemoryScreen(eventId: e.shareId!, title: e.title, start: pick.occurredAt, place: e.place),
+      ),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -720,16 +746,16 @@ class _WeekCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionTitle(HomeCard.week.label, trailing: 'hétfő óta'),
+        SectionTitle(HomeCard.week.label, trailing: tr('hétfő óta')),
         Card(
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
             child: Row(
               children: [
                 tile('${s.events}', 'program'),
-                tile('${s.social}', 'közös'),
-                tile('${s.tasksDone}', 'kész feladat'),
-                tile('${s.goalDays}', 'célnap'),
+                tile('${s.social}', tr('közös')),
+                tile('${s.tasksDone}', tr('kész feladat')),
+                tile('${s.goalDays}', tr('célnap')),
               ],
             ),
           ),
@@ -774,11 +800,19 @@ class _TipCard extends StatefulWidget {
 class _TipCardState extends State<_TipCard> with SingleTickerProviderStateMixin {
   // Bezáráskor: előbb oldalra kicsúszik és elhalványul, aztán a helye összecsukódik.
   late final _c = AnimationController(vsync: this, duration: Motion.slow);
-  late final _slide = Tween(begin: Offset.zero, end: const Offset(1.1, 0))
-      .animate(CurvedAnimation(parent: _c, curve: const Interval(0, 0.6, curve: Curves.easeInCubic)));
+  late final _slide = Tween(begin: Offset.zero, end: const Offset(1.1, 0)).animate(
+    CurvedAnimation(
+      parent: _c,
+      curve: const Interval(0, 0.6, curve: Curves.easeInCubic),
+    ),
+  );
   late final _fade = Tween(begin: 1.0, end: 0.0).animate(CurvedAnimation(parent: _c, curve: const Interval(0, 0.5)));
-  late final _size = Tween(begin: 1.0, end: 0.0)
-      .animate(CurvedAnimation(parent: _c, curve: const Interval(0.45, 1, curve: Curves.easeInOutCubic)));
+  late final _size = Tween(begin: 1.0, end: 0.0).animate(
+    CurvedAnimation(
+      parent: _c,
+      curve: const Interval(0.45, 1, curve: Curves.easeInOutCubic),
+    ),
+  );
 
   Tip get tip => widget.tip;
 
@@ -850,7 +884,10 @@ class _TipCardState extends State<_TipCard> with SingleTickerProviderStateMixin 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Tudtad?', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.accent)),
+                  Text(
+                    'Tudtad?',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.accent),
+                  ),
                   const SizedBox(height: 2),
                   Text(tip.text, style: const TextStyle(fontSize: 13, height: 1.35)),
                   if (tip.actionLabel != null)
@@ -866,7 +903,7 @@ class _TipCardState extends State<_TipCard> with SingleTickerProviderStateMixin 
               ),
             ),
             IconButton(
-              tooltip: 'Tipp bezárása',
+              tooltip: tr('Tipp bezárása'),
               icon: Icon(Icons.close, size: 18, color: AppColors.textMuted),
               onPressed: _dismiss,
             ),
@@ -879,9 +916,9 @@ class _TipCardState extends State<_TipCard> with SingleTickerProviderStateMixin 
 
 /// Az emlékek animált példái egy ablakban: fotók feltöltése és egy emlék megnézése.
 Future<void> showMemoriesExample(BuildContext context, {bool upload = true}) => showDialog<void>(
-      context: context,
-      builder: (context) => _MemoriesExample(upload: upload),
-    );
+  context: context,
+  builder: (context) => _MemoriesExample(upload: upload),
+);
 
 class _MemoriesExample extends StatefulWidget {
   const _MemoriesExample({required this.upload});
@@ -914,14 +951,18 @@ class _MemoriesExampleState extends State<_MemoriesExample> {
           const SizedBox(height: 12),
           Text(
             _upload
-                ? 'Egy közös program oldalán, az Emlékek résznél a „Fotó” gombbal választasz képeket, beállítod, '
-                    'ki láthatja őket, és feltöltöd.'
-                : 'Később a Főoldalon felbukkan az emlék: rákoppintva megnyílnak a közös képek, és bármelyiket '
-                    'megnézheted nagyban.',
+                ? tr(
+                    'Egy közös program oldalán, az Emlékek résznél a „Fotó” gombbal választasz képeket, beállítod, ki láthatja őket, és feltöltöd.',
+                  )
+                : tr(
+                    'Később a Főoldalon felbukkan az emlék: rákoppintva megnyílnak a közös képek, és bármelyiket megnézheted nagyban.',
+                  ),
           ),
           const SizedBox(height: 12),
           // A kulcs miatt váltáskor elölről indul az animáció.
-          _upload ? const PhotoUploadDemo(key: ValueKey('upload'), height: 260) : const MemoriesDemo(key: ValueKey('view'), height: 260),
+          _upload
+              ? const PhotoUploadDemo(key: ValueKey('upload'), height: 260)
+              : const MemoriesDemo(key: ValueKey('view'), height: 260),
         ],
       ),
       actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Értem'))],

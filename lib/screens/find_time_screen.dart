@@ -1,4 +1,9 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../availability.dart';
@@ -37,8 +42,8 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
   Future<void> _pickFriends() async {
     final picked = await showFriendPicker(
       context,
-      title: 'Kikkel találkoznál?',
-      action: 'Kész',
+      title: tr('Kikkel találkoznál?'),
+      action: tr('Kész'),
       initial: {..._friends},
     );
     if (picked == null) return;
@@ -53,7 +58,7 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
 
   void _search() {
     if (_friends.isEmpty) {
-      setState(() => _error = 'Válassz legalább egy barátot.');
+      setState(() => _error = tr('Válassz legalább egy barátot.'));
       return;
     }
     final store = StoreScope.of(context);
@@ -120,9 +125,9 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
             style: TextStyle(color: AppColors.textMuted),
           ),
           if (!Friends.instance.ready)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 12),
-              child: ErrorState(text: 'Ehhez internet kell. Próbáld újra kicsit később.'),
+              child: ErrorState(text: tr('Ehhez internet kell. Próbáld újra kicsit később.')),
             ),
           const SectionTitle('Kikkel?'),
           Wrap(
@@ -140,7 +145,7 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
                 ),
               ActionChip(
                 avatar: const Icon(Icons.person_add_alt_outlined, size: 18),
-                label: Text(_friends.isEmpty ? 'Barátok kiválasztása' : 'Módosítás'),
+                label: Text(_friends.isEmpty ? tr('Barátok kiválasztása') : tr('Módosítás')),
                 onPressed: _pickFriends,
               ),
             ],
@@ -150,12 +155,16 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
               padding: const EdgeInsets.only(top: 6),
               child: Text(_error!, style: TextStyle(color: AppColors.danger, fontSize: 13)),
             ),
-          const SectionTitle('Mennyi időre?'),
+          SectionTitle(tr('Mennyi időre?')),
           Wrap(
             spacing: 6,
             children: [
               for (final h in [1, 2, 3, 4])
-                ChoiceChip(label: Text('$h óra'), selected: _hours == h, onSelected: (_) => setState(() => _hours = h)),
+                ChoiceChip(
+                  label: Text(trf('{0} óra', [h])),
+                  selected: _hours == h,
+                  onSelected: (_) => setState(() => _hours = h),
+                ),
             ],
           ),
           const SectionTitle('Mikor?'),
@@ -166,7 +175,7 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
               for (final p in DayPart.values)
                 ChoiceChip(label: Text(p.label), selected: _part == p, onSelected: (_) => setState(() => _part = p)),
               const SizedBox(width: 8),
-              for (final (n, label) in [(7, 'Egy héten belül'), (14, 'Két héten belül')])
+              for (final (n, label) in [(7, tr('Egy héten belül')), (14, tr('Két héten belül'))])
                 ChoiceChip(
                   label: Text(label),
                   selected: _days == n,
@@ -177,7 +186,7 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
                 ),
             ],
           ),
-          const SectionTitle('Kihagyott napok', trailing: 'koppints a kizáráshoz'),
+          SectionTitle('Kihagyott napok', trailing: tr('koppints a kizáráshoz')),
           SizedBox(
             height: 44,
             child: ListView(
@@ -203,22 +212,24 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
             FutureBuilder<List<CommonSlot>>(
               future: _result,
               builder: (context, snap) {
-                if (snap.connectionState != ConnectionState.done) return const LoadingState(text: 'Keresés…');
-                if (snap.hasError) return ErrorState(text: 'Nem sikerült lekérni. Van internet?', onRetry: _search);
+                if (snap.connectionState != ConnectionState.done) return LoadingState(text: tr('Keresés…'));
+                if (snap.hasError) return ErrorState(text: tr('Nem sikerült lekérni. Van internet?'), onRetry: _search);
                 final slots = snap.data!;
                 if (slots.isEmpty) {
-                  return const Padding(
+                  return Padding(
                     padding: EdgeInsets.only(top: 16),
                     child: EmptyState(
                       emoji: '🗓️',
-                      text: 'Ebben az időszakban nincs mindenkinek megfelelő időpont.\nPróbálj rövidebb időt, másik napszakot, vagy két hetet.',
+                      text: tr(
+                        'Ebben az időszakban nincs mindenkinek megfelelő időpont.\nPróbálj rövidebb időt, másik napszakot, vagy két hetet.',
+                      ),
                     ),
                   );
                 }
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SectionTitle('Találatok', trailing: '${slots.length}'),
+                    SectionTitle(tr('Találatok'), trailing: '${slots.length}'),
                     for (final s in slots) _SlotCard(slot: s, onCreate: () => _create(s)),
                   ],
                 );
@@ -251,7 +262,7 @@ class _SlotCard extends StatelessWidget {
           child: Align(
             alignment: Alignment.centerLeft,
             child: slot.confirmed
-                ? Pill('Mindenki ráér', icon: Icons.check, color: AppColors.status(AvailabilityStatus.available))
+                ? Pill(tr('Mindenki ráér'), icon: Icons.check, color: AppColors.status(AvailabilityStatus.available))
                 : Pill('Nem tudjuk: ${slot.unknown.join(', ')}', icon: Icons.help_outline, color: AppColors.textMuted),
           ),
         ),

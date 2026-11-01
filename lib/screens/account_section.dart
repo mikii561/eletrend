@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:image_picker/image_picker.dart';
 
 import '../account.dart';
@@ -71,7 +76,7 @@ class AccountSection extends StatelessWidget {
                 TextField(
                   controller: password,
                   obscureText: true,
-                  decoration: InputDecoration(labelText: 'Jelszó', errorText: error),
+                  decoration: InputDecoration(labelText: tr('Jelszó'), errorText: error),
                 ),
             ],
           ),
@@ -111,11 +116,11 @@ class AccountSection extends StatelessWidget {
   }
 
   Future<void> _feedback(BuildContext context) => showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (_) => const FeedbackSheet(),
-      );
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => const FeedbackSheet(),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -124,14 +129,14 @@ class AccountSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SectionTitle('Fiók'),
+        SectionTitle(tr('Fiók')),
         Card(
           child: Column(
             children: [
               ListTile(
                 leading: NameAvatar(store.myName.isEmpty ? '?' : store.myName, photo: store.profilePhoto),
                 title: Text(
-                  store.myName.isEmpty ? (user?.displayName ?? 'Fiók') : store.myName,
+                  store.myName.isEmpty ? (user?.displayName ?? tr('Fiók')) : store.myName,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text('${user?.email ?? ''}\nAz adataid a fiókodban vannak, minden eszközödön ugyanazok.'),
@@ -156,7 +161,7 @@ class AccountSection extends StatelessWidget {
                             builder: (context, open) => Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                if ((open.data ?? 0) > 0) Pill('${open.data} vár', color: AppColors.danger),
+                                if ((open.data ?? 0) > 0) Pill(trf('{0} vár', [open.data]), color: AppColors.danger),
                                 const Icon(Icons.chevron_right),
                               ],
                             ),
@@ -229,9 +234,11 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
           failed++;
         }
       }
-      if (failed > 0) _error = failed == 1 ? 'Egy képet nem tudtam megnyitni.' : '$failed képet nem tudtam megnyitni.';
+      if (failed > 0) {
+        _error = failed == 1 ? tr('Egy képet nem tudtam megnyitni.') : trf('{0} képet nem tudtam megnyitni.', [failed]);
+      }
     } catch (e) {
-      _error = 'Nem sikerült megnyitni a képeket.';
+      _error = tr('Nem sikerült megnyitni a képeket.');
     } finally {
       if (mounted) setState(() => _picking = false);
     }
@@ -240,7 +247,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   Future<void> _send() async {
     final message = _text.text.trim();
     if (message.isEmpty) {
-      setState(() => _error = 'Írd le pár szóban, mi történt.');
+      setState(() => _error = tr('Írd le pár szóban, mi történt.'));
       return;
     }
     final user = Account.instance.user;
@@ -253,11 +260,17 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
       _error = null;
     });
     try {
-      await Admin.instance.sendFeedback(uid: user.uid, name: store.myName, email: user.email ?? '', text: message, images: _images);
+      await Admin.instance.sendFeedback(
+        uid: user.uid,
+        name: store.myName,
+        email: user.email ?? '',
+        text: message,
+        images: _images,
+      );
       navigator.pop();
       messenger.showSnackBar(const SnackBar(content: Text('Köszönjük! Megkaptuk. 💜')));
     } catch (e) {
-      if (mounted) setState(() => _error = 'Nem sikerült elküldeni. Van internet?');
+      if (mounted) setState(() => _error = tr('Nem sikerült elküldeni. Van internet?'));
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -281,7 +294,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
               maxLines: 8,
               maxLength: 2000,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(hintText: 'Mi történt? Mit csináltál előtte? Vagy mi hiányzik?'),
+              decoration: InputDecoration(hintText: tr('Mi történt? Mit csináltál előtte? Vagy mi hiányzik?')),
               onChanged: (_) {
                 if (_error != null) setState(() => _error = null);
               },
@@ -312,9 +325,14 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                           child: InkWell(
                             customBorder: const CircleBorder(),
                             onTap: () => setState(() => _images.removeAt(i)),
-                            child: const Padding(
+                            child: Padding(
                               padding: EdgeInsets.all(3),
-                              child: Icon(Icons.close, size: 14, color: Colors.white, semanticLabel: 'Kép eltávolítása'),
+                              child: Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white,
+                                semanticLabel: tr('Kép eltávolítása'),
+                              ),
                             ),
                           ),
                         ),
@@ -328,7 +346,11 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                     icon: _picking
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.add_photo_alternate_outlined),
-                    label: Text(_images.isEmpty ? 'Képernyőkép csatolása' : 'Még egy (${_images.length}/${Admin.maxScreenshots})'),
+                    label: Text(
+                      _images.isEmpty
+                          ? tr('Képernyőkép csatolása')
+                          : trf('Még egy ({0}/{1})', [_images.length, Admin.maxScreenshots]),
+                    ),
                   ),
               ],
             ),
@@ -340,7 +362,7 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _sending || _picking ? null : _send,
-              child: Text(_sending ? 'Küldés…' : 'Küldés'),
+              child: Text(_sending ? tr('Küldés…') : tr('Küldés')),
             ),
           ],
         ),

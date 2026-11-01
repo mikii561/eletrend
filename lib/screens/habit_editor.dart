@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../habit_templates.dart';
 import '../models.dart';
@@ -48,14 +52,14 @@ class _HabitEditorState extends State<_HabitEditor> {
     final picked = await pickTime(
       context,
       initial: _reminder ?? const TimeOfDay(hour: 9, minute: 0),
-      title: 'Mikor emlékeztesselek?',
+      title: tr('Mikor emlékeztesselek?'),
     );
     if (picked != null) setState(() => _reminder = picked);
   }
 
   void _save() {
     final name = _name.text.trim();
-    if (name.isEmpty) return setState(() => _error = 'Adj nevet a célnak');
+    if (name.isEmpty) return setState(() => _error = tr('Adj nevet a célnak'));
     final reminder = _reminder == null ? null : _reminder!.hour * 60 + _reminder!.minute;
     final h = widget.habit;
     if (h == null) {
@@ -117,7 +121,7 @@ class _HabitEditorState extends State<_HabitEditor> {
         ),
       ),
       IconButton.outlined(
-        tooltip: 'Több',
+        tooltip: tr('Több'),
         onPressed: value < max ? () => onChanged(value + 1) : null,
         icon: const Icon(Icons.add),
       ),
@@ -134,15 +138,15 @@ class _HabitEditorState extends State<_HabitEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.habit == null ? 'Új cél' : 'Cél szerkesztése', style: theme.textTheme.titleLarge),
+            Text(widget.habit == null ? tr('Új cél') : tr('Cél szerkesztése'), style: theme.textTheme.titleLarge),
             const SizedBox(height: 16),
             TextField(
               controller: _name,
               autofocus: widget.habit == null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                labelText: 'Név',
-                hintText: 'pl. Víz, Edzés, 10 perc olvasás',
+                labelText: tr('Név'),
+                hintText: tr('pl. Víz, Edzés, 10 perc olvasás'),
                 errorText: _error,
               ),
               onChanged: (_) => setState(() => _error = null),
@@ -188,7 +192,7 @@ class _HabitEditorState extends State<_HabitEditor> {
                   Expanded(
                     child: TextField(
                       controller: _unit,
-                      decoration: const InputDecoration(labelText: 'Egység', hintText: 'pl. pohár, oldal, perc'),
+                      decoration: InputDecoration(labelText: tr('Egység'), hintText: tr('pl. pohár, oldal, perc')),
                     ),
                   ),
                 ],
@@ -200,8 +204,8 @@ class _HabitEditorState extends State<_HabitEditor> {
               title: const Text('Saját emlékeztető', style: TextStyle(fontWeight: FontWeight.w700)),
               subtitle: Text(
                 _reminder == null
-                    ? 'Értesítés a telefonon, ha még nincs kész.'
-                    : 'Minden nap ${_reminder!.format(context)}-kor, ha még nincs kész.',
+                    ? tr('Értesítés a telefonon, ha még nincs kész.')
+                    : trf('Minden nap {0}-kor, ha még nincs kész.', [_reminder!.format(context)]),
               ),
               value: _reminder != null,
               onChanged: (on) => on ? _pickReminder() : setState(() => _reminder = null),
@@ -212,7 +216,7 @@ class _HabitEditorState extends State<_HabitEditor> {
                 child: TextButton.icon(
                   onPressed: _pickReminder,
                   icon: const Icon(Icons.schedule),
-                  label: Text('Időpont: ${_reminder!.format(context)}'),
+                  label: Text(trf('Időpont: {0}', [_reminder!.format(context)])),
                 ),
               ),
             if (!Notifications.supported)
@@ -290,7 +294,9 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                             ..showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új cél felvéve. Hajrá! 💪',
+                                  added == 0
+                                      ? tr('Ezek már mind megvannak. 🙂')
+                                      : trf('{0} új cél felvéve. Hajrá! 💪', [added]),
                                 ),
                               ),
                             );

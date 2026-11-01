@@ -1,4 +1,9 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -45,7 +50,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
 
   Future<void> _addByCode() async {
     final messenger = ScaffoldMessenger.of(context);
-    final code = await showTextInputSheet(context, title: 'Barát kódja', hint: 'pl. K7M2QX', action: 'Jelölés');
+    final code = await showTextInputSheet(context, title: tr('Barát kódja'), hint: 'pl. K7M2QX', action: tr('Jelölés'));
     if (code == null || code.trim().isEmpty) return;
     try {
       await Friends.instance.addByCode(code);
@@ -55,13 +60,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
     } on FriendException catch (e) {
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Nem sikerült. Van internet? ($e)')));
+      messenger.showSnackBar(SnackBar(content: Text(trf('Nem sikerült. Van internet? ({0})', [e]))));
     }
   }
 
   Future<void> _shareCode(String code) async {
     final messenger = ScaffoldMessenger.of(context);
-    final text = 'Jelölj be barátnak a LIFEUP-ban! A kódom: $code\nhttps://mikii561.github.io/eletrend/';
+    final text = trf('Jelölj be barátnak a LIFEUP-ban! A kódom: {0}\nhttps://mikii561.github.io/eletrend/', [code]);
     try {
       final r = await SharePlus.instance.share(ShareParams(text: text));
       if (r.status != ShareResultStatus.unavailable) return;
@@ -83,19 +88,19 @@ class _FriendsScreenState extends State<FriendsScreen> {
         actions: [
           if (Nudges.instance.ready)
             IconButton(
-              tooltip: 'Kapott bökések',
+              tooltip: tr('Kapott bökések'),
               icon: StreamBuilder<int>(
                 stream: _unseenNudges,
                 builder: (context, snap) => CountBadge(
                   count: snap.data ?? 0,
-                  label: 'olvasatlan bökés',
+                  label: tr('olvasatlan bökés'),
                   child: const Icon(Icons.waving_hand_outlined),
                 ),
               ),
               onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NudgeInboxScreen())),
             ),
           IconButton(
-            tooltip: 'Barát hozzáadása',
+            tooltip: tr('Barát hozzáadása'),
             icon: const Icon(Icons.person_add_alt_outlined),
             onPressed: friends.ready ? _addByCode : null,
           ),
@@ -105,7 +110,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       body: !friends.ready
           ? ListView(
               padding: const EdgeInsets.all(16),
-              children: const [ErrorState(text: 'A barátokhoz internet kell. Próbáld újra kicsit később.')],
+              children: [ErrorState(text: tr('A barátokhoz internet kell. Próbáld újra kicsit később.'))],
             )
           : RefreshIndicator(
               onRefresh: _refresh,
@@ -115,11 +120,14 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   Card(
                     child: ListTile(
                       leading: Icon(statusIcon(status), color: AppColors.status(status)),
-                      title: Text('Az állapotod: ${status.label}', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        trf('Az állapotod: {0}', [status.label]),
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       subtitle: Text(
                         store.shareAvailability == AvailabilityShare.nobody
-                            ? 'Senkivel nem osztod meg, mikor érsz rá.'
-                            : 'Látja: ${store.shareAvailability.label.toLowerCase()}',
+                            ? tr('Senkivel nem osztod meg, mikor érsz rá.')
+                            : trf('Látja: {0}', [store.shareAvailability.label.toLowerCase()]),
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => showStatusSheet(context),
@@ -133,7 +141,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SectionTitle('Jelölések', trailing: '${list.length}'),
+                          SectionTitle(tr('Jelölések'), trailing: '${list.length}'),
                           for (final r in list)
                             Card(
                               child: ListTile(
@@ -144,12 +152,12 @@ class _FriendsScreenState extends State<FriendsScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      tooltip: 'Elutasítás',
+                                      tooltip: tr('Elutasítás'),
                                       icon: const Icon(Icons.close),
                                       onPressed: () => friends.decline(r),
                                     ),
                                     IconButton.filled(
-                                      tooltip: 'Elfogadás',
+                                      tooltip: tr('Elfogadás'),
                                       icon: const Icon(Icons.check),
                                       onPressed: () => friends.accept(r),
                                     ),
@@ -205,16 +213,17 @@ class _FriendsScreenState extends State<FriendsScreen> {
                   StreamBuilder<List<Friend>>(
                     stream: _friends,
                     builder: (context, snap) {
-                      if (snap.hasError) return const ErrorState(text: 'A barátlista nem töltődött be. Van internet?');
+                      if (snap.hasError) return ErrorState(text: tr('A barátlista nem töltődött be. Van internet?'));
                       if (!snap.hasData) return const LoadingState();
                       final list = snap.data!;
                       if (list.isEmpty) {
-                        return const Padding(
+                        return Padding(
                           padding: EdgeInsets.only(top: 16),
                           child: EmptyState(
                             emoji: '👋',
-                            text:
-                                'Még nincs barátod az appban.\nKüldd el a kódodat, vagy add meg az övékét a + gombbal.',
+                            text: tr(
+                              'Még nincs barátod az appban.\nKüldd el a kódodat, vagy add meg az övékét a + gombbal.',
+                            ),
                           ),
                         );
                       }
@@ -227,7 +236,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              SectionTitle('Barátaim', trailing: '${list.length}'),
+                              SectionTitle(tr('Barátaim'), trailing: '${list.length}'),
                               Card(
                                 child: Column(
                                   children: [
@@ -242,7 +251,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       );
                     },
                   ),
-                  const SectionTitle('A barátkódod'),
+                  SectionTitle(tr('A barátkódod')),
                   Card(
                     child: ListTile(
                       title: SelectableText(
@@ -256,7 +265,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       ),
                       subtitle: const Text('Add meg a barátodnak, vagy kérd el az övét.'),
                       trailing: IconButton(
-                        tooltip: 'Megosztás',
+                        tooltip: tr('Megosztás'),
                         icon: const Icon(Icons.share_outlined),
                         onPressed: friends.myCode == null ? null : () => _shareCode(friends.myCode!),
                       ),
@@ -285,9 +294,9 @@ class _FriendTile extends StatelessWidget {
     final subtitle = loading
         ? '…'
         : status == null
-        ? 'Nem osztja meg az elérhetőségét'
+        ? tr('Nem osztja meg az elérhetőségét')
         : freeFrom != null && sameDay(freeFrom, now)
-        ? '${status.label} · ${formatTime(freeFrom)}-tól szabad'
+        ? trf('{0} · {1}-tól szabad', [status.label, formatTime(freeFrom)])
         : status.label;
     return ListTile(
       leading: status == null
@@ -325,7 +334,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
             ListTile(
               leading: NameAvatar(f.name, radius: 22, photo: f.photo),
               title: Text(f.name, style: Theme.of(context).textTheme.titleLarge),
-              subtitle: birthday == null ? null : Text('Születésnap: ${formatDay(birthday)}'),
+              subtitle: birthday == null ? null : Text(trf('Születésnap: {0}', [formatDay(birthday)])),
             ),
             if (f.streaks.isNotEmpty)
               Padding(
@@ -342,7 +351,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
             const Divider(),
             SettingsTile(
               icon: Icons.event_available_outlined,
-              title: 'Közös időpont keresése',
+              title: tr('Közös időpont keresése'),
               onTap: () {
                 navigator.pop();
                 navigator.push(MaterialPageRoute(builder: (_) => FindTimeScreen(initialUids: [f.uid])));
@@ -350,7 +359,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
             ),
             SettingsTile(
               icon: Icons.celebration_outlined,
-              title: 'Meghívás egy programra',
+              title: tr('Meghívás egy programra'),
               onTap: () {
                 navigator.pop();
                 navigator.push(MaterialPageRoute(builder: (_) => EventEditor(inviteUids: [f.uid], social: true)));
@@ -358,7 +367,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
             ),
             SettingsTile(
               icon: Icons.waving_hand_outlined,
-              title: 'Bökés',
+              title: tr('Bökés'),
               onTap: () {
                 navigator.pop();
                 showNudgeComposer(navigator.context, to: {f.uid: f.name});
@@ -379,12 +388,19 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
               leading: const Icon(Icons.person_remove_outlined),
               title: const Text('Barát eltávolítása'),
               onTap: () async {
-                final ok = await confirm(context, title: 'Eltávolítod ${f.name}-t?', text: 'Később újra bejelölheted.', action: 'Eltávolítás');
+                final ok = await confirm(
+                  context,
+                  title: trf('Eltávolítod {0}-t?', [f.name]),
+                  text: tr('Később újra bejelölheted.'),
+                  action: tr('Eltávolítás'),
+                );
                 if (!ok) return;
                 navigator.pop();
                 await Friends.instance
                     .remove(f.uid)
-                    .catchError((Object e) => messenger.showSnackBar(SnackBar(content: Text('Nem sikerült: $e'))));
+                    .catchError(
+                      (Object e) => messenger.showSnackBar(SnackBar(content: Text(trf('Nem sikerült: {0}', [e])))),
+                    );
               },
             ),
             ListTile(
@@ -392,15 +408,17 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
               title: Text('Letiltás', style: TextStyle(color: AppColors.danger)),
               subtitle: const Text('Nem lesztek barátok, és nem jelölhet, hívhat meg, bökhet meg.'),
               onTap: () async {
-                if (!await confirm(context, title: 'Letiltod ${f.name}-t?', action: 'Letiltás', danger: true)) return;
+                if (!await confirm(context, title: 'Letiltod ${f.name}-t?', action: tr('Letiltás'), danger: true)) {
+                  return;
+                }
                 navigator.pop();
                 try {
                   await Friends.instance.block(f.uid, f.name);
                   messenger.showSnackBar(
-                    SnackBar(content: Text('${f.name} letiltva. A Profil → Adatvédelem alatt feloldhatod.')),
+                    SnackBar(content: Text(trf('{0} letiltva. A Profil → Adatvédelem alatt feloldhatod.', [f.name]))),
                   );
                 } catch (e) {
-                  messenger.showSnackBar(SnackBar(content: Text('Nem sikerült: $e')));
+                  messenger.showSnackBar(SnackBar(content: Text(trf('Nem sikerült: {0}', [e]))));
                 }
               },
             ),
@@ -411,8 +429,8 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
                 final reason = await showTextInputSheet(
                   context,
                   title: 'Mi a gond?',
-                  hint: 'Írd le röviden',
-                  action: 'Jelentés',
+                  hint: tr('Írd le röviden'),
+                  action: tr('Jelentés'),
                 );
                 if (reason == null || reason.trim().isEmpty) return;
                 navigator.pop();
@@ -420,7 +438,7 @@ Future<void> showFriendSheet(BuildContext context, Friend f) {
                   await Friends.instance.report(userUid: f.uid, reason: reason);
                   messenger.showSnackBar(const SnackBar(content: Text('Köszönjük, megkaptuk.')));
                 } catch (e) {
-                  messenger.showSnackBar(SnackBar(content: Text('Nem sikerült: $e')));
+                  messenger.showSnackBar(SnackBar(content: Text(trf('Nem sikerült: {0}', [e]))));
                 }
               },
             ),
@@ -517,7 +535,7 @@ class _GroupEditorState extends State<_GroupEditor> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.group == null ? 'Új csoport' : 'Csoport', style: Theme.of(context).textTheme.titleLarge),
+            Text(widget.group == null ? tr('Új csoport') : 'Csoport', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 4),
             Text(
               'Csak te látod. Meghívásnál és közös időpontnál egy koppintással kiválaszthatod őket.',
@@ -529,7 +547,7 @@ class _GroupEditorState extends State<_GroupEditor> {
               maxLength: 40,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Név (pl. Foci csapat, Család)',
+                hintText: tr('Név (pl. Foci csapat, Család)'),
                 errorText: _error,
                 counterText: '',
               ),

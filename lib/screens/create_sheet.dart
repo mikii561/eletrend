@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../theme.dart';
 import 'challenges_screen.dart';
@@ -40,44 +44,44 @@ Future<void> showCreateSheet(BuildContext context) {
             children: [
               item(
                 Icons.event_outlined,
-                'Bejegyzés',
-                'Saját program, időpont, emlékeztető',
+                tr('Bejegyzés'),
+                tr('Saját program, időpont, emlékeztető'),
                 () => open(const EventEditor()),
               ),
               item(
                 Icons.add_task,
                 'Feladat',
-                'Teendő határidővel, beosztható a naptárba',
+                tr('Teendő határidővel, beosztható a naptárba'),
                 () => showTaskEditor(navigator.context, due: DateTime.now()),
               ),
               item(
                 Icons.celebration_outlined,
-                'Közös program',
-                'Barátok meghívása, visszajelzés, hozzászólások',
+                tr('Közös program'),
+                tr('Barátok meghívása, visszajelzés, hozzászólások'),
                 () => open(const EventEditor(social: true)),
               ),
               item(
                 Icons.event_available_outlined,
-                'Közös időpont keresése',
-                'Mikor ér rá mindenki?',
+                tr('Közös időpont keresése'),
+                tr('Mikor ér rá mindenki?'),
                 () => open(const FindTimeScreen()),
               ),
               item(
                 Icons.flag_outlined,
-                'Cél',
-                'Pl. hetente 3× edzés, napi 20 oldal',
+                tr('Cél'),
+                tr('Pl. hetente 3× edzés, napi 20 oldal'),
                 () => showHabitEditor(navigator.context),
               ),
               item(
                 Icons.emoji_events_outlined,
-                'Kihívás',
-                'Közös cél a barátaiddal',
+                tr('Kihívás'),
+                tr('Közös cél a barátaiddal'),
                 () => open(const ChallengesScreen()),
               ),
               item(
                 Icons.add_link,
-                'Google Naptár hozzáadása',
-                'Az eseményeid átjönnek ide is',
+                tr('Google Naptár hozzáadása'),
+                tr('Az eseményeid átjönnek ide is'),
                 () => open(const GoogleCalendarScreen()),
               ),
               const SizedBox(height: 8),

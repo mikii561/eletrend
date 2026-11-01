@@ -1,6 +1,8 @@
 /// Az app adatmodelljei: naptárbejegyzések, feladatok, célok, baráti csoportok.
 library;
 
+import 'l10n/l10n.dart';
+
 import 'dart:math';
 
 /// Egy napot azonosító kulcs, pl. "2026-10-27".
@@ -483,7 +485,7 @@ class Habit {
   }
 
   /// A sorozat mértékegysége kiíráshoz.
-  String get streakUnit => isWeekly ? 'hét' : 'nap';
+  String get streakUnit => isWeekly ? tr('hét') : 'nap';
 
   Map<String, dynamic> toJson() => {
     'id': id,

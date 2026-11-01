@@ -1,6 +1,12 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as m show Text;
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -54,7 +60,7 @@ class _LocationPickerState extends State<LocationPicker> {
     final token = ++_reverseToken;
     setState(() {
       _results = [];
-      _picked = Place(name: 'Cím keresése…', point: point);
+      _picked = Place(name: tr('Cím keresése…'), point: point);
     });
     String? name;
     try {
@@ -64,14 +70,13 @@ class _LocationPickerState extends State<LocationPicker> {
     }
     // Ha közben máshova koppintott, a régi választ eldobjuk.
     if (!mounted || token != _reverseToken) return;
-    setState(() => _picked = Place(name: name ?? 'Kiválasztott hely', point: point));
+    setState(() => _picked = Place(name: name ?? tr('Kiválasztott hely'), point: point));
   }
 
   void _showError() {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nem sikerült elérni a térképszolgáltatást. Van internet?')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Nem sikerült elérni a térképszolgáltatást. Van internet?')));
   }
 
   @override
@@ -96,7 +101,7 @@ class _LocationPickerState extends State<LocationPicker> {
             children: [
               osmTiles(),
               if (picked != null) MarkerLayer(markers: [pinMarker(picked.point)]),
-              const SimpleAttributionWidget(source: Text('OpenStreetMap')),
+              SimpleAttributionWidget(source: const m.Text('OpenStreetMap')),
             ],
           ),
 
@@ -118,8 +123,8 @@ class _LocationPickerState extends State<LocationPicker> {
                             controller: _search,
                             textInputAction: TextInputAction.search,
                             onSubmitted: _runSearch,
-                            decoration: const InputDecoration(
-                              hintText: 'Hely vagy cím keresése',
+                            decoration: InputDecoration(
+                              hintText: tr('Hely vagy cím keresése'),
                               filled: false,
                               contentPadding: EdgeInsets.zero,
                             ),
@@ -128,7 +133,11 @@ class _LocationPickerState extends State<LocationPicker> {
                         _loading
                             ? const Padding(
                                 padding: EdgeInsets.all(14),
-                                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
                               )
                             : IconButton(icon: const Icon(Icons.search), onPressed: () => _runSearch(_search.text)),
                       ],
@@ -190,10 +199,12 @@ class _LocationPickerState extends State<LocationPicker> {
                                 Icon(Icons.location_on, color: AppColors.accent),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(picked.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.titleMedium),
+                                  child: Text(
+                                    picked.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
                                 ),
                               ],
                             ),

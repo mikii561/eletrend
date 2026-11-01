@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../theme.dart';
@@ -232,7 +237,7 @@ Future<String?> showTextInputSheet(BuildContext context, {required String title,
             onSubmitted: (v) => Navigator.pop(context, v),
           ),
           const SizedBox(height: 16),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(action ?? 'Mentés')),
+          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(action ?? tr('Mentés'))),
         ],
       ),
     ),

@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -62,7 +64,9 @@ Event? parseGoogleEvent(Map<String, dynamic> item, {required String calendarId, 
   final notes = (item['description'] as String? ?? '').replaceAll(RegExp(r'<[^>]*>'), ' ').trim();
   return Event(
     id: 'g-${calendarId.hashCode.abs()}-$id',
-    title: (item['summary'] as String?)?.trim().isNotEmpty == true ? (item['summary'] as String).trim() : '(nincs cím)',
+    title: (item['summary'] as String?)?.trim().isNotEmpty == true
+        ? (item['summary'] as String).trim()
+        : tr('(nincs cím)'),
     start: s,
     durationMin: minutes <= 0 ? (allDay ? 1440 : 30) : minutes,
     allDay: allDay,
@@ -84,10 +88,10 @@ Event? parseGoogleEvent(Map<String, dynamic> item, {required String calendarId, 
 /// hozzáférés kb. egy óráig érvényes; utána a frissítéshez újra elég egy koppintás.
 class GoogleCalendar {
   GoogleCalendar({FirebaseAuth? auth, http.Client? client, String? token})
-      : _authOverride = auth,
-        _client = client ?? http.Client(),
-        _token = token,
-        _tokenAt = token == null ? null : DateTime.now();
+    : _authOverride = auth,
+      _client = client ?? http.Client(),
+      _token = token,
+      _tokenAt = token == null ? null : DateTime.now();
 
   static GoogleCalendar instance = GoogleCalendar();
 
@@ -111,7 +115,7 @@ class GoogleCalendar {
   /// (így később Google-lel is be lehet lépni); ha már van, csak az engedélyt kéri.
   Future<void> connect() async {
     final user = _auth.currentUser;
-    if (user == null) throw const GoogleCalendarException('Előbb jelentkezz be.');
+    if (user == null) throw GoogleCalendarException(tr('Előbb jelentkezz be.'));
     final provider = GoogleAuthProvider()
       ..addScope(scope)
       ..setCustomParameters({'prompt': 'select_account'});
@@ -119,26 +123,32 @@ class GoogleCalendar {
     final UserCredential result;
     try {
       if (linked) {
-        result = kIsWeb ? await user.reauthenticateWithPopup(provider) : await user.reauthenticateWithProvider(provider);
+        result = kIsWeb
+            ? await user.reauthenticateWithPopup(provider)
+            : await user.reauthenticateWithProvider(provider);
       } else {
         result = kIsWeb ? await user.linkWithPopup(provider) : await user.linkWithProvider(provider);
       }
     } on FirebaseAuthException catch (e) {
       throw GoogleCalendarException(switch (e.code) {
-        'popup-closed-by-user' || 'cancelled-popup-request' || 'web-context-canceled' => 'Megszakítottad. Bármikor újrapróbálhatod.',
-        'popup-blocked' => 'A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.',
-        'credential-already-in-use' || 'email-already-in-use' =>
+        'popup-closed-by-user' ||
+        'cancelled-popup-request' ||
+        'web-context-canceled' => tr('Megszakítottad. Bármikor újrapróbálhatod.'),
+        'popup-blocked' => tr('A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.'),
+        'credential-already-in-use' || 'email-already-in-use' => tr(
           'Ez a Google-fiók már egy másik LIFEUP-fiókhoz tartozik. Válassz másik Google-fiókot.',
-        'user-mismatch' => 'Azzal a Google-fiókkal lépj be, amelyik ehhez a fiókhoz tartozik.',
-        'network-request-failed' => 'Nincs internet. Ellenőrizd a kapcsolatot!',
-        _ => 'Nem sikerült összekapcsolni (${e.code}). Próbáld újra.',
+        ),
+        'user-mismatch' => tr('Azzal a Google-fiókkal lépj be, amelyik ehhez a fiókhoz tartozik.'),
+        'network-request-failed' => tr('Nincs internet. Ellenőrizd a kapcsolatot!'),
+        _ => trf('Nem sikerült összekapcsolni ({0}). Próbáld újra.', [e.code]),
       });
     }
     final token = (result.credential as OAuthCredential?)?.accessToken;
-    if (token == null) throw const GoogleCalendarException('A Google nem adott hozzáférést a naptárhoz. Próbáld újra.');
+    if (token == null) throw GoogleCalendarException(tr('A Google nem adott hozzáférést a naptárhoz. Próbáld újra.'));
     _token = token;
     _tokenAt = DateTime.now();
-    email = result.user?.providerData.where((p) => p.providerId == 'google.com').firstOrNull?.email ?? result.user?.email;
+    email =
+        result.user?.providerData.where((p) => p.providerId == 'google.com').firstOrNull?.email ?? result.user?.email;
   }
 
   void disconnect() {
@@ -148,28 +158,40 @@ class GoogleCalendar {
 
   Future<Map<String, dynamic>> _get(String path, [Map<String, String>? query]) async {
     final token = _token;
-    if (!hasAccess || token == null) throw const GoogleCalendarException('Engedélyezd újra a hozzáférést.', reconnect: true);
+    if (!hasAccess || token == null) {
+      throw GoogleCalendarException(tr('Engedélyezd újra a hozzáférést.'), reconnect: true);
+    }
     final http.Response r;
     try {
-      r = await _client.get(Uri.parse('$_api$path').replace(queryParameters: query), headers: {'Authorization': 'Bearer $token'});
+      r = await _client.get(
+        Uri.parse('$_api$path').replace(queryParameters: query),
+        headers: {'Authorization': 'Bearer $token'},
+      );
     } catch (_) {
-      throw const GoogleCalendarException('Nincs internet. Ellenőrizd a kapcsolatot!');
+      throw GoogleCalendarException(tr('Nincs internet. Ellenőrizd a kapcsolatot!'));
     }
     if (r.statusCode == 401) {
       disconnect();
-      throw const GoogleCalendarException('Lejárt a hozzáférés. Engedélyezd újra.', reconnect: true);
+      throw GoogleCalendarException(tr('Lejárt a hozzáférés. Engedélyezd újra.'), reconnect: true);
     }
     if (r.statusCode == 403) {
       final body = r.body;
       if (body.contains('accessNotConfigured') || body.contains('SERVICE_DISABLED')) {
-        throw const GoogleCalendarException(
-          'A Google Naptár elérése még nincs bekapcsolva az app Google-beállításaiban. Szólj az app üzemeltetőjének.',
+        throw GoogleCalendarException(
+          tr(
+            'A Google Naptár elérése még nincs bekapcsolva az app Google-beállításaiban. Szólj az app üzemeltetőjének.',
+          ),
         );
       }
       disconnect();
-      throw const GoogleCalendarException('A Google nem engedte a hozzáférést. Engedélyezd újra, és pipáld be a naptárt.', reconnect: true);
+      throw GoogleCalendarException(
+        tr('A Google nem engedte a hozzáférést. Engedélyezd újra, és pipáld be a naptárt.'),
+        reconnect: true,
+      );
     }
-    if (r.statusCode != 200) throw GoogleCalendarException('A Google Naptár most nem válaszol (${r.statusCode}). Próbáld később.');
+    if (r.statusCode != 200) {
+      throw GoogleCalendarException(trf('A Google Naptár most nem válaszol ({0}). Próbáld később.', [r.statusCode]));
+    }
     return jsonDecode(utf8.decode(r.bodyBytes)) as Map<String, dynamic>;
   }
 
@@ -203,7 +225,11 @@ class GoogleCalendar {
         'pageToken': ?page,
       });
       for (final item in data['items'] as List? ?? []) {
-        final e = parseGoogleEvent(Map<String, dynamic>.from(item as Map), calendarId: calendar.id, color: calendar.color);
+        final e = parseGoogleEvent(
+          Map<String, dynamic>.from(item as Map),
+          calendarId: calendar.id,
+          color: calendar.color,
+        );
         if (e != null) out.add(e);
       }
       page = data['nextPageToken'] as String?;
@@ -222,7 +248,8 @@ Future<int> syncGoogleCalendars(AppStore store, {GoogleCalendar? api, DateTime? 
   final all = await google.calendars();
   final byCalendar = <String, List<Event>>{};
   for (final entry in store.googleCalendars.entries) {
-    final info = all.where((c) => c.id == entry.key).firstOrNull ?? GoogleCalendarInfo(id: entry.key, name: entry.value);
+    final info =
+        all.where((c) => c.id == entry.key).firstOrNull ?? GoogleCalendarInfo(id: entry.key, name: entry.value);
     byCalendar[entry.key] = await google.events(info, from: from, to: to);
   }
   store.replaceGoogleEvents(byCalendar, at: t);

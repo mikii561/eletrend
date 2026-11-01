@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../formatting.dart';
 import '../models.dart';
@@ -75,7 +79,7 @@ class _TaskEditorState extends State<_TaskEditor> {
       initial: _scheduled == null
           ? TimeOfDay(hour: (now.hour + 1) % 24, minute: 0)
           : TimeOfDay.fromDateTime(_scheduled!),
-      title: 'Hánykor kezded?',
+      title: tr('Hánykor kezded?'),
     );
     if (time == null) return;
     setState(() => _scheduled = DateTime(day.year, day.month, day.day, time.hour, time.minute));
@@ -91,7 +95,7 @@ class _TaskEditorState extends State<_TaskEditor> {
   Future<void> _save() async {
     final title = _title.text.trim();
     if (title.isEmpty) {
-      setState(() => _error = 'Mi a teendő?');
+      setState(() => _error = tr('Mi a teendő?'));
       return;
     }
     final store = StoreScope.of(context);
@@ -119,14 +123,14 @@ class _TaskEditorState extends State<_TaskEditor> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(widget.task == null ? 'Új feladat' : 'Feladat', style: Theme.of(context).textTheme.titleLarge),
+            Text(widget.task == null ? tr('Új feladat') : 'Feladat', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             TextField(
               controller: _title,
               autofocus: widget.task == null,
               maxLength: 200,
               textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(hintText: 'Mit kell megcsinálni?', errorText: _error, counterText: ''),
+              decoration: InputDecoration(hintText: tr('Mit kell megcsinálni?'), errorText: _error, counterText: ''),
               onChanged: (_) {
                 if (_error != null) setState(() => _error = null);
               },
@@ -156,11 +160,11 @@ class _TaskEditorState extends State<_TaskEditor> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.flag_outlined),
-              title: Text(_due == null ? 'Határidő (nem kötelező)' : 'Határidő: ${formatDay(_due!)}'),
+              title: Text(_due == null ? tr('Határidő (nem kötelező)') : trf('Határidő: {0}', [formatDay(_due!)])),
               trailing: _due == null
                   ? null
                   : IconButton(
-                      tooltip: 'Határidő törlése',
+                      tooltip: tr('Határidő törlése'),
                       icon: const Icon(Icons.close),
                       onPressed: () => setState(() => _due = null),
                     ),
@@ -171,14 +175,14 @@ class _TaskEditorState extends State<_TaskEditor> {
               leading: const Icon(Icons.view_timeline_outlined),
               title: Text(
                 _scheduled == null
-                    ? 'Beosztom a naptárba'
+                    ? tr('Beosztom a naptárba')
                     : '${formatDay(_scheduled!)} ${formatTime(_scheduled!)}, ${formatDuration(_duration)}',
               ),
               subtitle: _scheduled == null ? const Text('Időt foglalsz rá, és a naptárban is látszik.') : null,
               trailing: _scheduled == null
                   ? null
                   : IconButton(
-                      tooltip: 'Beosztás törlése',
+                      tooltip: tr('Beosztás törlése'),
                       icon: const Icon(Icons.close),
                       onPressed: () => setState(() => _scheduled = null),
                     ),
@@ -264,16 +268,16 @@ class TaskTile extends StatelessWidget {
     final overdue = t.isOverdue();
     final meta = [
       if (t.scheduled != null) '${formatDay(t.scheduled!, short: true)} ${formatTime(t.scheduled!)}',
-      if (t.due != null && t.scheduled == null) 'Határidő: ${formatDay(t.due!, short: true)}',
+      if (t.due != null && t.scheduled == null) trf('Határidő: {0}', [formatDay(t.due!, short: true)]),
     ];
     return ListTile(
       dense: dense,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12),
       leading: Semantics(
         checked: t.done,
-        label: t.done ? 'Kész' : 'Kipipálás',
+        label: t.done ? tr('Kész') : tr('Kipipálás'),
         child: IconButton(
-          tooltip: t.done ? 'Visszavonás' : 'Kész',
+          tooltip: t.done ? tr('Visszavonás') : tr('Kész'),
           // Kipipáláskor a pipa egy kis rugózással „bepattan”.
           icon: AnimatedSwitcher(
             duration: Motion.of(context, Motion.medium),
@@ -305,7 +309,7 @@ class TaskTile extends StatelessWidget {
           ? null
           : Row(
               children: [
-                if (overdue) ...[Pill('Lejárt', color: AppColors.danger), const SizedBox(width: 6)],
+                if (overdue) ...[Pill(tr('Lejárt'), color: AppColors.danger), const SizedBox(width: 6)],
                 Flexible(child: Text(meta.join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis)),
               ],
             ),

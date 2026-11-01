@@ -1,9 +1,13 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 /// Hangüzenet lejátszása (böngészőben data: címről, telefonon a memóriából).
 class VoicePlayer extends StatefulWidget {
@@ -67,6 +71,6 @@ class _VoicePlayerState extends State<VoicePlayer> {
   Widget build(BuildContext context) => FilledButton.tonalIcon(
     onPressed: _toggle,
     icon: Icon(_playing ? Icons.stop_rounded : Icons.play_arrow_rounded),
-    label: Text(_playing ? 'Leállítás' : 'Hangüzenet lejátszása'),
+    label: Text(_playing ? tr('Leállítás') : tr('Hangüzenet lejátszása')),
   );
 }

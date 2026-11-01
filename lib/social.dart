@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -305,7 +307,7 @@ class Social {
         });
       } on FirebaseException catch (e) {
         if (e.code == 'permission-denied' && status == RsvpStatus.yes) {
-          throw const SocialException('Betelt a létszám, most nem tudsz jelentkezni.');
+          throw SocialException(tr('Betelt a létszám, most nem tudsz jelentkezni.'));
         }
         rethrow;
       }

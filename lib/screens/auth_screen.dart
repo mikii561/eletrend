@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../account.dart';
 import '../l10n/l10n.dart';
@@ -44,8 +46,8 @@ class _AuthScreenState extends State<AuthScreen> {
     final password = _password.text;
     String? problem;
     if (_register && _name.text.trim().isEmpty) problem = 'Add meg a neved.';
-    if (!email.contains('@') || !email.contains('.')) problem ??= 'Add meg az e-mail-címed.';
-    if (password.length < 6) problem ??= 'A jelszó legalább 6 karakter legyen.';
+    if (!email.contains('@') || !email.contains('.')) problem ??= tr('Add meg az e-mail-címed.');
+    if (password.length < 6) problem ??= tr('A jelszó legalább 6 karakter legyen.');
     if (problem != null) return setState(() => _error = problem);
 
     setState(() {
@@ -66,7 +68,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } on AccountException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Valami hiba történt. Van internet? ($e)');
+      if (mounted) setState(() => _error = trf('Valami hiba történt. Van internet? ({0})', [e]));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -86,7 +88,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } on AccountException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
-      if (mounted) setState(() => _error = 'Valami hiba történt. Van internet? ($e)');
+      if (mounted) setState(() => _error = trf('Valami hiba történt. Van internet? ({0})', [e]));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -94,14 +96,14 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Future<void> _forgot() async {
     final email = _email.text.trim();
-    if (!email.contains('@')) return setState(() => _error = 'Írd be az e-mail-címed, és oda küldöm a linket.');
+    if (!email.contains('@')) return setState(() => _error = tr('Írd be az e-mail-címed, és oda küldöm a linket.'));
     setState(() => _busy = true);
     try {
       await Account.instance.resetPassword(email);
       if (mounted) {
         setState(() {
           _error = null;
-          _info = 'Elküldtem a jelszó-visszaállító linket ide: $email. Nézd meg a spam mappát is!';
+          _info = trf('Elküldtem a jelszó-visszaállító linket ide: {0}. Nézd meg a spam mappát is!', [email]);
         });
       }
     } on AccountException catch (e) {
@@ -205,7 +207,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     controller: _email,
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email],
-                    decoration: const InputDecoration(labelText: 'E-mail-cím', prefixIcon: Icon(Icons.mail_outline)),
+                    decoration: InputDecoration(labelText: tr('E-mail-cím'), prefixIcon: Icon(Icons.mail_outline)),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -214,10 +216,10 @@ class _AuthScreenState extends State<AuthScreen> {
                     autofillHints: [_register ? AutofillHints.newPassword : AutofillHints.password],
                     onSubmitted: (_) => _submit(),
                     decoration: InputDecoration(
-                      labelText: _register ? 'Jelszó (legalább 6 karakter)' : 'Jelszó',
+                      labelText: _register ? tr('Jelszó (legalább 6 karakter)') : tr('Jelszó'),
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
-                        tooltip: _showPassword ? 'Jelszó elrejtése' : 'Jelszó mutatása',
+                        tooltip: _showPassword ? tr('Jelszó elrejtése') : tr('Jelszó mutatása'),
                         icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
                         onPressed: () => setState(() => _showPassword = !_showPassword),
                       ),
@@ -242,7 +244,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     onPressed: _busy ? null : _submit,
                     child: _busy
                         ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
-                        : Text(_register ? 'Fiók létrehozása' : 'Bejelentkezés'),
+                        : Text(_register ? tr('Fiók létrehozása') : tr('Bejelentkezés')),
                   ),
                   if (!_register)
                     TextButton(onPressed: _busy ? null : _forgot, child: const Text('Elfelejtettem a jelszavam')),
@@ -254,9 +256,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         padding: const EdgeInsets.all(12),
                         child: Text(
                           _register
-                              ? '💾 Az ezen az eszközön lévő naptárad, feladataid és céljaid az új fiókodba kerülnek.'
-                              : '⚠️ Bejelentkezéskor a fiókod adatai kerülnek az ezen az eszközön lévők helyére. '
-                                    'Ha ezeket is meg akarod tartani, inkább regisztrálj velük új fiókot.',
+                              ? tr(
+                                  '💾 Az ezen az eszközön lévő naptárad, feladataid és céljaid az új fiókodba kerülnek.',
+                                )
+                              : tr(
+                                  '⚠️ Bejelentkezéskor a fiókod adatai kerülnek az ezen az eszközön lévők helyére. Ha ezeket is meg akarod tartani, inkább regisztrálj velük új fiókot.',
+                                ),
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                       ),

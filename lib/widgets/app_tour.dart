@@ -1,6 +1,10 @@
+import '../l10n/l10n.dart';
+
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../theme.dart';
 import 'memories_demo.dart';
@@ -75,7 +79,8 @@ final appTourSteps = <TourStep>[
   const TourStep(
     icon: Icons.add_photo_alternate_outlined,
     title: 'Közös fotók',
-    text: 'Egy közös program után a program oldalán, az Emlékek résznél tölthettek fel fotókat. '
+    text:
+        'Egy közös program után a program oldalán, az Emlékek résznél tölthettek fel fotókat. '
         'Te döntöd el, ki láthatja és letöltheti őket. Így megy:',
     demo: PhotoUploadDemo(),
   ),
@@ -199,12 +204,18 @@ class _TourState extends State<_Tour> {
                           behavior: HitTestBehavior.opaque,
                           onTap: _next,
                           child: CustomPaint(
-                            painter: _HolePainter(hole: r.width < 2 ? null : r, color: Colors.black.withValues(alpha: 0.6)),
+                            painter: _HolePainter(
+                              hole: r.width < 2 ? null : r,
+                              color: Colors.black.withValues(alpha: 0.6),
+                            ),
                           ),
                         ),
                       ),
                       Positioned.fill(
-                        child: CustomSingleChildLayout(delegate: _CardPlacer(hole: r, side: side), child: card),
+                        child: CustomSingleChildLayout(
+                          delegate: _CardPlacer(hole: r, side: side),
+                          child: card,
+                        ),
                       ),
                     ],
                   );
@@ -287,7 +298,10 @@ class _TourCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 10),
-        Padding(padding: const EdgeInsets.only(right: 8), child: Text(step.text, style: const TextStyle(height: 1.4))),
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Text(step.text, style: const TextStyle(height: 1.4)),
+        ),
         if (step.demo != null) ...[const SizedBox(height: 12), step.demo!],
       ],
     );
@@ -310,10 +324,8 @@ class _TourCard extends StatelessWidget {
                 switchInCurve: const Interval(0.45, 1, curve: Curves.easeOut),
                 switchOutCurve: const Interval(0.55, 1, curve: Curves.easeIn),
                 // Az új tartalom felülre igazodik, így nem „ugrál” a régi és az új között.
-                layoutBuilder: (current, previous) => Stack(
-                  alignment: Alignment.topLeft,
-                  children: [...previous, ?current],
-                ),
+                layoutBuilder: (current, previous) =>
+                    Stack(alignment: Alignment.topLeft, children: [...previous, ?current]),
                 child: content,
               ),
             ),
@@ -352,7 +364,7 @@ class _TourCard extends StatelessWidget {
                   onPressed: onNext,
                   child: AnimatedSwitcher(
                     duration: medium,
-                    child: Text(last ? 'Kezdjük!' : 'Tovább', key: ValueKey(last)),
+                    child: Text(last ? tr('Kezdjük!') : tr('Tovább'), key: ValueKey(last)),
                   ),
                 ),
               ],
@@ -377,7 +389,11 @@ class _HolePainter extends CustomPainter {
     final h = hole;
     final path = h == null
         ? all
-        : Path.combine(PathOperation.difference, all, Path()..addRRect(RRect.fromRectAndRadius(h, const Radius.circular(14))));
+        : Path.combine(
+            PathOperation.difference,
+            all,
+            Path()..addRRect(RRect.fromRectAndRadius(h, const Radius.circular(14))),
+          );
     canvas.drawPath(path, Paint()..color = color);
     if (h != null) {
       canvas.drawRRect(

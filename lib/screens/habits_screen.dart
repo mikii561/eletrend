@@ -1,4 +1,9 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../challenges.dart';
@@ -50,8 +55,10 @@ class HabitsScreen extends StatelessWidget {
           if (store.habits.isEmpty)
             EmptyState(
               emoji: '🌱',
-              text: 'Vegyél fel egy célt, amit követni szeretnél: naponta, hetente párszor, vagy mennyiséggel (pl. 8 pohár víz).',
-              action: 'Cél felvétele',
+              text: tr(
+                'Vegyél fel egy célt, amit követni szeretnél: naponta, hetente párszor, vagy mennyiséggel (pl. 8 pohár víz).',
+              ),
+              action: tr('Cél felvétele'),
               onAction: () => _addHabit(context),
             ),
           for (final h in store.habits)
@@ -131,7 +138,7 @@ class HabitsScreen extends StatelessWidget {
                               icon: const Icon(Icons.remove),
                             ),
                             IconButton.filled(
-                              tooltip: 'Még egy',
+                              tooltip: tr('Még egy'),
                               onPressed: h.countOn(today) < h.target ? () => store.toggleHabit(h) : null,
                               icon: const Icon(Icons.add),
                             ),

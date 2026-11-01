@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../account.dart';
 import '../push.dart';
@@ -32,11 +36,11 @@ class _InstallAndPushCardState extends State<InstallAndPushCard> {
         () => _message = ok
             ? null
             : Push.permission == 'denied'
-            ? 'Le vannak tiltva. A telefon Beállítások → Értesítések menüjében engedélyezheted.'
-            : 'Nem sikerült bekapcsolni. Próbáld újra.',
+            ? tr('Le vannak tiltva. A telefon Beállítások → Értesítések menüjében engedélyezheted.')
+            : tr('Nem sikerült bekapcsolni. Próbáld újra.'),
       );
     } catch (e) {
-      if (mounted) setState(() => _message = 'Nem sikerült bekapcsolni: $e');
+      if (mounted) setState(() => _message = trf('Nem sikerült bekapcsolni: {0}', [e]));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -58,7 +62,7 @@ class _InstallAndPushCardState extends State<InstallAndPushCard> {
                   const SizedBox(width: 12),
                   Expanded(child: Text('Tedd a kezdőképernyőre', style: Theme.of(context).textTheme.titleMedium)),
                   IconButton(
-                    tooltip: 'Bezárás',
+                    tooltip: tr('Bezárás'),
                     icon: const Icon(Icons.close, size: 20),
                     onPressed: () => store.closeHint('install'),
                   ),
@@ -71,9 +75,9 @@ class _InstallAndPushCardState extends State<InstallAndPushCard> {
                 style: TextStyle(color: AppColors.textMuted),
               ),
               const SizedBox(height: 10),
-              const _Step(n: 1, text: 'Koppints a Megosztás gombra (négyzet felfelé nyíllal).'),
-              const _Step(n: 2, text: 'Válaszd: „Főképernyőhöz adás”.'),
-              const _Step(n: 3, text: 'Nyisd meg a LIFEUP-ot az új ikonról.'),
+              _Step(n: 1, text: tr('Koppints a Megosztás gombra (négyzet felfelé nyíllal).')),
+              _Step(n: 2, text: tr('Válaszd: „Főképernyőhöz adás”.')),
+              _Step(n: 3, text: tr('Nyisd meg a LIFEUP-ot az új ikonról.')),
             ],
           ),
         ),
@@ -92,7 +96,7 @@ class _InstallAndPushCardState extends State<InstallAndPushCard> {
                   const SizedBox(width: 12),
                   Expanded(child: Text('Értesítések bekapcsolása', style: Theme.of(context).textTheme.titleMedium)),
                   IconButton(
-                    tooltip: 'Bezárás',
+                    tooltip: tr('Bezárás'),
                     icon: const Icon(Icons.close, size: 20),
                     onPressed: () => store.closeHint('push'),
                   ),
@@ -114,7 +118,7 @@ class _InstallAndPushCardState extends State<InstallAndPushCard> {
                   child: FilledButton(
                     style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
                     onPressed: _busy ? null : _enable,
-                    child: Text(_busy ? 'Bekapcsolás…' : 'Bekapcsolom'),
+                    child: Text(_busy ? tr('Bekapcsolás…') : 'Bekapcsolom'),
                   ),
                 ),
               ),

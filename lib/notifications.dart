@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -147,7 +149,7 @@ class Notifications {
     await _plugin.show(
       id: _testId,
       title: 'Szia! 👋',
-      body: 'Így fognak kinézni a LIFEUP emlékeztetői.',
+      body: tr('Így fognak kinézni a LIFEUP emlékeztetői.'),
       notificationDetails: NotificationDetails(android: _channels['events']),
     );
   }
@@ -192,7 +194,7 @@ class Notifications {
           title = before == 0 ? 'Most: ${o.event.title}' : '${_inText(before)}: ${o.event.title}';
         }
         if (!when.isAfter(now)) continue;
-        final body = o.event.allDay ? 'Egész napos' : '${time.format(o.start)}–${time.format(o.end)}';
+        final body = o.event.allDay ? tr('Egész napos') : '${time.format(o.start)}–${time.format(o.end)}';
         out.add(
           PlannedNotification(_eventBase + i++, when, title, o.event.place.isEmpty ? body : '$body · ${o.event.place}'),
         );
@@ -217,9 +219,11 @@ class Notifications {
             _taskBase + i++,
             when,
             s == null
-                ? 'Ma a határidő: ${t.title}'
+                ? trf('Ma a határidő: {0}', [t.title])
                 : (before == 0 ? 'Most: ${t.title}' : '${_inText(before)}: ${t.title}'),
-            s == null ? 'Pipáld ki, ha megvan. ✅' : '${formatTime(s)}-kor, ${t.durationMin} percet szántál rá.',
+            s == null
+                ? tr('Pipáld ki, ha megvan. ✅')
+                : trf('{0}-kor, {1} percet szántál rá.', [formatTime(s), t.durationMin]),
           ),
         );
       }
@@ -253,8 +257,8 @@ class Notifications {
           PlannedNotification(
             _birthdayBase + i++,
             when,
-            'Ma van ${f.name} születésnapja 🎂',
-            'Írj neki, vagy szervezz valamit!',
+            trf('Ma van {0} születésnapja 🎂', [f.name]),
+            tr('Írj neki, vagy szervezz valamit!'),
             channel: 'birthdays',
           ),
         );
@@ -272,7 +276,7 @@ class Notifications {
           PlannedNotification(
             _memoryBase + d,
             when,
-            'Emlék: ${pick.event.title} 📸',
+            trf('Emlék: {0} 📸', [pick.event.title]),
             'Ma ${pick.ago} volt${pick.event.place.isEmpty ? '' : ' · ${pick.event.place}'}. Nézd meg a közös fotókat!',
             channel: 'birthdays',
           ),
@@ -283,9 +287,9 @@ class Notifications {
   }
 
   static String _inText(int minutes) => switch (minutes) {
-    < 60 => '$minutes perc múlva',
-    60 => '1 óra múlva',
-    < 1440 => '${minutes ~/ 60} óra múlva',
+    < 60 => trf('{0} perc múlva', [minutes]),
+    60 => tr('1 óra múlva'),
+    < 1440 => trf('{0} óra múlva', [minutes ~/ 60]),
     _ => 'Holnap',
   };
 
@@ -296,7 +300,7 @@ class Notifications {
       final left = h.target - h.countOn(day);
       return 'Még $left${h.unit.isEmpty ? '' : ' ${h.unit}'} van hátra mára. 💪';
     }
-    if (h.isWeekly) return 'Ezen a héten még ${h.perWeek! - h.doneInWeek(day)}× van hátra. 💪';
+    if (h.isWeekly) return trf('Ezen a héten még {0}× van hátra. 💪', [h.perWeek! - h.doneInWeek(day)]);
     return 'Ne felejtsd el ma! 💪';
   }
 }

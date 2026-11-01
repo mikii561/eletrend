@@ -227,25 +227,25 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         selectedIndex: _index,
         onDestinationSelected: _select,
         destinations: [
-          const NavigationDestination(
+          NavigationDestination(
             icon: _HomeTabIcon(selected: false),
             selectedIcon: _HomeTabIcon(selected: true),
-            label: 'Főoldal',
+            label: tr('Főoldal'),
           ),
-          const NavigationDestination(
+          NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
-            label: 'Naptár',
+            label: tr('Naptár'),
           ),
           NavigationDestination(
             icon: const _CreateButton(),
-            label: 'Létrehozás',
-            tooltip: 'Új bejegyzés, feladat, közös program',
+            label: tr('Létrehozás'),
+            tooltip: tr('Új bejegyzés, feladat, közös program'),
           ),
-          const NavigationDestination(
+          NavigationDestination(
             icon: _FriendsTabIcon(selected: false),
             selectedIcon: _FriendsTabIcon(selected: true),
-            label: 'Barátok',
+            label: tr('Barátok'),
           ),
           const NavigationDestination(
             icon: Icon(Icons.person_outline),
@@ -298,7 +298,7 @@ class _FriendsTabIconState extends State<_FriendsTabIcon> {
         stream: _nudges,
         builder: (context, nudges) => CountBadge(
           count: (requests.data?.length ?? 0) + (nudges.data ?? 0),
-          label: 'új jelölés vagy bökés',
+          label: tr('új jelölés vagy bökés'),
           child: icon,
         ),
       ),
@@ -315,7 +315,7 @@ class _HomeTabIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) => CountBadge(
     count: StoreScope.of(context).unseenInvites().length,
-    label: 'új meghívás',
+    label: tr('új meghívás'),
     child: Icon(selected ? Icons.home : Icons.home_outlined),
   );
 }

@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -8,7 +10,7 @@ import 'package:image/image.dart' as img;
 /// Ha a kép nem nyitható meg, [FormatException] a hiba (magyar üzenettel).
 String squareJpegBase64(Uint8List bytes, {required int side, int quality = 80}) {
   final decoded = img.decodeImage(bytes);
-  if (decoded == null) throw const FormatException('Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.');
+  if (decoded == null) throw FormatException(tr('Ezt a képet nem tudom megnyitni. Próbálj JPG-t vagy PNG-t.'));
   final oriented = img.bakeOrientation(decoded);
   final shortSide = oriented.width < oriented.height ? oriented.width : oriented.height;
   final square = img.copyCrop(

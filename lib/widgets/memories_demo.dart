@@ -1,6 +1,10 @@
+import '../l10n/l10n.dart';
+
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../theme.dart';
 
@@ -19,11 +23,13 @@ class MemoriesDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _DemoPhone(
-        height: height,
-        loop: loop,
-        label: 'Animált példa: a Főoldalon megjelenő emlékre koppintva megnyílnak a közös fotók, és egy fotó nagyban is látszik.',
-        frame: (t) => _Frame(t: t),
-      );
+    height: height,
+    loop: loop,
+    label: tr(
+      'Animált példa: a Főoldalon megjelenő emlékre koppintva megnyílnak a közös fotók, és egy fotó nagyban is látszik.',
+    ),
+    frame: (t) => _Frame(t: t),
+  );
 }
 
 /// Kis animált példa: egy közös program oldalán a „Fotó” gombbal kiválasztasz pár képet,
@@ -37,12 +43,13 @@ class PhotoUploadDemo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _DemoPhone(
-        height: height,
-        loop: loop,
-        label: 'Animált példa: a közös program Emlékek részénél a Fotó gombbal képeket választasz, '
-            'beállítod, ki láthatja őket, és feltöltöd; utána a program oldalán megjelennek.',
-        frame: (t) => _UploadFrame(t: t),
-      );
+    height: height,
+    loop: loop,
+    label: tr(
+      'Animált példa: a közös program Emlékek részénél a Fotó gombbal képeket választasz, beállítod, ki láthatja őket, és feltöltöd; utána a program oldalán megjelennek.',
+    ),
+    frame: (t) => _UploadFrame(t: t),
+  );
 }
 
 /// Egy rajzolt „telefon”, benne végtelenített animációval ([frame] a 0..1 közötti időből rajzol).
@@ -104,7 +111,14 @@ class _DemoPhoneState extends State<_DemoPhone> with SingleTickerProviderStateMi
 }
 
 /// A színek a minta-fotókhoz (tó, naplemente, erdő…).
-const _photoColors = [Color(0xFF3A6E8C), Color(0xFFC8964F), Color(0xFF5A7846), Color(0xFF8C5A3C), Color(0xFF6E3B5E), Color(0xFF4F5D73)];
+const _photoColors = [
+  Color(0xFF3A6E8C),
+  Color(0xFFC8964F),
+  Color(0xFF5A7846),
+  Color(0xFF8C5A3C),
+  Color(0xFF6E3B5E),
+  Color(0xFF4F5D73),
+];
 
 /// [a]–[b] közötti szakasz előrehaladása 0..1-re vetítve, lágyítva.
 double _seg(double t, double a, double b) => Curves.easeInOut.transform(((t - a) / (b - a)).clamp(0.0, 1.0));
@@ -143,7 +157,9 @@ class _Frame extends StatelessWidget {
         return Stack(
           children: [
             // 1. Főoldal az emlék-kártyával
-            Positioned.fill(child: _Home(cardRect: cardRect, highlight: press > 0 && t < 0.32)),
+            Positioned.fill(
+              child: _Home(cardRect: cardRect, highlight: press > 0 && t < 0.32),
+            ),
             // 2. Galéria (jobbról becsúszik)
             if (toGallery > 0)
               Positioned(
@@ -172,7 +188,9 @@ class _Frame extends StatelessWidget {
                           opacity: _seg(t, 0.72, 0.78),
                           child: Row(
                             children: [
-                              const Expanded(child: Text('Anna · 1 éve', style: TextStyle(color: Colors.white70, fontSize: 9))),
+                              const Expanded(
+                                child: Text('Anna · 1 éve', style: TextStyle(color: Colors.white70, fontSize: 9)),
+                              ),
                               Icon(Icons.download_outlined, color: Colors.white.withValues(alpha: 0.9), size: 12),
                               const Text(' Letöltés', style: TextStyle(color: Colors.white, fontSize: 9)),
                             ],
@@ -219,10 +237,10 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(3)),
-      );
+    width: width,
+    height: height,
+    decoration: BoxDecoration(color: AppColors.divider, borderRadius: BorderRadius.circular(3)),
+  );
 }
 
 class _Photo extends StatelessWidget {
@@ -233,34 +251,36 @@ class _Photo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: ColoredBox(
-          color: color,
-          child: LayoutBuilder(
-            builder: (context, c) => Stack(
-              children: [
-                // Egyszerű „táj”: nap és domb.
-                Positioned(
-                  left: c.maxWidth * 0.55,
-                  top: c.maxHeight * 0.18,
-                  width: c.maxWidth * 0.22,
-                  height: c.maxWidth * 0.22,
-                  child: const DecoratedBox(decoration: BoxDecoration(color: Color(0xFFF4E9DA), shape: BoxShape.circle)),
-                ),
-                Positioned(
-                  left: -c.maxWidth * 0.2,
-                  right: -c.maxWidth * 0.2,
-                  bottom: -c.maxHeight * 0.45,
-                  height: c.maxHeight * 0.8,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.18), shape: BoxShape.circle),
-                  ),
-                ),
-              ],
+    borderRadius: BorderRadius.circular(radius),
+    child: ColoredBox(
+      color: color,
+      child: LayoutBuilder(
+        builder: (context, c) => Stack(
+          children: [
+            // Egyszerű „táj”: nap és domb.
+            Positioned(
+              left: c.maxWidth * 0.55,
+              top: c.maxHeight * 0.18,
+              width: c.maxWidth * 0.22,
+              height: c.maxWidth * 0.22,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(color: Color(0xFFF4E9DA), shape: BoxShape.circle),
+              ),
             ),
-          ),
+            Positioned(
+              left: -c.maxWidth * 0.2,
+              right: -c.maxWidth * 0.2,
+              bottom: -c.maxHeight * 0.45,
+              height: c.maxHeight * 0.8,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.18), shape: BoxShape.circle),
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _Home extends StatelessWidget {
@@ -284,11 +304,18 @@ class _Home extends StatelessWidget {
               children: [
                 _Bar(40, height: 4),
                 const SizedBox(height: 4),
-                Text('Szia, Gabi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text)),
+                Text(
+                  'Szia, Gabi',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text),
+                ),
                 const SizedBox(height: 8),
                 Container(
                   height: 26,
-                  decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(6), border: Border.all(color: AppColors.divider)),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.divider),
+                  ),
                 ),
               ],
             ),
@@ -296,7 +323,10 @@ class _Home extends StatelessWidget {
           Positioned(
             left: cardRect.left,
             top: cardRect.top - 14,
-            child: Text('Emlékek · ma 1 éve', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.text)),
+            child: Text(
+              'Emlékek · ma 1 éve',
+              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.text),
+            ),
           ),
           Positioned.fromRect(
             rect: cardRect,
@@ -311,7 +341,10 @@ class _Home extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Balatoni hétvége', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text)),
+                  Text(
+                    'Balatoni hétvége',
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text),
+                  ),
                   Text('2025. okt. 31. · Balatonfüred', style: TextStyle(fontSize: 7, color: AppColors.textMuted)),
                   const SizedBox(height: 5),
                   Expanded(
@@ -332,7 +365,13 @@ class _Home extends StatelessWidget {
             left: cardRect.left,
             right: cardRect.left,
             top: cardRect.bottom + 10,
-            child: Column(children: [_Bar(double.infinity, height: 20), const SizedBox(height: 6), _Bar(double.infinity, height: 20)]),
+            child: Column(
+              children: [
+                _Bar(double.infinity, height: 20),
+                const SizedBox(height: 6),
+                _Bar(double.infinity, height: 20),
+              ],
+            ),
           ),
         ],
       ),
@@ -361,7 +400,10 @@ class _Gallery extends StatelessWidget {
               Positioned(
                 left: left,
                 top: 14,
-                child: Text('Emlékek', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text)),
+                child: Text(
+                  'Emlékek',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.text),
+                ),
               ),
               Positioned(
                 left: left,
@@ -369,12 +411,19 @@ class _Gallery extends StatelessWidget {
                 top: 34,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.divider)),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.divider),
+                  ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Balatoni hétvége', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text)),
+                      Text(
+                        'Balatoni hétvége',
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text),
+                      ),
                       Text('1 éve · Balatonfüred', style: TextStyle(fontSize: 7, color: AppColors.textMuted)),
                     ],
                   ),
@@ -410,25 +459,25 @@ class _Finger extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Positioned(
-        left: at.dx - 11,
-        top: at.dy - 11,
-        child: Opacity(
-          opacity: opacity.clamp(0.0, 1.0),
-          child: AnimatedScale(
-            scale: pressed ? 0.75 : 1,
-            duration: const Duration(milliseconds: 120),
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.85),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.black.withValues(alpha: 0.35), width: 1.5),
-              ),
-            ),
+    left: at.dx - 11,
+    top: at.dy - 11,
+    child: Opacity(
+      opacity: opacity.clamp(0.0, 1.0),
+      child: AnimatedScale(
+        scale: pressed ? 0.75 : 1,
+        duration: const Duration(milliseconds: 120),
+        child: Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.85),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.black.withValues(alpha: 0.35), width: 1.5),
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// A feltöltés lépései: program oldala → képválasztó (3 kép) → kik láthatják → feltöltés → kész.
@@ -454,7 +503,8 @@ class _UploadFrame extends StatelessWidget {
         final stripTop = h * 0.56;
         final plusTile = Rect.fromLTWH(left, stripTop, thumb, thumb);
         final pickCell = (w - 16) / 3;
-        Rect pick(int i) => Rect.fromLTWH(4 + (i % 3) * (pickCell + 4), h * 0.14 + (i ~/ 3) * (pickCell + 4), pickCell, pickCell);
+        Rect pick(int i) =>
+            Rect.fromLTWH(4 + (i % 3) * (pickCell + 4), h * 0.14 + (i ~/ 3) * (pickCell + 4), pickCell, pickCell);
         final addButton = Rect.fromLTWH(w * 0.2, h * 0.80, w * 0.6, 22);
         final uploadButton = Rect.fromLTWH(w * 0.12, h * 0.84, w * 0.76, 24);
 
@@ -485,7 +535,9 @@ class _UploadFrame extends StatelessWidget {
 
         return Stack(
           children: [
-            Positioned.fill(child: _EventPage(t: t, left: left, thumb: thumb, stripTop: stripTop, plusTile: plusTile)),
+            Positioned.fill(
+              child: _EventPage(t: t, left: left, thumb: thumb, stripTop: stripTop, plusTile: plusTile),
+            ),
             if (sheetUp > 0)
               Positioned(
                 left: 0,
@@ -494,7 +546,10 @@ class _UploadFrame extends StatelessWidget {
                 height: h,
                 child: _Picker(t: t, pick: pick, addButton: addButton, picked: picked, top: h * 0.06),
               ),
-            if (optionsUp > 0) Positioned.fill(child: _Options(t: t, up: optionsUp, uploadButton: uploadButton)),
+            if (optionsUp > 0)
+              Positioned.fill(
+                child: _Options(t: t, up: optionsUp, uploadButton: uploadButton),
+              ),
             if (t >= _progress && t < _done)
               Positioned.fill(
                 child: ColoredBox(
@@ -514,7 +569,7 @@ class _UploadFrame extends StatelessWidget {
                           const SizedBox(width: 8),
                           Flexible(
                             child: Text(
-                              'Feltöltés: ${min(3, (_seg(t, _progress, _done - 0.01) * 3).floor() + 1)} / 3',
+                              trf('Feltöltés: {0} / 3', [min(3, (_seg(t, _progress, _done - 0.01) * 3).floor() + 1)]),
                               maxLines: 1,
                               style: TextStyle(fontSize: 8, color: AppColors.text),
                             ),
@@ -535,7 +590,13 @@ class _UploadFrame extends StatelessWidget {
 
 /// A közös program oldala az Emlékek résszel (a végén a feltöltött képekkel).
 class _EventPage extends StatelessWidget {
-  const _EventPage({required this.t, required this.left, required this.thumb, required this.stripTop, required this.plusTile});
+  const _EventPage({
+    required this.t,
+    required this.left,
+    required this.thumb,
+    required this.stripTop,
+    required this.plusTile,
+  });
 
   final double t;
   final double left;
@@ -557,12 +618,19 @@ class _EventPage extends StatelessWidget {
             top: 12,
             child: Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.divider)),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.divider),
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Pizzaest', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.text)),
+                  Text(
+                    'Pizzaest',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.text),
+                  ),
                   Text('Tegnap · Budapest', style: TextStyle(fontSize: 7, color: AppColors.textMuted)),
                 ],
               ),
@@ -575,7 +643,10 @@ class _EventPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Résztvevők · 4 megy', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.text)),
+                Text(
+                  'Résztvevők · 4 megy',
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.text),
+                ),
                 const SizedBox(height: 4),
                 _Bar(double.infinity, height: 16),
               ],
@@ -584,7 +655,10 @@ class _EventPage extends StatelessWidget {
           Positioned(
             left: left,
             top: stripTop - 14,
-            child: Text('Emlékek', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.text)),
+            child: Text(
+              'Emlékek',
+              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: AppColors.text),
+            ),
           ),
           Positioned.fromRect(
             rect: plusTile,
@@ -637,7 +711,13 @@ class _EventPage extends StatelessWidget {
 
 /// A telefon képválasztója: 3×3 kép, a kiválasztottakon pipa.
 class _Picker extends StatelessWidget {
-  const _Picker({required this.t, required this.pick, required this.addButton, required this.picked, required this.top});
+  const _Picker({
+    required this.t,
+    required this.pick,
+    required this.addButton,
+    required this.picked,
+    required this.top,
+  });
 
   final double t;
   final Rect Function(int i) pick;
@@ -650,13 +730,19 @@ class _Picker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(12))),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      ),
       child: Stack(
         children: [
           Positioned(
             left: 8,
             top: 6,
-            child: Text('Képek kiválasztása', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text)),
+            child: Text(
+              'Képek kiválasztása',
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text),
+            ),
           ),
           for (var i = 0; i < 9; i++)
             Positioned.fromRect(
@@ -685,7 +771,7 @@ class _Picker extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8)),
               child: Text(
-                'Hozzáadás ($picked)',
+                trf('Hozzáadás ({0})', [picked]),
                 style: TextStyle(fontSize: 8, color: AppColors.onPrimary, fontWeight: FontWeight.w700),
               ),
             ),
@@ -721,21 +807,38 @@ class _Options extends StatelessWidget {
                 bottom: -shift,
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(10, 8, 10, 0),
-                  decoration: BoxDecoration(color: AppColors.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(12))),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('3 fotó feltöltése', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text)),
+                      Text(
+                        '3 fotó feltöltése',
+                        style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.text),
+                      ),
                       const SizedBox(height: 3),
                       Text('Ki láthatja?', style: TextStyle(fontSize: 7, color: AppColors.textMuted)),
-                      for (final (label, on) in [('Mindenki a programból', true), ('Csak akik ott voltak', false)])
+                      for (final (label, on) in [(tr('Mindenki a programból'), true), ('Csak akik ott voltak', false)])
                         Padding(
                           padding: const EdgeInsets.only(top: 3),
                           child: Row(
                             children: [
-                              Icon(on ? Icons.radio_button_checked : Icons.radio_button_off, size: 10, color: AppColors.primary),
+                              Icon(
+                                on ? Icons.radio_button_checked : Icons.radio_button_off,
+                                size: 10,
+                                color: AppColors.primary,
+                              ),
                               const SizedBox(width: 4),
-                              Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 7, color: AppColors.text))),
+                              Flexible(
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 7, color: AppColors.text),
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -743,7 +846,14 @@ class _Options extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 3),
                         child: Row(
                           children: [
-                            Expanded(child: Text('Mások is letölthetik', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 7, color: AppColors.text))),
+                            Expanded(
+                              child: Text(
+                                'Mások is letölthetik',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 7, color: AppColors.text),
+                              ),
+                            ),
                             Icon(Icons.toggle_on, size: 16, color: AppColors.primary),
                           ],
                         ),
@@ -760,7 +870,10 @@ class _Options extends StatelessWidget {
                     color: t > 0.63 && t < 0.66 ? AppColors.primary.withValues(alpha: 0.8) : AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text('Feltöltés', style: TextStyle(fontSize: 8, color: AppColors.onPrimary, fontWeight: FontWeight.w700)),
+                  child: Text(
+                    'Feltöltés',
+                    style: TextStyle(fontSize: 8, color: AppColors.onPrimary, fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ],

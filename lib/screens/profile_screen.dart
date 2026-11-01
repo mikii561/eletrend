@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:intl/intl.dart';
 
 import '../account.dart';
@@ -32,7 +35,7 @@ class ProfileScreen extends StatelessWidget {
     final name = await showTextInputSheet(
       context,
       title: 'A neved',
-      hint: store.myName.isEmpty ? 'Így látnak a barátaid' : store.myName,
+      hint: store.myName.isEmpty ? tr('Így látnak a barátaid') : store.myName,
     );
     if (name != null && name.trim().isNotEmpty) store.setMyName(name);
   }
@@ -74,11 +77,11 @@ class ProfileScreen extends StatelessWidget {
                   subtitle: Text(
                     [
                       user?.email ?? '',
-                      if (Friends.instance.myCode != null) 'Kód: ${Friends.instance.myCode}',
+                      if (Friends.instance.myCode != null) trf('Kód: {0}', [Friends.instance.myCode]),
                     ].where((s) => s.isNotEmpty).join(' · '),
                   ),
                   trailing: IconButton(
-                    tooltip: 'Név szerkesztése',
+                    tooltip: tr('Név szerkesztése'),
                     icon: const Icon(Icons.edit_outlined),
                     onPressed: () => _editName(context),
                   ),
@@ -86,42 +89,45 @@ class ProfileScreen extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.cake_outlined),
                   title: Text(
-                    birthday == null ? 'Születésnap megadása' : DateFormat('yyyy. MMMM d.', 'hu').format(birthday),
+                    birthday == null ? tr('Születésnap megadása') : DateFormat('yyyy. MMMM d.', 'hu').format(birthday),
                   ),
-                  subtitle: Text(store.shareBirthday ? 'A barátaid látják (év nélkül)' : 'Csak te látod'),
+                  subtitle: Text(store.shareBirthday ? tr('A barátaid látják (év nélkül)') : tr('Csak te látod')),
                   onTap: () => _editBirthday(context),
                 ),
               ],
             ),
           ),
-          const SectionTitle('Fejlődés'),
+          SectionTitle(tr('Fejlődés')),
           Card(
             child: Column(
               children: [
                 SettingsTile(
                   icon: Icons.flag_outlined,
-                  title: 'Céljaim',
+                  title: tr('Céljaim'),
                   subtitle: store.habits.isEmpty
-                      ? 'Még nincs célod'
-                      : '${store.habits.length} cél · ma ${store.habits.length - store.habitsLeftToday} kész',
+                      ? tr('Még nincs célod')
+                      : trf('{0} cél · ma {1} kész', [
+                          store.habits.length,
+                          store.habits.length - store.habitsLeftToday,
+                        ]),
                   onTap: () => _push(context, const HabitsScreen()),
                 ),
                 SettingsTile(
                   icon: Icons.emoji_events_outlined,
-                  title: 'Kihívások',
-                  subtitle: 'Közös célok a barátaiddal, ranglistával',
+                  title: tr('Kihívások'),
+                  subtitle: tr('Közös célok a barátaiddal, ranglistával'),
                   onTap: () => _push(context, const ChallengesScreen()),
                 ),
                 SettingsTile(
                   icon: Icons.waving_hand_outlined,
-                  title: 'Kapott bökések',
+                  title: tr('Kapott bökések'),
                   onTap: () => _push(context, const NudgeInboxScreen()),
                   trailing: StreamBuilder<int>(
                     stream: Nudges.instance.watchUnseenCount(),
                     builder: (context, snap) => Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        if ((snap.data ?? 0) > 0) Pill('${snap.data} új', color: AppColors.danger),
+                        if ((snap.data ?? 0) > 0) Pill(trf('{0} új', [snap.data]), color: AppColors.danger),
                         const Icon(Icons.chevron_right),
                       ],
                     ),
@@ -130,31 +136,31 @@ class ProfileScreen extends StatelessWidget {
               ],
             ),
           ),
-          const SectionTitle('Beállítások'),
+          SectionTitle(tr('Beállítások')),
           Card(
             child: Column(
               children: [
                 SettingsTile(
                   icon: Icons.lock_outline,
-                  title: 'Adatvédelem',
-                  subtitle: 'Elérhetőség: ${store.shareAvailability.label.toLowerCase()}',
+                  title: tr('Adatvédelem'),
+                  subtitle: trf('Elérhetőség: {0}', [store.shareAvailability.label.toLowerCase()]),
                   onTap: () => _push(context, const PrivacyScreen()),
                 ),
                 SettingsTile(
                   icon: Icons.calendar_month_outlined,
-                  title: 'Google Naptár',
-                  subtitle: store.googleConnected ? 'Összekapcsolva' : 'Hozd át az eseményeidet',
+                  title: tr('Google Naptár'),
+                  subtitle: store.googleConnected ? tr('Összekapcsolva') : tr('Hozd át az eseményeidet'),
                   onTap: () => _push(context, const GoogleCalendarScreen()),
                 ),
                 SettingsTile(
                   icon: Icons.notifications_none,
-                  title: 'Értesítések',
+                  title: tr('Értesítések'),
                   onTap: () => _push(context, const NotificationSettingsScreen()),
                 ),
                 SettingsTile(
                   icon: Icons.dashboard_customize_outlined,
-                  title: 'Főoldal testreszabása',
-                  subtitle: 'Kártyák sorrendje, elrejtése',
+                  title: tr('Főoldal testreszabása'),
+                  subtitle: tr('Kártyák sorrendje, elrejtése'),
                   onTap: () => _push(context, const HomeCardsScreen()),
                 ),
                 SettingsTile(
@@ -165,29 +171,29 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 SettingsTile(
                   icon: Icons.palette_outlined,
-                  title: 'Megjelenés',
+                  title: tr('Megjelenés'),
                   subtitle: switch (store.themeMode) {
                     ThemeMode.light => store.palette.label,
-                    ThemeMode.dark => 'Sötét',
-                    ThemeMode.system => 'A telefon beállítása szerint',
+                    ThemeMode.dark => tr('Sötét'),
+                    ThemeMode.system => tr('A telefon beállítása szerint'),
                   },
                   onTap: () => _showTheme(context),
                 ),
                 SettingsTile(
                   icon: Icons.download_outlined,
-                  title: 'Adataim exportálása',
-                  subtitle: 'Minden saját adat egy fájlban',
+                  title: tr('Adataim exportálása'),
+                  subtitle: tr('Minden saját adat egy fájlban'),
                   onTap: () => Backup.export(context, store),
                 ),
                 SettingsTile(
                   icon: Icons.upload_outlined,
-                  title: 'Export visszatöltése',
+                  title: tr('Export visszatöltése'),
                   onTap: () => Backup.restore(context, store),
                 ),
                 SettingsTile(
                   icon: Icons.school_outlined,
-                  title: 'Bemutató újra',
-                  subtitle: 'Végigvezet az app fő részein',
+                  title: tr('Bemutató újra'),
+                  subtitle: tr('Végigvezet az app fő részein'),
                   onTap: () => HomeShell.startTour(context),
                 ),
               ],
@@ -248,7 +254,7 @@ class ProfileScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                     child: Text(
-                      'Világos napszakban a(z) ${store.palette.label} megjelenést használja.',
+                      trf('Világos napszakban a(z) {0} megjelenést használja.', [store.palette.label]),
                       style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                     ),
                   ),
@@ -275,7 +281,7 @@ class NotificationSettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
         children: [
           if (!Notifications.supported) const _WebNotice(),
-          const SectionTitle('Emlékeztetők'),
+          SectionTitle(tr('Emlékeztetők')),
           Card(
             child: Column(
               children: [
@@ -340,11 +346,12 @@ class _WebNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = !kIsWeb
-        ? 'Ezen az eszközön az emlékeztetők nem érhetők el.'
+        ? tr('Ezen az eszközön az emlékeztetők nem érhetők el.')
         : !Push.configured
-        ? 'Böngészőben most csak nyitott appnál látod a meghívókat és bökéseket. A beállított emlékeztetők '
-              'Android telefonon működnek; bezárt appra küldött értesítéshez szerver kell, ami még nincs bekapcsolva.'
-        : 'Böngészőben az értesítéseket a Főoldal „Értesítések bekapcsolása” kártyáján kapcsolhatod be.';
+        ? tr(
+            'Böngészőben most csak nyitott appnál látod a meghívókat és bökéseket. A beállított emlékeztetők Android telefonon működnek; bezárt appra küldött értesítéshez szerver kell, ami még nincs bekapcsolva.',
+          )
+        : tr('Böngészőben az értesítéseket a Főoldal „Értesítések bekapcsolása” kártyáján kapcsolhatod be.');
     return Card(
       child: ListTile(
         leading: const Icon(Icons.info_outline),

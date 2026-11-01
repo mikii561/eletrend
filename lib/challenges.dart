@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -134,11 +136,12 @@ class ChallengeActivity {
   /// Aki elvégezte (a buzdításnál nem tudjuk, ki volt).
   final String name;
 
-  String get title => kind == ChallengeActivityKind.done ? '💪 $name már megcsinálta!' : '👏 Megbuzdítottak!';
+  String get title =>
+      kind == ChallengeActivityKind.done ? trf('💪 {0} már megcsinálta!', [name]) : tr('👏 Megbuzdítottak!');
 
   String get body => kind == ChallengeActivityKind.done
-      ? '${challenge.title}: most te jössz! Ha te is kész vagy, buzdítsd a többieket.'
-      : '${challenge.title}: valaki szerint menni fog. Csináld meg ma!';
+      ? trf('{0}: most te jössz! Ha te is kész vagy, buzdítsd a többieket.', [challenge.title])
+      : trf('{0}: valaki szerint menni fog. Csináld meg ma!', [challenge.title]);
 }
 
 /// Közös kihívások: `challenges/{id}` (tagok, nevek), `challenges/{id}/progress/{uid}` (teljesített napok, buzdítások).

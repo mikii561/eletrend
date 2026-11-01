@@ -1,4 +1,9 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:image_picker/image_picker.dart';
 
 import '../square_image.dart';
@@ -83,7 +88,7 @@ class ProfilePhotoButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Profilkép módosítása',
+      label: tr('Profilkép módosítása'),
       child: GestureDetector(
         onTap: () async {
           final picked = await chooseProfilePhoto(context, hasPhoto: photo.isNotEmpty);

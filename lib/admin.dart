@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -426,7 +428,7 @@ class Admin {
   /// [FormatException]-t dob, ha nem kép.
   static Uint8List prepareScreenshot(Uint8List bytes) {
     final decoded = img.decodeImage(bytes);
-    if (decoded == null) throw const FormatException('Ezt a képet nem tudom megnyitni.');
+    if (decoded == null) throw FormatException(tr('Ezt a képet nem tudom megnyitni.'));
     var image = img.bakeOrientation(decoded);
     final longest = image.width > image.height ? image.width : image.height;
     if (longest > 1280) {
@@ -439,7 +441,7 @@ class Admin {
       image = img.copyResize(image, width: (image.width * 0.85).round());
       out = Uint8List.fromList(img.encodeJpg(image, quality: quality));
     }
-    if (out.length > maxScreenshotBytes) throw const FormatException('Ez a kép túl nagy.');
+    if (out.length > maxScreenshotBytes) throw FormatException(tr('Ez a kép túl nagy.'));
     return out;
   }
 

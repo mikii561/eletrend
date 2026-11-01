@@ -1,6 +1,10 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../account.dart';
 import '../availability.dart' show AvailabilityStatus;
@@ -65,7 +69,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> with WidgetsBindi
       if (!silent) {
         setState(() {
           _error = true;
-          _message = 'Még nem látjuk megerősítve. Nyisd meg a levelet, és koppints a linkre.';
+          _message = tr('Még nem látjuk megerősítve. Nyisd meg a levelet, és koppints a linkre.');
         });
       }
     } catch (e) {
@@ -90,7 +94,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> with WidgetsBindi
       if (!mounted) return;
       setState(() {
         _error = false;
-        _message = 'Elküldtük az új levelet. Nézd meg a spam mappát is!';
+        _message = tr('Elküldtük az új levelet. Nézd meg a spam mappát is!');
         _cooldown = 60;
       });
       _cooldownTimer?.cancel();
@@ -134,9 +138,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> with WidgetsBindi
             Text('Küldtünk egy levelet ide:', style: TextStyle(color: AppColors.textMuted, fontSize: 16, height: 1.4)),
             Text(widget.email, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
             const SizedBox(height: 16),
-            _step(theme, '1', 'Nyisd meg a levelet (nézd meg a spam mappát is).'),
-            _step(theme, '2', 'Koppints a benne lévő megerősítő linkre.'),
-            _step(theme, '3', 'Gyere vissza ide: az app magától továbblép.'),
+            _step(theme, '1', tr('Nyisd meg a levelet (nézd meg a spam mappát is).')),
+            _step(theme, '2', tr('Koppints a benne lévő megerősítő linkre.')),
+            _step(theme, '3', tr('Gyere vissza ide: az app magától továbblép.')),
             if (_message != null) ...[
               const SizedBox(height: 8),
               Text(
@@ -158,7 +162,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> with WidgetsBindi
             OutlinedButton(
               style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),
               onPressed: _busy || _cooldown > 0 ? null : _resend,
-              child: Text(_cooldown > 0 ? 'Új levél kérése ($_cooldown mp)' : 'Levél újraküldése'),
+              child: Text(_cooldown > 0 ? trf('Új levél kérése ({0} mp)', [_cooldown]) : tr('Levél újraküldése')),
             ),
             const SizedBox(height: 4),
             TextButton(onPressed: Account.instance.logout, child: const Text('Rossz az e-mail-cím? Kijelentkezés')),

@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../models.dart';
 import '../theme.dart';
@@ -69,7 +73,7 @@ class StreakChip extends StatelessWidget {
 String? habitProgress(Habit h, DateTime day) {
   final parts = [
     if (h.isCounted) '${h.countOn(day)}/${h.target}${h.unit.isEmpty ? '' : ' ${h.unit}'}',
-    if (h.isWeekly) '${h.doneInWeek(day)}/${h.perWeek} ezen a héten',
+    if (h.isWeekly) trf('{0}/{1} ezen a héten', [h.doneInWeek(day), h.perWeek]),
   ];
   return parts.isEmpty ? null : parts.join(' · ');
 }

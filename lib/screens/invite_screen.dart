@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../models.dart';
 import '../social.dart';
@@ -45,9 +49,11 @@ class _InviteScreenState extends State<InviteScreen> {
           if (snap.hasError) {
             return ListView(
               padding: const EdgeInsets.all(16),
-              children: const [
+              children: [
                 ErrorState(
-                  text: 'Nem sikerült betölteni. Lehet, hogy nincs internet, vagy ez a program csak a meghívottaknak látható.',
+                  text: tr(
+                    'Nem sikerült betölteni. Lehet, hogy nincs internet, vagy ez a program csak a meghívottaknak látható.',
+                  ),
                 ),
               ],
             );
@@ -57,8 +63,8 @@ class _InviteScreenState extends State<InviteScreen> {
           if (e == null) {
             return ListView(
               padding: const EdgeInsets.all(16),
-              children: const [
-                EmptyState(emoji: '🤷', text: 'Ez a program már nem létezik.\nLehet, hogy a szervező törölte.'),
+              children: [
+                EmptyState(emoji: '🤷', text: tr('Ez a program már nem létezik.\nLehet, hogy a szervező törölte.')),
               ],
             );
           }

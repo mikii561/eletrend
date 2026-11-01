@@ -1,7 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../account.dart';
 import '../admin.dart';
@@ -242,9 +246,9 @@ class _AuthGateState extends State<AuthGate> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const EmptyState(
+                EmptyState(
                   emoji: '⛔',
-                  text: 'A fiókod fel van függesztve.\nHa szerinted ez tévedés, keresd az app üzemeltetőjét.',
+                  text: tr('A fiókod fel van függesztve.\nHa szerinted ez tévedés, keresd az app üzemeltetőjét.'),
                 ),
                 TextButton(onPressed: Account.instance.logout, child: const Text('Kijelentkezés')),
               ],
@@ -261,7 +265,7 @@ class _AuthGateState extends State<AuthGate> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const EmptyState(emoji: '📡', text: 'Nem sikerült betölteni az adataidat.\nVan internet?'),
+                EmptyState(emoji: '📡', text: tr('Nem sikerült betölteni az adataidat.\nVan internet?')),
                 const SizedBox(height: 12),
                 FilledButton(onPressed: () => _startSync(_user!), child: const Text('Újra')),
                 TextButton(onPressed: Account.instance.logout, child: const Text('Kijelentkezés')),

@@ -1,6 +1,11 @@
+import '../l10n/l10n.dart';
+
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -13,7 +18,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 
 void _error(BuildContext context, Object e) =>
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Nem sikerült. Van internet? ($e)')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(trf('Nem sikerült. Van internet? ({0})', [e]))));
 
 /// Közös kihívások listája.
 class ChallengesScreen extends StatefulWidget {
@@ -43,22 +48,22 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
               label: const Text('Új kihívás', style: TextStyle(fontWeight: FontWeight.w700)),
             ),
       body: _mine == null
-          ? const Padding(
+          ? Padding(
               padding: EdgeInsets.all(16),
-              child: EmptyState(emoji: '📡', text: 'A kihívásokhoz internet kell.'),
+              child: EmptyState(emoji: '📡', text: tr('A kihívásokhoz internet kell.')),
             )
           : StreamBuilder<List<Challenge>>(
               stream: _mine,
               builder: (context, snap) {
-                if (snap.hasError) return Center(child: Text('Nem sikerült betölteni: ${snap.error}'));
+                if (snap.hasError) return Center(child: Text(trf('Nem sikerült betölteni: {0}', [snap.error])));
                 final list = snap.data?.where((c) => !c.isGoal).toList();
                 if (list == null) return const Center(child: CircularProgressIndicator());
                 if (list.isEmpty) {
-                  return const Padding(
+                  return Padding(
                     padding: EdgeInsets.all(16),
                     child: EmptyState(
                       emoji: '🏁',
-                      text: 'Még nincs kihívásod.\nHívd ki a barátaidat: ki bírja tovább?',
+                      text: tr('Még nincs kihívásod.\nHívd ki a barátaidat: ki bírja tovább?'),
                     ),
                   );
                 }
@@ -72,10 +77,10 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                           title: Text(c.title, style: const TextStyle(fontWeight: FontWeight.w800)),
                           subtitle: Text(
                             c.isActive()
-                                ? '${c.dayNumber()}. nap a ${c.days}-ból · ${c.members.length} résztvevő'
+                                ? trf('{0}. nap a {1}-ból · {2} résztvevő', [c.dayNumber(), c.days, c.members.length])
                                 : c.dayNumber() == 0
                                 ? 'Kezdés: ${DateFormat('MMM d.', 'hu').format(c.start)} · ${c.members.length} résztvevő'
-                                : 'Véget ért · ${c.members.length} résztvevő',
+                                : trf('Véget ért · {0} résztvevő', [c.members.length]),
                           ),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () =>
@@ -135,7 +140,7 @@ class _NewChallengeState extends State<_NewChallenge> {
     if (_title.text.trim().isEmpty) return;
     if (_days < 1 || _days > maxChallengeDays) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('A napok száma 1 és $maxChallengeDays között lehet.')));
+          .showSnackBar(SnackBar(content: Text(trf('A napok száma 1 és {0} között lehet.', [maxChallengeDays]))));
       return;
     }
     setState(() => _busy = true);
@@ -219,7 +224,7 @@ class _NewChallengeState extends State<_NewChallenge> {
                 OutlinedButton.icon(
                   onPressed: _pickImage,
                   icon: const Icon(Icons.photo_library_outlined),
-                  label: Text(_image.isEmpty ? 'Kép a galériából' : 'Másik kép'),
+                  label: Text(_image.isEmpty ? tr('Kép a galériából') : tr('Másik kép')),
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
                 ),
                 if (_image.isNotEmpty)
@@ -230,7 +235,7 @@ class _NewChallengeState extends State<_NewChallenge> {
             TextField(
               controller: _title,
               maxLength: 60,
-              decoration: const InputDecoration(labelText: 'Név (vagy írj sajátot)', counterText: ''),
+              decoration: InputDecoration(labelText: tr('Név (vagy írj sajátot)'), counterText: ''),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: 12),
@@ -259,8 +264,8 @@ class _NewChallengeState extends State<_NewChallenge> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(3)],
               decoration: InputDecoration(
-                labelText: 'Vagy írd be a napok számát',
-                helperText: 'Például 10 vagy 100 (legfeljebb $maxChallengeDays)',
+                labelText: tr('Vagy írd be a napok számát'),
+                helperText: trf('Például 10 vagy 100 (legfeljebb {0})', [maxChallengeDays]),
                 suffixText: 'nap',
               ),
               onChanged: (v) => setState(() => _days = int.tryParse(v) ?? 0),
@@ -384,10 +389,10 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                     children: [
                       Text(
                         c.isActive()
-                            ? '${c.dayNumber()}. nap a ${c.days}-ból'
+                            ? trf('{0}. nap a {1}-ból', [c.dayNumber(), c.days])
                             : c.dayNumber() == 0
-                            ? 'Még nem kezdődött el'
-                            : 'A kihívás véget ért',
+                            ? tr('Még nem kezdődött el')
+                            : tr('A kihívás véget ért'),
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
@@ -405,10 +410,10 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                           icon: Icon(doneToday ? Icons.check_circle : Icons.radio_button_unchecked),
                           label: Text(
                             linked != null
-                                ? (doneToday ? 'Ma kész ✅ (a célból)' : 'A célod kipipálásával teljesül')
+                                ? (doneToday ? tr('Ma kész ✅ (a célból)') : tr('A célod kipipálásával teljesül'))
                                 : doneToday
-                                ? 'Ma kész ✅'
-                                : 'Ma teljesítettem',
+                                ? tr('Ma kész ✅')
+                                : tr('Ma teljesítettem'),
                           ),
                         ),
                     ],
@@ -425,14 +430,16 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                           setState(() => _cheeredAll = true);
                           try {
                             final n = await Challenges.instance.cheerAll(c);
-                            messenger.showSnackBar(SnackBar(content: Text('Megbuzdítottál $n embert 👏')));
+                            messenger.showSnackBar(SnackBar(content: Text(trf('Megbuzdítottál {0} embert 👏', [n]))));
                           } catch (e) {
                             if (mounted) setState(() => _cheeredAll = false);
                             if (context.mounted) _error(context, e);
                           }
                         },
                   icon: const Text('👏', style: TextStyle(fontSize: 18)),
-                  label: Text(_cheeredAll ? 'Megbuzdítottad őket' : 'Buzdíts mindenkit, aki ma még nem csinálta meg'),
+                  label: Text(
+                    _cheeredAll ? tr('Megbuzdítottad őket') : tr('Buzdíts mindenkit, aki ma még nem csinálta meg'),
+                  ),
                 ),
               const SectionTitle('Ranglista'),
               Card(
@@ -471,13 +478,13 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                         trailing: p.uid == me
                             ? null
                             : IconButton(
-                                tooltip: 'Buzdítás',
+                                tooltip: tr('Buzdítás'),
                                 icon: const Text('👏', style: TextStyle(fontSize: 22)),
                                 onPressed: () async {
                                   await Challenges.instance.cheer(c.id, p.uid);
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context)
-                                        .showSnackBar(SnackBar(content: Text('Megbuzdítottad: ${p.name} 👏')));
+                                        .showSnackBar(SnackBar(content: Text(trf('Megbuzdítottad: {0} 👏', [p.name]))));
                                   }
                                 },
                               ),
@@ -492,14 +499,14 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                 ),
               ),
               if (store.habits.isNotEmpty) ...[
-                const SectionTitle('Célhoz kötés'),
+                SectionTitle(tr('Célhoz kötés')),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: DropdownButtonFormField<String?>(
                       initialValue: store.habits.any((h) => h.id == linked) ? linked : null,
                       isExpanded: true,
-                      decoration: const InputDecoration(labelText: 'Ha kipipálom ezt a célt, a kihívásban is teljesül'),
+                      decoration: InputDecoration(labelText: tr('Ha kipipálom ezt a célt, a kihívásban is teljesül')),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('Nincs (kézzel jelölöm)')),
                         for (final Habit h in store.habits)

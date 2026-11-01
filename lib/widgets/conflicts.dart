@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../formatting.dart';
 import '../models.dart';
@@ -43,8 +47,13 @@ class ConflictHint extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.text),
                 ),
                 const SizedBox(height: 2),
-                for (final c in conflicts.take(3)) Text(conflictLine(c), style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-                if (conflicts.length > 3) Text('és még ${conflicts.length - 3}', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                for (final c in conflicts.take(3))
+                  Text(conflictLine(c), style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                if (conflicts.length > 3)
+                  Text(
+                    trf('és még {0}', [conflicts.length - 3]),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                  ),
               ],
             ),
           ),
@@ -78,7 +87,7 @@ Future<bool> confirmDespiteConflicts(BuildContext context, List<Conflict> confli
                 ],
               ),
             ),
-          if (conflicts.length > 5) Text('és még ${conflicts.length - 5}'),
+          if (conflicts.length > 5) Text(trf('és még {0}', [conflicts.length - 5])),
           const SizedBox(height: 8),
           const Text('Biztosan hozzáadod így is?'),
         ],

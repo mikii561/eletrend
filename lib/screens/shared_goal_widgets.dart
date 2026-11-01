@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
+
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
 
 import '../challenges.dart';
 import '../friends.dart';
@@ -46,7 +50,7 @@ class _ShareGoalSheetState extends State<_ShareGoalSheet> {
       Navigator.pop(context);
       messenger.showSnackBar(SnackBar(content: Text('Elküldve: ${_picked.values.join(', ')} megkapta a meghívást.')));
     } catch (e) {
-      if (mounted) setState(() => _error = 'Nem sikerült. Van internet? ($e)');
+      if (mounted) setState(() => _error = trf('Nem sikerült. Van internet? ({0})', [e]));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -61,7 +65,7 @@ class _ShareGoalSheetState extends State<_ShareGoalSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Közös cél: ${widget.habit.name}', style: Theme.of(context).textTheme.titleLarge),
+            Text(trf('Közös cél: {0}', [widget.habit.name]), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 6),
             Text(
               'A barátod is felveszi ezt a célt, és egymás pipáit látjátok a kártyán. Egy évig tart.',
@@ -72,7 +76,7 @@ class _ShareGoalSheetState extends State<_ShareGoalSheet> {
               stream: _friends,
               builder: (context, snap) {
                 final list = snap.data;
-                if (snap.hasError) return Text('Nem sikerült betölteni a barátokat: ${snap.error}');
+                if (snap.hasError) return Text(trf('Nem sikerült betölteni a barátokat: {0}', [snap.error]));
                 if (list == null) {
                   return const Padding(
                     padding: EdgeInsets.all(16),
@@ -80,9 +84,9 @@ class _ShareGoalSheetState extends State<_ShareGoalSheet> {
                   );
                 }
                 if (list.isEmpty) {
-                  return const EmptyState(
+                  return EmptyState(
                     emoji: '👋',
-                    text: 'Még nincs barátod az appban. A Barátok fülön kóddal felveheted.',
+                    text: tr('Még nincs barátod az appban. A Barátok fülön kóddal felveheted.'),
                   );
                 }
                 return ConstrainedBox(
@@ -110,7 +114,7 @@ class _ShareGoalSheetState extends State<_ShareGoalSheet> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: _picked.isEmpty || _busy ? null : _share,
-              child: Text(_busy ? 'Küldés…' : 'Közös cél indítása'),
+              child: Text(_busy ? tr('Küldés…') : tr('Közös cél indítása')),
             ),
           ],
         ),
@@ -148,7 +152,7 @@ class _SharedGoalRowState extends State<SharedGoalRow> {
           return Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Text(
-              snap.data == null ? '' : 'Közös cél · várjuk, hogy a barátod csatlakozzon',
+              snap.data == null ? '' : tr('Közös cél · várjuk, hogy a barátod csatlakozzon'),
               style: TextStyle(color: AppColors.textMuted, fontSize: 13),
             ),
           );
@@ -182,7 +186,7 @@ class _SharedGoalRowState extends State<SharedGoalRow> {
                       ),
                     const SizedBox(width: 4),
                     IconButton(
-                      tooltip: 'Buzdítás',
+                      tooltip: tr('Buzdítás'),
                       visualDensity: VisualDensity.compact,
                       onPressed: _cheered.contains(p.uid)
                           ? null

@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Text;
+
+import '../l10n/text.dart';
+
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -111,7 +114,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// A név, a profilkép és a születésnap mentése; utána a „kész” oldal jön.
   void _saveProfile() {
     if (_name.text.trim().isEmpty) {
-      setState(() => _nameError = 'Hogy szólíthatunk? (A barátaid is így látnak.)');
+      setState(() => _nameError = tr('Hogy szólíthatunk? (A barátaid is így látnak.)'));
       return;
     }
     final store = StoreScope.of(context);
@@ -144,7 +147,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       setState(() {
         _friendOk = true;
-        _friendMessage = 'Elküldtük a jelölést. Ha elfogadja, barátok lesztek. 🎉';
+        _friendMessage = tr('Elküldtük a jelölést. Ha elfogadja, barátok lesztek. 🎉');
         _friendCode.clear();
       });
     } on FriendException catch (e) {
@@ -158,7 +161,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (mounted) {
         setState(() {
           _friendOk = false;
-          _friendMessage = 'Nem sikerült. Van internet?';
+          _friendMessage = tr('Nem sikerült. Van internet?');
         });
       }
     } finally {
@@ -280,15 +283,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<Widget> _welcome(ThemeData theme) => [
     _logo(),
     const SizedBox(height: 24),
-    ..._title(theme, 'Üdvözlünk a LIFEUP alkalmazásban!', 'Az életed. Az embereid. Az időd.'),
-    _point(theme, Icons.calendar_month_outlined, 'Naptár és teendők', 'A napod egy helyen, emlékeztetőkkel.'),
+    ..._title(theme, tr('Üdvözlünk a LIFEUP alkalmazásban!'), tr('Az életed. Az embereid. Az időd.')),
+    _point(theme, Icons.calendar_month_outlined, tr('Naptár és teendők'), tr('A napod egy helyen, emlékeztetőkkel.')),
     _point(
       theme,
       Icons.people_alt_outlined,
-      'Barátok',
-      'Lásd, ki mikor ér rá, és szervezz közös programot pár koppintással.',
+      tr('Barátok'),
+      tr('Lásd, ki mikor ér rá, és szervezz közös programot pár koppintással.'),
     ),
-    _point(theme, Icons.flag_outlined, 'Célok', 'Kövesd a szokásaidat, egyedül vagy a barátaiddal.'),
+    _point(theme, Icons.flag_outlined, tr('Célok'), tr('Kövesd a szokásaidat, egyedül vagy a barátaiddal.')),
     Text(
       'Barátok nélkül is teljes értékű naptár: a közösségi rész csak kiegészítés.',
       style: TextStyle(color: AppColors.textMuted, fontSize: 13),
@@ -330,13 +333,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<Widget> _intro(ThemeData theme) => [
     ..._title(
       theme,
-      'Első lépések',
-      'Pár gyors kérdés, hogy a barátaid felismerjenek és minden a helyére kerüljön. '
-          'Egy perc az egész, és szinte minden kihagyható.',
+      tr('Első lépések'),
+      tr(
+        'Pár gyors kérdés, hogy a barátaid felismerjenek és minden a helyére kerüljön. Egy perc az egész, és szinte minden kihagyható.',
+      ),
     ),
-    _point(theme, Icons.cake_outlined, 'Születésnap', 'Nem kötelező, és csak akkor látják a barátaid, ha engeded.'),
-    _point(theme, Icons.person_add_alt_outlined, 'Barátok', 'Ha egy barátod hívott meg, add meg a kódját.'),
-    _point(theme, Icons.account_circle_outlined, 'Profilkép és név', 'Így látnak a barátaid.'),
+    _point(
+      theme,
+      Icons.cake_outlined,
+      tr('Születésnap'),
+      tr('Nem kötelező, és csak akkor látják a barátaid, ha engeded.'),
+    ),
+    _point(theme, Icons.person_add_alt_outlined, tr('Barátok'), tr('Ha egy barátod hívott meg, add meg a kódját.')),
+    _point(theme, Icons.account_circle_outlined, tr('Profilkép és név'), tr('Így látnak a barátaid.')),
     Text(
       'Ha most nem érsz rá, válaszd a „Beállítom később” gombot: a Profilban bármikor megadhatod.',
       style: TextStyle(color: AppColors.textMuted, fontSize: 13),
@@ -346,18 +355,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   List<Widget> _birthdayPage(ThemeData theme) => [
     ..._title(
       theme,
-      'Mikor van a születésnapod?',
-      'A barátaid ezt látják meg a naptárukban, ha engeded (az évszám nélkül). Nem kötelező.',
+      tr('Mikor van a születésnapod?'),
+      tr('A barátaid ezt látják meg a naptárukban, ha engeded (az évszám nélkül). Nem kötelező.'),
     ),
     Card(
       margin: EdgeInsets.zero,
       child: ListTile(
         leading: const Icon(Icons.cake_outlined),
-        title: Text(_birthday == null ? 'Születésnap megadása' : DateFormat('yyyy. MMMM d.', 'hu').format(_birthday!)),
+        title: Text(
+          _birthday == null ? tr('Születésnap megadása') : DateFormat('yyyy. MMMM d.', 'hu').format(_birthday!),
+        ),
         trailing: _birthday == null
             ? const Icon(Icons.chevron_right)
             : IconButton(
-                tooltip: 'Törlés',
+                tooltip: tr('Törlés'),
                 icon: const Icon(Icons.close),
                 onPressed: () => setState(() => _birthday = null),
               ),
@@ -372,10 +383,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return [
       ..._title(
         theme,
-        'Barátok felvétele',
+        tr('Barátok felvétele'),
         invitedByLink
-            ? 'Egy barátod meghívott egy programra. Ha megadod a barátkódját, barátok is lehettek. Nem kötelező.'
-            : 'Ha egy barátod hívott meg, írd be a barátkódját, így egyből barátok lehettek. Nem kötelező.',
+            ? tr('Egy barátod meghívott egy programra. Ha megadod a barátkódját, barátok is lehettek. Nem kötelező.')
+            : tr('Ha egy barátod hívott meg, írd be a barátkódját, így egyből barátok lehettek. Nem kötelező.'),
       ),
       if (!Friends.instance.ready)
         Text(
@@ -387,8 +398,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           controller: _friendCode,
           maxLength: 8,
           textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
-            labelText: 'Barátod kódja',
+          decoration: InputDecoration(
+            labelText: tr('Barátod kódja'),
             hintText: 'pl. AQX2VA',
             prefixIcon: Icon(Icons.person_add_alt_outlined),
             counterText: '',
@@ -398,7 +409,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 8),
         FilledButton.tonal(
           onPressed: _friendBusy ? null : _addFriend,
-          child: Text(_friendBusy ? 'Küldés…' : 'Jelölés küldése'),
+          child: Text(_friendBusy ? tr('Küldés…') : tr('Jelölés küldése')),
         ),
         if (_friendMessage != null)
           Padding(
@@ -417,7 +428,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               title: const Text('A te barátkódod'),
               subtitle: Text(code, style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 2)),
               trailing: IconButton(
-                tooltip: 'Másolás',
+                tooltip: tr('Másolás'),
                 icon: const Icon(Icons.copy_outlined),
                 onPressed: () async {
                   final messenger = ScaffoldMessenger.of(context);
@@ -433,7 +444,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   List<Widget> _profilePage(ThemeData theme) => [
-    ..._title(theme, 'Profilkép és név', 'Így látnak a barátaid. A képet kamerával vagy a galériából is megadhatod.'),
+    ..._title(
+      theme,
+      tr('Profilkép és név'),
+      tr('Így látnak a barátaid. A képet kamerával vagy a galériából is megadhatod.'),
+    ),
     Center(
       child: ProfilePhotoButton(
         name: _name.text,
@@ -466,8 +481,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     const SizedBox(height: 24),
     ..._title(
       theme,
-      'Kész is vagyunk!',
-      'Mindent elmentettünk. A következő lépésben megmutatjuk, mit hol találsz az appban.',
+      tr('Kész is vagyunk!'),
+      tr('Mindent elmentettünk. A következő lépésben megmutatjuk, mit hol találsz az appban.'),
     ),
     if (Notifications.supported)
       Card(
@@ -477,8 +492,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           title: const Text('Emlékeztetők'),
           subtitle: Text(
             _notificationsAsked
-                ? 'Köszönjük! A Profil → Értesítések alatt bármikor átállíthatod.'
-                : 'Szólunk a bejegyzéseid előtt és a barátaid születésnapján. A telefon engedélyt kér.',
+                ? tr('Köszönjük! A Profil → Értesítések alatt bármikor átállíthatod.')
+                : tr('Szólunk a bejegyzéseid előtt és a barátaid születésnapján. A telefon engedélyt kér.'),
           ),
           trailing: _notificationsAsked
               ? null

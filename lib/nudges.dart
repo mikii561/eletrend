@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -54,7 +56,7 @@ class Nudge {
 
   /// Az értesítés szövege, pl. „👋 Gabi: Szervezzünk valamit!”; csatolmánynál ezt is jelzi.
   String get headline {
-    final media = [if (image != null) '📷 kép', if (audio != null) '🎙️ hangüzenet'].join(' + ');
+    final media = [if (image != null) tr('📷 kép'), if (audio != null) tr('🎙️ hangüzenet')].join(' + ');
     final body = text.isEmpty ? media : (media.isEmpty ? text : '$text ($media)');
     return '$emoji $fromName: $body';
   }
@@ -193,10 +195,10 @@ class Nudges {
     String? audioMime,
     DateTime? now,
   }) async {
-    final me = _uid ?? (throw const NudgeException('Előbb jelentkezz be.'));
+    final me = _uid ?? (throw NudgeException(tr('Előbb jelentkezz be.')));
     final clean = text.trim();
     if (clean.isEmpty && image == null && audio == null) {
-      throw const NudgeException('Írj valamit, vagy csatolj képet vagy hangot a bökéshez.');
+      throw NudgeException(tr('Írj valamit, vagy csatolj képet vagy hangot a bökéshez.'));
     }
     final day = dayKey(now ?? DateTime.now()).replaceAll('-', '');
     for (var n = 0; n < dailyLimit; n++) {
@@ -221,7 +223,7 @@ class Nudges {
         if (e.code != 'permission-denied') rethrow;
       }
     }
-    throw const NudgeException('Ma már elég bökést küldtél neki (vagy nem fogad bökést). Próbáld holnap!');
+    throw NudgeException(tr('Ma már elég bökést küldtél neki (vagy nem fogad bökést). Próbáld holnap!'));
   }
 
   Future<void> markSeen(String id) => _inbox(_uid!).doc(id).update({'seen': true});

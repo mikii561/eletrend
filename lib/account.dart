@@ -1,3 +1,5 @@
+import 'l10n/l10n.dart';
+
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
@@ -22,21 +24,24 @@ class AccountException implements Exception {
 }
 
 String _hungarian(FirebaseAuthException e) => switch (e.code) {
-  'invalid-email' => 'Ez nem érvényes e-mail-cím.',
-  'email-already-in-use' => 'Ezzel az e-mail-címmel már van fiók. Jelentkezz be!',
-  'weak-password' => 'Túl gyenge a jelszó: legalább 6 karakter legyen.',
-  'user-not-found' || 'wrong-password' || 'invalid-credential' => 'Hibás e-mail-cím vagy jelszó.',
-  'user-disabled' => 'Ezt a fiókot letiltották.',
-  'too-many-requests' => 'Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.',
-  'network-request-failed' => 'Nincs internet. Ellenőrizd a kapcsolatot!',
-  'requires-recent-login' => 'Biztonsági okból add meg újra a jelszavad.',
-  'operation-not-allowed' => 'Ez a bejelentkezési mód nincs bekapcsolva a Firebase-ben.',
-  'popup-closed-by-user' || 'cancelled-popup-request' || 'web-context-canceled' => 'Megszakítottad a bejelentkezést.',
-  'popup-blocked' => 'A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.',
-  'account-exists-with-different-credential' =>
+  'invalid-email' => tr('Ez nem érvényes e-mail-cím.'),
+  'email-already-in-use' => tr('Ezzel az e-mail-címmel már van fiók. Jelentkezz be!'),
+  'weak-password' => tr('Túl gyenge a jelszó: legalább 6 karakter legyen.'),
+  'user-not-found' || 'wrong-password' || 'invalid-credential' => tr('Hibás e-mail-cím vagy jelszó.'),
+  'user-disabled' => tr('Ezt a fiókot letiltották.'),
+  'too-many-requests' => tr('Túl sok próbálkozás. Várj egy kicsit, és próbáld újra.'),
+  'network-request-failed' => tr('Nincs internet. Ellenőrizd a kapcsolatot!'),
+  'requires-recent-login' => tr('Biztonsági okból add meg újra a jelszavad.'),
+  'operation-not-allowed' => tr('Ez a bejelentkezési mód nincs bekapcsolva a Firebase-ben.'),
+  'popup-closed-by-user' ||
+  'cancelled-popup-request' ||
+  'web-context-canceled' => tr('Megszakítottad a bejelentkezést.'),
+  'popup-blocked' => tr('A böngésző letiltotta a felugró ablakot. Engedélyezd, és próbáld újra.'),
+  'account-exists-with-different-credential' => tr(
     'Ezzel az e-mail-címmel már jelszavas fiókod van. Jelentkezz be jelszóval.',
-  'unauthorized-domain' => 'Ez a weboldal nincs engedélyezve a Firebase-ben (Authorized domains).',
-  _ => 'Valami hiba történt (${e.code}). Próbáld újra.',
+  ),
+  'unauthorized-domain' => tr('Ez a weboldal nincs engedélyezve a Firebase-ben (Authorized domains).'),
+  _ => trf('Valami hiba történt ({0}). Próbáld újra.', [e.code]),
 };
 
 /// Felhasználói fiók: regisztráció, bejelentkezés, kijelentkezés, törlés.
