@@ -211,9 +211,20 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
 }
 
 /// Egy bökés megnyitása: ha programhoz kötött, a program nyílik meg; különben a lista.
+bool _nudgeOpen = false;
+
+/// Közben (amíg egy bökés oldala nyitva van, vagy épp nyílik) a további koppintásokat figyelmen kívül hagyjuk,
+/// különben többször nyílna meg ugyanaz az oldal, és mindet külön be kellene zárni.
 Future<void> openNudge(BuildContext context, Nudge n) async {
-  Nudges.instance.markSeen(n.id).catchError((_) {});
-  final id = n.eventId;
-  await Navigator.of(context)
-      .push(MaterialPageRoute<void>(builder: (_) => id == null ? const NudgeInboxScreen() : InviteScreen(eventId: id)));
+  if (_nudgeOpen) return;
+  _nudgeOpen = true;
+  try {
+    Nudges.instance.markSeen(n.id).catchError((_) {});
+    final id = n.eventId;
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (_) => id == null ? const NudgeInboxScreen() : InviteScreen(eventId: id)));
+  } finally {
+    _nudgeOpen = false;
+  }
 }
