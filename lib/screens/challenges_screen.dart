@@ -188,9 +188,9 @@ class _NewChallengeState extends State<_NewChallenge> {
               children: [
                 for (final (emoji, title, days) in challengeIdeas)
                   ChoiceChip(
-                    label: Text('$emoji $title'),
-                    selected: _title.text == title,
-                    onSelected: (_) => _useIdea(emoji, title, days),
+                    label: Text('$emoji ${tr(title)}'),
+                    selected: _title.text == tr(title),
+                    onSelected: (_) => _useIdea(emoji, tr(title), days),
                   ),
               ],
             ),

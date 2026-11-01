@@ -71,7 +71,7 @@ class _TaskEditorState extends State<_TaskEditor> {
       initialDate: base,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 5),
-      helpText: 'Melyik nap dolgozol rajta?',
+      helpText: tr('Melyik nap dolgozol rajta?'),
     );
     if (day == null || !mounted) return;
     final time = await pickTime(

@@ -31,7 +31,7 @@ class L10n {
     if (lang == AppLanguage.hu) return hu;
     final en = enStrings[hu];
     if (en != null) return en;
-    if (_looksHungarian(hu)) missing.add(hu);
+    if (_looksHungarian(hu) && !_keepOriginal.contains(hu)) missing.add(hu);
     return hu;
   }
 
@@ -51,6 +51,9 @@ class L10n {
       return '$value';
     });
   }
+
+  /// Szándékosan nem fordított szövegek (pl. a nyelvválasztó kétnyelvű).
+  static const _keepOriginal = {'Válaszd ki a nyelvet'};
 
   static final _hungarianChars = RegExp('[áéíóöőúüűÁÉÍÓÖŐÚÜŰ]');
 

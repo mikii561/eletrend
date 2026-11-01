@@ -290,7 +290,7 @@ class Notifications {
     < 60 => trf('{0} perc múlva', [minutes]),
     60 => tr('1 óra múlva'),
     < 1440 => trf('{0} óra múlva', [minutes ~/ 60]),
-    _ => 'Holnap',
+    _ => tr('Holnap'),
   };
 
   /// Mit írjunk egy cél emlékeztetőjébe.
@@ -301,6 +301,6 @@ class Notifications {
       return trf('Még {0}{1} van hátra mára. 💪', [left, h.unit.isEmpty ? '' : ' ${h.unit}']);
     }
     if (h.isWeekly) return trf('Ezen a héten még {0}× van hátra. 💪', [h.perWeek! - h.doneInWeek(day)]);
-    return 'Ne felejtsd el ma! 💪';
+    return tr('Ne felejtsd el ma! 💪');
   }
 }

@@ -22,7 +22,7 @@ class Backup {
         fileName: name,
         bytes: utf8.encode(store.exportData()),
         mimeType: 'application/json',
-        dialogTitle: 'Hova mentsem?',
+        dialogTitle: tr('Hova mentsem?'),
       );
       if (saved == null) return;
       messenger.showSnackBar(SnackBar(content: Text(trf('Elmentve: {0}', [name]))));

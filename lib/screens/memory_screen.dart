@@ -368,7 +368,7 @@ class _PhotoViewerState extends State<_PhotoViewer> {
         fileName: 'lifeup-${widget.photo.id}.jpg',
         bytes: bytes,
         mimeType: 'image/jpeg',
-        dialogTitle: 'Hova mentsem?',
+        dialogTitle: tr('Hova mentsem?'),
       );
       if (saved != null) messenger.showSnackBar(const SnackBar(content: Text('Elmentve.')));
     } catch (_) {

@@ -263,7 +263,7 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${pack.emoji} ${pack.title}',
+                      '${pack.emoji} ${tr(pack.title)}',
                       style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
                     ),
                     Text(pack.text, style: TextStyle(color: AppColors.textMuted)),
@@ -271,8 +271,8 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                     for (final h in pack.habits)
                       Text(
                         [
-                          '• ${h.name}',
-                          if (h.target > 1) '(${h.target} ${h.unit})',
+                          '• ${tr(h.name)}',
+                          if (h.target > 1) '(${h.target} ${tr(h.unit)})',
                           if (h.perWeek != null) trf('(hetente {0}×)', [h.perWeek]),
                         ].join(' '),
                       ),
@@ -284,8 +284,8 @@ Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<vo
                           final existing = {for (final h in store.habits) h.name.toLowerCase()};
                           var added = 0;
                           for (final h in pack.habits) {
-                            if (existing.contains(h.name.toLowerCase())) continue;
-                            store.addHabit(h.name, perWeek: h.perWeek, target: h.target, unit: h.unit);
+                            if (existing.contains(tr(h.name).toLowerCase())) continue;
+                            store.addHabit(tr(h.name), perWeek: h.perWeek, target: h.target, unit: tr(h.unit));
                             added++;
                           }
                           Navigator.pop(sheetContext);

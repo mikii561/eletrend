@@ -282,10 +282,10 @@ class _NudgeComposerState extends State<_NudgeComposer> {
             children: [
               for (final (emoji, text) in nudgeTemplates)
                 ActionChip(
-                  label: Text('$emoji $text'),
+                  label: Text('$emoji ${tr(text)}'),
                   onPressed: () => setState(() {
                     _emoji = emoji;
-                    _text.text = text;
+                    _text.text = tr(text);
                     _error = null;
                   }),
                 ),

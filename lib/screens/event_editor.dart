@@ -219,7 +219,7 @@ class _EventEditorState extends State<EventEditor> {
             maxLength: 100,
             style: Theme.of(context).textTheme.titleMedium,
             decoration: InputDecoration(
-              hintText: widget.social ? 'Mi a program? (pl. Mozi, foci, vacsora)' : tr('Cím (pl. Fogorvos, Edzés)'),
+              hintText: widget.social ? tr('Mi a program? (pl. Mozi, foci, vacsora)') : tr('Cím (pl. Fogorvos, Edzés)'),
               prefixIcon: Icon(categoryIcon(_category), color: color),
               errorText: _titleError,
               counterText: '',
