@@ -16,12 +16,19 @@ enum LightPalette {
   ember('Narancs', 'Égetett narancs, elefántcsont és puha fekete'),
 
   /// Élénk kobaltkék márkaszín, mandarin-narancs kiemelés, krém alap.
-  cobalt('Kobalt', 'Kobaltkék, mandarin és krém');
+  cobalt('Kobalt', 'Kobaltkék, mandarin és krém'),
 
-  const LightPalette(this.label, this.description);
+  /// Texturált fekete alap, törtfehér szöveg, elektromos magenta kiemelés. Sötét kinézetű, de a világos
+  /// választók között van: saját színkészlete van, a sima sötét módtól független.
+  magenta('Magenta', 'Mély fekete, törtfehér és elektromos magenta', isDark: true);
+
+  const LightPalette(this.label, this.description, {this.isDark = false});
 
   final String label;
   final String description;
+
+  /// Sötét alapú-e (a színek és az alapértelmezett stílusok ehhez igazodnak).
+  final bool isDark;
 }
 
 /// Egy megjelenés színei.
@@ -114,6 +121,18 @@ const _schemes = {
     header: [Color(0xFF0736BB), Color(0xFF052A94)],
     highlight: Color(0xFFFF7900),
   ),
+  // Fekete #0A0A0A (az alap), törtfehér #F2F0ED (a fő szöveg és a címek), elektromos magenta #F20B8B (a kiemelés).
+  LightPalette.magenta: _Scheme(
+    background: Color(0xFF0A0A0A),
+    card: Color(0xFF161616),
+    border: Color(0xFF2B2B2B),
+    text: Color(0xFFF2F0ED),
+    muted: Color(0xFFA7A39D),
+    primary: Color(0xFFF20B8B),
+    onPrimary: Color(0xFFFFFFFF),
+    accent: Color(0xFFC9C5BF),
+    header: [Color(0xFFF20B8B), Color(0xFFC20870)],
+  ),
 };
 
 /// Az app színei és stílusa egy helyen.
@@ -125,12 +144,15 @@ class AppColors {
   /// így az alábbi getterek mindig az aktuális módhoz illő színt adják.
   static bool dark = false;
 
+  /// A sima sötét mód aktív-e (a „Magenta” sötét kinézetű, de nem ez).
+  static bool plainDark = false;
+
   /// Melyik világos megjelenés. Sötét módban nincs hatása.
   static LightPalette palette = LightPalette.beige;
 
   static _Scheme _of(bool dark, LightPalette palette) => dark ? _dark : _schemes[palette]!;
 
-  static _Scheme get _now => _of(dark, palette);
+  static _Scheme get _now => plainDark ? _dark : _schemes[palette]!;
 
   /// Márkaszín (gombok, kiemelések).
   static Color get primary => _now.primary;
@@ -229,6 +251,8 @@ class Space {
 
 /// Az app témája: sötét, vagy a választott világos [palette].
 ThemeData buildTheme({bool dark = false, LightPalette palette = LightPalette.beige}) {
+  // A sötét alapú paletta (magenta) sötét kinézetű, akkor is, ha a világos témák között van.
+  final useDark = dark || palette.isDark;
   final background = AppColors.backgroundFor(dark, palette: palette);
   final card = AppColors.cardFor(dark, palette: palette);
   final border = AppColors.borderFor(dark, palette: palette);
@@ -240,11 +264,11 @@ ThemeData buildTheme({bool dark = false, LightPalette palette = LightPalette.bei
 
   final scheme = ColorScheme.fromSeed(
     seedColor: primary,
-    brightness: dark ? Brightness.dark : Brightness.light,
+    brightness: useDark ? Brightness.dark : Brightness.light,
     primary: primary,
     onPrimary: onPrimary,
     secondary: AppColors.highlightFor(dark, palette: palette),
-    onSecondary: dark ? const Color(0xFF18181B) : const Color(0xFF1B1B1B),
+    onSecondary: useDark ? const Color(0xFF18181B) : const Color(0xFF1B1B1B),
     surface: background,
     onSurface: textColor,
     outline: border,
@@ -355,7 +379,7 @@ ThemeData buildTheme({bool dark = false, LightPalette palette = LightPalette.bei
       indicatorColor: AppColors.highlightFor(
         dark,
         palette: palette,
-      ).withValues(alpha: dark ? 0.22 : (palette == LightPalette.cobalt ? 0.28 : 0.10)),
+      ).withValues(alpha: useDark ? 0.22 : (palette == LightPalette.cobalt ? 0.28 : 0.10)),
       height: 64,
       elevation: 0,
       iconTheme: WidgetStateProperty.resolveWith(
@@ -374,13 +398,13 @@ ThemeData buildTheme({bool dark = false, LightPalette palette = LightPalette.bei
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       side: BorderSide(color: border),
       backgroundColor: card,
-      selectedColor: primary.withValues(alpha: dark ? 0.25 : 0.12),
+      selectedColor: primary.withValues(alpha: useDark ? 0.25 : 0.12),
       labelStyle: TextStyle(fontFamily: font, fontWeight: FontWeight.w500, color: textColor),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
         side: BorderSide(color: border),
-        selectedBackgroundColor: primary.withValues(alpha: dark ? 0.25 : 0.12),
+        selectedBackgroundColor: primary.withValues(alpha: useDark ? 0.25 : 0.12),
         selectedForegroundColor: textColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -404,7 +428,7 @@ ThemeData buildTheme({bool dark = false, LightPalette palette = LightPalette.bei
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: textColor,
-      contentTextStyle: TextStyle(fontFamily: font, color: dark ? const Color(0xFF18181B) : card),
+      contentTextStyle: TextStyle(fontFamily: font, color: useDark ? const Color(0xFF18181B) : card),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );

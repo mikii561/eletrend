@@ -277,7 +277,7 @@ void main() {
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
-    // Megjelenés: négy világos (bézs, fehér, narancs, kobalt) és a sötét; mindegyik a saját színeit adja.
+    // Megjelenés: öt választható (bézs, fehér, narancs, kobalt, magenta) és a sötét; mindegyik a saját színeit adja.
     await tester.ensureVisible(find.text('Megjelenés'));
     await tester.pumpAndSettle();
     for (final p in LightPalette.values) {
@@ -290,13 +290,19 @@ void main() {
       expect(AppColors.background, AppColors.backgroundFor(false, palette: p));
       expect(AppColors.primary, AppColors.primaryFor(false, palette: p));
     }
-    expect(AppColors.primary.toARGB32(), 0xFF0736BB); // az utolsó, a kobalt
+    // Az utolsó a magenta: sötét kinézetű, de nem a sima sötét mód.
+    expect(AppColors.primary.toARGB32(), 0xFFF20B8B);
+    expect(AppColors.background.toARGB32(), 0xFF0A0A0A);
+    expect(AppColors.dark, isTrue);
+    expect(AppColors.plainDark, isFalse);
     await tester.tap(find.text('Megjelenés'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Sötét'));
     await tester.pumpAndSettle();
     expect(store.themeMode, ThemeMode.dark);
     expect(AppColors.dark, isTrue);
+    expect(AppColors.plainDark, isTrue);
+    expect(AppColors.primary, AppColors.primaryFor(true)); // a sima sötét, nem a magenta
     store.setThemeMode(ThemeMode.light, palette: LightPalette.beige);
     await tester.pumpAndSettle();
     stopServices();

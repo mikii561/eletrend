@@ -52,6 +52,7 @@ void main() {
     ('feher', LightPalette.white),
     ('narancs', LightPalette.ember),
     ('kobalt', LightPalette.cobalt),
+    ('magenta', LightPalette.magenta),
     ('sotet', LightPalette.beige),
   ]) {
     final dark = mode == 'sotet';
