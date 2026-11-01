@@ -11,6 +11,7 @@ import '../models.dart';
 import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 import '../widgets/common.dart';
 import '../widgets/conflicts.dart';
 import '../widgets/map_view.dart';
@@ -100,13 +101,13 @@ class _EventEditorState extends State<EventEditor> {
   }
 
   Future<void> _pickStart() async {
-    final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_start));
+    final t = await pickTime(context, initial: TimeOfDay.fromDateTime(_start), title: 'Mikor kezdődik?');
     if (t != null) setState(() => _start = DateTime(_start.year, _start.month, _start.day, t.hour, t.minute));
   }
 
   /// A befejezés választásakor az időtartam változik (a kezdés marad).
   Future<void> _pickEnd() async {
-    final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_end));
+    final t = await pickTime(context, initial: TimeOfDay.fromDateTime(_end), title: 'Mikor ér véget?');
     if (t == null) return;
     var end = DateTime(_start.year, _start.month, _start.day, t.hour, t.minute);
     if (!end.isAfter(_start)) end = end.add(const Duration(days: 1)); // éjfélen átnyúló
@@ -131,12 +132,12 @@ class _EventEditorState extends State<EventEditor> {
 
   /// A választott időponttal ütköző programok (a szerkesztett bejegyzés saját magával nem ütközik).
   List<Conflict> _conflicts(AppStore store) => store.conflictsFor(
-        start: _start,
-        durationMin: _duration,
-        allDay: _allDay,
-        repeat: _repeat,
-        ignoreEventId: _e?.id,
-      );
+    start: _start,
+    durationMin: _duration,
+    allDay: _allDay,
+    repeat: _repeat,
+    ignoreEventId: _e?.id,
+  );
 
   Future<void> _save() async {
     if (_saving) return;
@@ -303,7 +304,9 @@ class _EventEditorState extends State<EventEditor> {
                       onChanged: (m) => setState(() => _reminder = m),
                     ),
                   ),
-                  subtitle: _reminder == null ? const Text('A Főoldalon így is látszik, csak nem jön értesítés.') : null,
+                  subtitle: _reminder == null
+                      ? const Text('A Főoldalon így is látszik, csak nem jön értesítés.')
+                      : null,
                 ),
               ],
             ),

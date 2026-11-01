@@ -10,6 +10,7 @@ import '../models.dart';
 import '../social.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart' show showMemoriesExample;
 import 'memory_screen.dart';
@@ -362,7 +363,7 @@ class _PollEditorState extends State<_PollEditor> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (day == null || !mounted) return;
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(base));
+    final time = await pickTime(context, initial: TimeOfDay.fromDateTime(base), title: 'Hánykor?');
     if (time == null) return;
     final option = DateTime(day.year, day.month, day.day, time.hour, time.minute);
     if (_options.contains(option)) return;
@@ -709,16 +710,18 @@ class _SharedEventSectionState extends State<SharedEventSection> {
     }
   }
 
-  void _openMemories(SharedEvent shared) => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => MemoryScreen(
-          eventId: shared.id,
-          title: shared.title,
-          start: shared.date,
-          place: shared.place,
-          going: shared.going.contains(Social.instance.uid),
-          ownerUid: shared.ownerUid,
-        ),
-      ));
+  void _openMemories(SharedEvent shared) => Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => MemoryScreen(
+        eventId: shared.id,
+        title: shared.title,
+        start: shared.date,
+        place: shared.place,
+        going: shared.going.contains(Social.instance.uid),
+        ownerUid: shared.ownerUid,
+      ),
+    ),
+  );
 
   Future<void> _report(SharedEvent shared) async {
     final reason = await showTextInputSheet(
@@ -806,12 +809,12 @@ class _SharedEventSectionState extends State<SharedEventSection> {
                 ),
                 const SectionTitle('Reakciók'),
                 ReactionBar(eventId: shared.id),
-                SectionTitle(
-                  'Emlékek',
-                  onMore: () => _openMemories(shared),
-                ),
+                SectionTitle('Emlékek', onMore: () => _openMemories(shared)),
                 if (shared.date.isAfter(DateTime.now()))
-                  Text('A program után itt oszthatjátok meg egymással a fotókat.', style: TextStyle(color: AppColors.textMuted))
+                  Text(
+                    'A program után itt oszthatjátok meg egymással a fotókat.',
+                    style: TextStyle(color: AppColors.textMuted),
+                  )
                 else
                   MemoryStrip(
                     eventId: shared.id,

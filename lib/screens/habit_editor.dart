@@ -5,14 +5,15 @@ import '../models.dart';
 import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 
 /// Új cél felvétele vagy egy meglévő módosítása: név, gyakoriság, mennyiség, emlékeztető.
 Future<void> showHabitEditor(BuildContext context, {Habit? habit}) => showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _HabitEditor(store: StoreScope.of(context), habit: habit),
-    );
+  context: context,
+  isScrollControlled: true,
+  showDragHandle: true,
+  builder: (_) => _HabitEditor(store: StoreScope.of(context), habit: habit),
+);
 
 class _HabitEditor extends StatefulWidget {
   const _HabitEditor({required this.store, this.habit});
@@ -44,10 +45,10 @@ class _HabitEditorState extends State<_HabitEditor> {
   }
 
   Future<void> _pickReminder() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: _reminder ?? const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'Mikor emlékeztesselek?',
+    final picked = await pickTime(
+      context,
+      initial: _reminder ?? const TimeOfDay(hour: 9, minute: 0),
+      title: 'Mikor emlékeztesselek?',
     );
     if (picked != null) setState(() => _reminder = picked);
   }
@@ -82,9 +83,15 @@ class _HabitEditorState extends State<_HabitEditor> {
           }
         }
         h.counts.updateAll((_, n) => n > h.target ? h.target : n);
-        h.doneDays = {for (final e in h.counts.entries) if (e.value >= h.target) e.key};
+        h.doneDays = {
+          for (final e in h.counts.entries)
+            if (e.value >= h.target) e.key,
+        };
       } else {
-        h.doneDays.addAll([for (final e in h.counts.entries) if (e.value > 0) e.key]);
+        h.doneDays.addAll([
+          for (final e in h.counts.entries)
+            if (e.value > 0) e.key,
+        ]);
         h.counts.clear();
       }
       widget.store.updateHabit(h);
@@ -94,24 +101,28 @@ class _HabitEditorState extends State<_HabitEditor> {
   }
 
   Widget _stepper(int value, int min, int max, ValueChanged<int> onChanged) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          IconButton.outlined(
-            tooltip: 'Kevesebb',
-            onPressed: value > min ? () => onChanged(value - 1) : null,
-            icon: const Icon(Icons.remove),
-          ),
-          SizedBox(
-            width: 40,
-            child: Text('$value', textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-          ),
-          IconButton.outlined(
-            tooltip: 'Több',
-            onPressed: value < max ? () => onChanged(value + 1) : null,
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      IconButton.outlined(
+        tooltip: 'Kevesebb',
+        onPressed: value > min ? () => onChanged(value - 1) : null,
+        icon: const Icon(Icons.remove),
+      ),
+      SizedBox(
+        width: 40,
+        child: Text(
+          '$value',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
+        ),
+      ),
+      IconButton.outlined(
+        tooltip: 'Több',
+        onPressed: value < max ? () => onChanged(value + 1) : null,
+        icon: const Icon(Icons.add),
+      ),
+    ],
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +140,11 @@ class _HabitEditorState extends State<_HabitEditor> {
               controller: _name,
               autofocus: widget.habit == null,
               textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(labelText: 'Név', hintText: 'pl. Víz, Edzés, 10 perc olvasás', errorText: _error),
+              decoration: InputDecoration(
+                labelText: 'Név',
+                hintText: 'pl. Víz, Edzés, 10 perc olvasás',
+                errorText: _error,
+              ),
               onChanged: (_) => setState(() => _error = null),
             ),
             const SizedBox(height: 20),
@@ -149,7 +164,9 @@ class _HabitEditorState extends State<_HabitEditor> {
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Expanded(child: Text('Hány napon egy héten?', style: TextStyle(fontWeight: FontWeight.w600))),
+                  const Expanded(
+                    child: Text('Hány napon egy héten?', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
                   _stepper(_perWeek, 1, 6, (v) => setState(() => _perWeek = v)),
                 ],
               ),
@@ -181,9 +198,11 @@ class _HabitEditorState extends State<_HabitEditor> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Saját emlékeztető', style: TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text(_reminder == null
-                  ? 'Értesítés a telefonon, ha még nincs kész.'
-                  : 'Minden nap ${_reminder!.format(context)}-kor, ha még nincs kész.'),
+              subtitle: Text(
+                _reminder == null
+                    ? 'Értesítés a telefonon, ha még nincs kész.'
+                    : 'Minden nap ${_reminder!.format(context)}-kor, ha még nincs kész.',
+              ),
               value: _reminder != null,
               onChanged: (on) => on ? _pickReminder() : setState(() => _reminder = null),
             ),
@@ -197,7 +216,10 @@ class _HabitEditorState extends State<_HabitEditor> {
                 ),
               ),
             if (!Notifications.supported)
-              Text('Az emlékeztető csak a telefonos appban működik.', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(
+                'Az emlékeztető csak a telefonos appban működik.',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
             const SizedBox(height: 20),
             FilledButton(onPressed: _save, child: const Text('Mentés')),
           ],
@@ -209,68 +231,79 @@ class _HabitEditorState extends State<_HabitEditor> {
 
 /// Cél-sablonok: egy csomag egy koppintással felvehető (a már meglévő nevűeket kihagyja).
 Future<void> showHabitTemplates(BuildContext context) => showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        final store = StoreScope.of(context);
-        return DraggableScrollableSheet(
-          expand: false,
-          initialChildSize: 0.8,
-          maxChildSize: 0.95,
-          builder: (_, controller) => ListView(
-            controller: controller,
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-            children: [
-              Text('Cél-sablonok', style: Theme.of(sheetContext).textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text('Válassz egy csomagot; utána bármelyik célt átírhatod vagy törölheted.',
-                  style: TextStyle(color: AppColors.textMuted)),
-              const SizedBox(height: 12),
-              for (final pack in habitPacks)
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${pack.emoji} ${pack.title}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-                        Text(pack.text, style: TextStyle(color: AppColors.textMuted)),
-                        const SizedBox(height: 8),
-                        for (final h in pack.habits)
-                          Text([
-                            '• ${h.name}',
-                            if (h.target > 1) '(${h.target} ${h.unit})',
-                            if (h.perWeek != null) '(hetente ${h.perWeek}×)',
-                          ].join(' ')),
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: FilledButton.tonal(
-                            onPressed: () {
-                              final existing = {for (final h in store.habits) h.name.toLowerCase()};
-                              var added = 0;
-                              for (final h in pack.habits) {
-                                if (existing.contains(h.name.toLowerCase())) continue;
-                                store.addHabit(h.name, perWeek: h.perWeek, target: h.target, unit: h.unit);
-                                added++;
-                              }
-                              Navigator.pop(sheetContext);
-                              ScaffoldMessenger.of(context)
-                                ..hideCurrentSnackBar()
-                                ..showSnackBar(SnackBar(
-                                content: Text(added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új cél felvéve. Hajrá! 💪'),
-                              ));
-                            },
-                            child: const Text('Felvétel'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+  context: context,
+  isScrollControlled: true,
+  showDragHandle: true,
+  builder: (sheetContext) {
+    final store = StoreScope.of(context);
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.8,
+      maxChildSize: 0.95,
+      builder: (_, controller) => ListView(
+        controller: controller,
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        children: [
+          Text('Cél-sablonok', style: Theme.of(sheetContext).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            'Válassz egy csomagot; utána bármelyik célt átírhatod vagy törölheted.',
+            style: TextStyle(color: AppColors.textMuted),
           ),
-        );
-      },
+          const SizedBox(height: 12),
+          for (final pack in habitPacks)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${pack.emoji} ${pack.title}',
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                    ),
+                    Text(pack.text, style: TextStyle(color: AppColors.textMuted)),
+                    const SizedBox(height: 8),
+                    for (final h in pack.habits)
+                      Text(
+                        [
+                          '• ${h.name}',
+                          if (h.target > 1) '(${h.target} ${h.unit})',
+                          if (h.perWeek != null) '(hetente ${h.perWeek}×)',
+                        ].join(' '),
+                      ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: FilledButton.tonal(
+                        onPressed: () {
+                          final existing = {for (final h in store.habits) h.name.toLowerCase()};
+                          var added = 0;
+                          for (final h in pack.habits) {
+                            if (existing.contains(h.name.toLowerCase())) continue;
+                            store.addHabit(h.name, perWeek: h.perWeek, target: h.target, unit: h.unit);
+                            added++;
+                          }
+                          Navigator.pop(sheetContext);
+                          ScaffoldMessenger.of(context)
+                            ..hideCurrentSnackBar()
+                            ..showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  added == 0 ? 'Ezek már mind megvannak. 🙂' : '$added új cél felvéve. Hajrá! 💪',
+                                ),
+                              ),
+                            );
+                        },
+                        child: const Text('Felvétel'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
     );
+  },
+);

@@ -4,6 +4,7 @@ import '../formatting.dart';
 import '../models.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 import '../widgets/common.dart';
 import '../widgets/motion.dart';
 import '../widgets/conflicts.dart';
@@ -69,12 +70,12 @@ class _TaskEditorState extends State<_TaskEditor> {
       helpText: 'Melyik nap dolgozol rajta?',
     );
     if (day == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: _scheduled == null
+    final time = await pickTime(
+      context,
+      initial: _scheduled == null
           ? TimeOfDay(hour: (now.hour + 1) % 24, minute: 0)
           : TimeOfDay.fromDateTime(_scheduled!),
-      helpText: 'Hánykor kezded?',
+      title: 'Hánykor kezded?',
     );
     if (time == null) return;
     setState(() => _scheduled = DateTime(day.year, day.month, day.day, time.hour, time.minute));
@@ -205,7 +206,8 @@ class _TaskEditorState extends State<_TaskEditor> {
                     value: _reminder,
                     isExpanded: true,
                     items: [
-                      for (final m in {...reminderOptions, _reminder}) DropdownMenuItem(value: m, child: Text(reminderLabel(m))),
+                      for (final m in {...reminderOptions, _reminder})
+                        DropdownMenuItem(value: m, child: Text(reminderLabel(m))),
                     ],
                     onChanged: (m) => setState(() => _reminder = m),
                   ),

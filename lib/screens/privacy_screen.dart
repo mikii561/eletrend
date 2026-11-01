@@ -5,6 +5,7 @@ import '../friends.dart';
 import '../nudges.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 import '../widgets/common.dart';
 
 /// Adatvédelem: ki mit lát rólam, ki hívhat meg, ki bökhet meg, kiket tiltottam le.
@@ -321,7 +322,7 @@ class _WindowEditorState extends State<_WindowEditor> {
                     title: Text(_from.format(context)),
                     subtitle: const Text('Ettől'),
                     onTap: () async {
-                      final t = await showTimePicker(context: context, initialTime: _from);
+                      final t = await pickTime(context, initial: _from, title: 'Ettől');
                       if (t != null) setState(() => _from = t);
                     },
                   ),
@@ -331,7 +332,7 @@ class _WindowEditorState extends State<_WindowEditor> {
                     title: Text(_to.format(context)),
                     subtitle: const Text('Eddig'),
                     onTap: () async {
-                      final t = await showTimePicker(context: context, initialTime: _to);
+                      final t = await pickTime(context, initial: _to, title: 'Eddig');
                       if (t != null) setState(() => _to = t);
                     },
                   ),
