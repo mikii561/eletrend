@@ -286,6 +286,22 @@ class TaskItem {
   /// Melyik napra esik: a beosztás, különben a határidő napja.
   DateTime? get day => scheduled ?? due;
 
+  /// Elmaradt: nem kész, és a napja (beosztás vagy határidő) már elmúlt.
+  bool isMissed([DateTime? now]) {
+    final d = day;
+    return !done && d != null && startOfDay(d).isBefore(startOfDay(now ?? DateTime.now()));
+  }
+
+  /// Másik napra teszi: a beosztás ugyanabban az órában marad, a határidő csak akkor tolódik, ha elmúlt volna.
+  void moveToDay(DateTime newDay) {
+    final target = DateTime(newDay.year, newDay.month, newDay.day);
+    final s = scheduled;
+    if (s != null) scheduled = DateTime(target.year, target.month, target.day, s.hour, s.minute);
+    final d = due;
+    if (d != null && startOfDay(d).isBefore(target)) due = target;
+    if (s == null && d == null) due = target;
+  }
+
   bool isOverdue([DateTime? now]) {
     final d = due;
     return !done && d != null && startOfDay(d).isBefore(startOfDay(now ?? DateTime.now()));

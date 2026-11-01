@@ -27,6 +27,7 @@ import 'google_calendar_screen.dart';
 import 'habits_screen.dart';
 import 'invite_screen.dart';
 import 'memory_screen.dart';
+import 'missed_tasks.dart';
 import 'privacy_screen.dart';
 import 'profile_screen.dart' show HomeCardsScreen;
 import 'status_sheet.dart';
@@ -368,6 +369,7 @@ class _TasksCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SectionTitle(HomeCard.tasks.label, trailing: countLabel(todayLeft, tomorrowLeft)),
+        MissedTasksBanner(store: store, now: now),
         Card(
           child: Column(
             children: [

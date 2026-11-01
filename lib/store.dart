@@ -660,6 +660,16 @@ class AppStore extends ChangeNotifier {
     }).toList()..sort(_taskOrder);
   }
 
+  /// Az elmaradt feladatok (nem készek, a napjuk már elmúlt), a legrégebbi elöl.
+  List<TaskItem> missedTasks({DateTime? now}) =>
+      tasks.where((t) => t.isMissed(now)).toList()..sort((a, b) => a.day!.compareTo(b.day!));
+
+  /// Egy feladat áttétele másik napra.
+  void moveTask(TaskItem t, DateTime day) {
+    t.moveToDay(day);
+    saveTask(t);
+  }
+
   /// Nyitott feladatok: előbb a lejártak és a határidősök, aztán a többi.
   List<TaskItem> get openTasks => tasks.where((t) => !t.done).toList()..sort(_taskOrder);
 

@@ -116,6 +116,12 @@ Alsó menü (`lib/main.dart` `HomeShell`): Főoldal · Naptár · **Létrehozás
 - Bemutató: a kiemelés `RectTween`-nel csúszik, egyetlen kártya követi (`_CardPlacer`, a fölé/alá váltás is folyamatos), mérete `AnimatedSize`-zal igazodik, a tartalma egymás után halványul át (előbb ki a régi, aztán be az új); az egész be/ki halványul. Tesztben a lépések között több képkocka kell (`pump(300ms)` ×4).
 - Tipp bezárása: kicsúszik + `SizeTransition` összecsukás, csak utána `closeTip`. Fülváltás: az új fül `FadeSlideIn` (a régi nem marad meg, mert a Főoldalon GlobalKey-ek vannak). Naptár: lapozáskor irány szerinti csúszás (`_dir`, `_periodKey`). Oldalak: `FadeForwardsPageTransitionsBuilder` (theme.dart).
 
+## Egyszerű választók, elmaradt teendők
+
+- `lib/widgets/pickers.dart`: `pickTime` (óra : perc kerekek), `pickDay`, `pickBirthday` (év-hónap-nap kerekek, beírni nem kell): az Android-os órás tárcsa és a kézzel beírandó dátum helyett. Új időválasztásnál ezeket használd, ne `showTimePicker`-t.
+- Elmaradt teendő: `TaskItem.isMissed` (nem kész, a napja — beosztás vagy határidő — elmúlt), `store.missedTasks()`, `store.moveTask`. A Főoldalon a Teendők fölött `MissedTasksBanner` (`screens/missed_tasks.dart`): „Van N elmaradt teendőd — Szeretnéd folytatni?” Igen → lap, egyenként Ma / Holnap / Másik nap, kész, törlés; Nem → törlés megerősítés után.
+- Bökés megnyitása: `openNudge` védett az ismételt koppintás ellen (`_nudgeOpen`), különben ugyanaz az oldal többször nyílna.
+
 ## Olvasatlan-számlálók
 
 - `CountBadge` (widgets/common.dart). Főoldal fül: `store.unseenInvites()` (meg nem nyitott, jövőbeli, naptárban még nem lévő meghívás; `seenInvites`, megnyitáskor `markInviteSeen`). Barátok fül: függő jelölések + `Nudges.watchUnseenCount()`.
