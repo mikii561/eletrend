@@ -188,7 +188,7 @@ class _DayDot extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            DateFormat.E('hu').format(day),
+            DateFormat.E(L10n.code).format(day),
             style: TextStyle(
               fontSize: 12,
               fontWeight: isToday ? FontWeight.w900 : FontWeight.w600,

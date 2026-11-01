@@ -1,3 +1,4 @@
+import 'l10n/l10n.dart';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -27,7 +28,7 @@ class Geocoding {
       'format': 'jsonv2',
       'limit': '6',
       'addressdetails': '1',
-      'accept-language': 'hu',
+      'accept-language': L10n.code,
     });
     final res = await http.get(uri, headers: _headers);
     if (res.statusCode != 200) return [];
@@ -48,7 +49,7 @@ class Geocoding {
       'lon': '${point.longitude}',
       'format': 'jsonv2',
       'zoom': '18',
-      'accept-language': 'hu',
+      'accept-language': L10n.code,
     });
     final res = await http.get(uri, headers: _headers);
     if (res.statusCode != 200) return null;
@@ -62,7 +63,7 @@ class Geocoding {
       'lon': '${point.longitude}',
       'format': 'jsonv2',
       'zoom': '10',
-      'accept-language': 'hu',
+      'accept-language': L10n.code,
     });
     try {
       final res = await http.get(uri, headers: _headers);

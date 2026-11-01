@@ -48,7 +48,7 @@ class _ShareGoalSheetState extends State<_ShareGoalSheet> {
       if (!mounted) return;
       final messenger = ScaffoldMessenger.of(context);
       Navigator.pop(context);
-      messenger.showSnackBar(SnackBar(content: Text('Elküldve: ${_picked.values.join(', ')} megkapta a meghívást.')));
+      messenger.showSnackBar(SnackBar(content: Text(trf('Elküldve: {0} megkapta a meghívást.', [_picked.values.join(', ')]))));
     } catch (e) {
       if (mounted) setState(() => _error = trf('Nem sikerült. Van internet? ({0})', [e]));
     } finally {
@@ -243,7 +243,7 @@ class _SharedGoalInvitesState extends State<SharedGoalInvites> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${c.names[c.ownerUid] ?? 'Egy barátod'} közös célt indított veled',
+                        trf('{0} közös célt indított veled', [c.names[c.ownerUid] ?? tr('Egy barátod')]),
                         style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                       ),
                       const SizedBox(height: 2),

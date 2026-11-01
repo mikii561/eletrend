@@ -58,7 +58,7 @@ class _HabitHistoryScreenState extends State<HabitHistoryScreen> {
               IconButton(tooltip: tr('Előző'), icon: const Icon(Icons.chevron_left), onPressed: () => _shift(-1)),
               Expanded(
                 child: Text(
-                  _year ? '${_month.year}' : DateFormat('y. MMMM', 'hu').format(_month),
+                  _year ? '${_month.year}' : DateFormat(tr('y. MMMM'), L10n.code).format(_month),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -204,7 +204,7 @@ class _MonthGrid extends StatelessWidget {
     final first = DateTime(month.year, month.month, 1, 12);
     final count = DateTime(month.year, month.month + 1, 0).day;
     final lead = first.weekday - 1;
-    final weekdays = [for (var i = 0; i < 7; i++) DateFormat.E('hu').format(DateTime(2024, 1, 1 + i))];
+    final weekdays = [for (var i = 0; i < 7; i++) DateFormat.E(L10n.code).format(DateTime(2024, 1, 1 + i))];
     return Column(
       children: [
         Row(
@@ -297,7 +297,7 @@ class _MiniMonth extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      DateFormat.MMM('hu').format(month),
+                      DateFormat.MMM(L10n.code).format(month),
                       style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                     ),
                   ),

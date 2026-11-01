@@ -363,7 +363,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: ListTile(
         leading: const Icon(Icons.cake_outlined),
         title: Text(
-          _birthday == null ? tr('Születésnap megadása') : DateFormat('yyyy. MMMM d.', 'hu').format(_birthday!),
+          _birthday == null ? tr('Születésnap megadása') : DateFormat(tr('yyyy. MMMM d.'), L10n.code).format(_birthday!),
         ),
         trailing: _birthday == null
             ? const Icon(Icons.chevron_right)

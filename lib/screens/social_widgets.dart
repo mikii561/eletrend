@@ -171,8 +171,8 @@ Future<int> inviteFriendsTo(BuildContext context, Event event, List<String> uids
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          'Nem mehetett ki: ${failed.map(store.nameOf).join(', ')} (kikapcsolta a meghívásokat). '
-          'Neki a meghívólinket küldheted el.',
+          '${trf('Nem mehetett ki: {0} (kikapcsolta a meghívásokat).', [failed.map(store.nameOf).join(', ')])} '
+          '${tr('Neki a meghívólinket küldheted el.')}',
         ),
       ),
     );
@@ -264,7 +264,7 @@ class RsvpSummary extends StatelessWidget {
   }
 }
 
-String formatOption(DateTime d) => DateFormat('MMM d., EEEE HH:mm', 'hu').format(d);
+String formatOption(DateTime d) => DateFormat(tr('MMM d., EEEE HH:mm'), L10n.code).format(d);
 
 /// Időpont-szavazás: a meghívottak bejelölik, mi jó nekik; a legjobb ki van emelve.
 /// Szervezőként innen lehet kiválasztani a végleges időpontot.
@@ -611,7 +611,7 @@ class _Bubble extends StatelessWidget {
               Text(m.text, style: TextStyle(color: fg)),
               if (m.at != null)
                 Text(
-                  DateFormat('MMM d. HH:mm', 'hu').format(m.at!),
+                  DateFormat(tr('MMM d. HH:mm'), L10n.code).format(m.at!),
                   style: TextStyle(fontSize: 11, color: mine ? fg.withValues(alpha: 0.75) : AppColors.textMuted),
                 ),
             ],

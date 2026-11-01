@@ -175,7 +175,7 @@ class Notifications {
   @visibleForTesting
   static List<PlannedNotification> plan(AppStore store, DateTime now) {
     final out = <PlannedNotification>[];
-    final time = DateFormat('HH:mm', 'hu');
+    final time = DateFormat(tr('HH:mm'), L10n.code);
 
     // Bejegyzések: a saját emlékeztetőjük szerint, a következő 14 napban.
     if (store.eventReminders) {
@@ -277,7 +277,7 @@ class Notifications {
             _memoryBase + d,
             when,
             trf('Emlék: {0} 📸', [pick.event.title]),
-            'Ma ${pick.ago} volt${pick.event.place.isEmpty ? '' : ' · ${pick.event.place}'}. Nézd meg a közös fotókat!',
+            trf('Ma {0} volt{1}. Nézd meg a közös fotókat!', [pick.ago, pick.event.place.isEmpty ? '' : ' · ${pick.event.place}']),
             channel: 'birthdays',
           ),
         );
@@ -298,7 +298,7 @@ class Notifications {
   static String habitReminderBody(Habit h, DateTime day) {
     if (h.isCounted) {
       final left = h.target - h.countOn(day);
-      return 'Még $left${h.unit.isEmpty ? '' : ' ${h.unit}'} van hátra mára. 💪';
+      return trf('Még {0}{1} van hátra mára. 💪', [left, h.unit.isEmpty ? '' : ' ${h.unit}']);
     }
     if (h.isWeekly) return trf('Ezen a héten még {0}× van hátra. 💪', [h.perWeek! - h.doneInWeek(day)]);
     return 'Ne felejtsd el ma! 💪';

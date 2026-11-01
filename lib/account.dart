@@ -140,7 +140,7 @@ class Account {
   /// Megerősítő levél a bejelentkezett fióknak (egy link; kattintás után az app magától továbblép).
   Future<void> sendVerification() => _guard(() async {
     final u = auth.currentUser!;
-    await auth.setLanguageCode('hu');
+    await auth.setLanguageCode(L10n.code);
     try {
       await u.sendEmailVerification(
         ActionCodeSettings(url: 'https://mikii561.github.io/eletrend/', handleCodeInApp: false),
@@ -171,7 +171,7 @@ class Account {
   });
 
   Future<void> resetPassword(String email) => _guard(() async {
-    await auth.setLanguageCode('hu');
+    await auth.setLanguageCode(L10n.code);
     await auth.sendPasswordResetEmail(email: email.trim());
   });
 

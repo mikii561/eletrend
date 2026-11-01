@@ -20,7 +20,7 @@ Future<TimeOfDay?> pickTime(BuildContext context, {required TimeOfDay initial, S
       title: title,
       initial: DateTime(2000, 1, 1, initial.hour, initial.minute),
       mode: CupertinoDatePickerMode.time,
-      preview: (d) => DateFormat.Hm('hu').format(d),
+      preview: (d) => DateFormat.Hm(L10n.code).format(d),
     ),
   );
   return picked == null ? null : TimeOfDay(hour: picked.hour, minute: picked.minute);
@@ -45,7 +45,7 @@ Future<DateTime?> pickDay(
       mode: CupertinoDatePickerMode.date,
       min: first,
       max: last,
-      preview: (d) => DateFormat('yyyy. MMMM d.', 'hu').format(d),
+      preview: (d) => DateFormat(tr('yyyy. MMMM d.'), L10n.code).format(d),
     ),
   );
 }

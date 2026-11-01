@@ -60,7 +60,7 @@ class HomeScreen extends StatelessWidget {
       if (rest > 0) '$rest programod',
       if (tasks > 0) trf('{0} teendőd', [tasks]),
     ];
-    var text = parts.isEmpty ? tr('Ma nincs több dolgod a naptárban.') : 'Ma még ${parts.join(' és ')} van.';
+    var text = parts.isEmpty ? tr('Ma nincs több dolgod a naptárban.') : trf('Ma még {0} van.', [parts.join(tr(' és '))]);
     if (freeFriends != null && freeFriends > 0) text += trf(' {0} barátod most ráér.', [freeFriends]);
     return text;
   }
@@ -158,7 +158,7 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  DateFormat('MMMM d., EEEE', 'hu').format(now).toUpperCase(),
+                  DateFormat(tr('MMMM d., EEEE'), L10n.code).format(now).toUpperCase(),
                   style: TextStyle(
                     color: AppColors.textMuted,
                     fontSize: 12,
@@ -699,7 +699,7 @@ class _MemoryCard extends StatelessWidget {
                             Text(e.title, style: Theme.of(context).textTheme.titleMedium),
                             Text(
                               [
-                                DateFormat('yyyy. MMMM d., EEEE', 'hu').format(pick.occurredAt),
+                                DateFormat(tr('yyyy. MMMM d., EEEE'), L10n.code).format(pick.occurredAt),
                                 if (e.place.isNotEmpty) e.place,
                               ].join(' · '),
                               style: TextStyle(color: AppColors.textMuted),

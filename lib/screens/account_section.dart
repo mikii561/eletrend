@@ -68,8 +68,8 @@ class AccountSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'A fiókod és minden adatod (naptár, feladatok, célok, csoportok) végleg törlődik. '
-                'Ezt nem lehet visszavonni. ${google ? 'A megerősítéshez jelentkezz be újra a Google-fiókoddal.' : 'A megerősítéshez add meg a jelszavad.'}',
+                '${tr('A fiókod és minden adatod (naptár, feladatok, célok, csoportok) végleg törlődik. Ezt nem lehet visszavonni.')} '
+                '${google ? tr('A megerősítéshez jelentkezz be újra a Google-fiókoddal.') : tr('A megerősítéshez add meg a jelszavad.')}',
               ),
               if (!google) const SizedBox(height: 12),
               if (!google)
@@ -139,7 +139,7 @@ class AccountSection extends StatelessWidget {
                   store.myName.isEmpty ? (user?.displayName ?? tr('Fiók')) : store.myName,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: Text('${user?.email ?? ''}\nAz adataid a fiókodban vannak, minden eszközödön ugyanazok.'),
+                subtitle: Text('${user?.email ?? ''}\n${tr('Az adataid a fiókodban vannak, minden eszközödön ugyanazok.')}'),
                 isThreeLine: true,
               ),
               ListTile(

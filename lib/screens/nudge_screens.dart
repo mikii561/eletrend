@@ -189,7 +189,7 @@ class _NudgeComposerState extends State<_NudgeComposer> {
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          failed.isEmpty ? tr('Elküldve.') : 'Elküldve, kivéve: ${failed.join(', ')} (napi keret vagy kikapcsolta).',
+          failed.isEmpty ? tr('Elküldve.') : trf('Elküldve, kivéve: {0} (napi keret vagy kikapcsolta).', [failed.join(', ')]),
         ),
       ),
     );
@@ -269,7 +269,7 @@ class _NudgeComposerState extends State<_NudgeComposer> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Bökés: ${widget.to.values.join(', ')}', style: Theme.of(context).textTheme.titleLarge),
+          Text(trf('Bökés: {0}', [widget.to.values.join(', ')]), style: Theme.of(context).textTheme.titleLarge),
           if (widget.eventTitle != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -385,7 +385,7 @@ class _NudgeInboxScreenState extends State<NudgeInboxScreen> {
                           subtitle: Text(
                             [
                               n.fromName,
-                              if (n.at != null) DateFormat('MMM d. HH:mm', 'hu').format(n.at!),
+                              if (n.at != null) DateFormat(tr('MMM d. HH:mm'), L10n.code).format(n.at!),
                               if (n.eventTitle != null) n.eventTitle!,
                               if (n.audio != null) tr('🎙️ hangüzenet'),
                             ].join(' · '),
@@ -463,7 +463,7 @@ class NudgeDetailScreen extends StatelessWidget {
           ],
           if (n.at != null) ...[
             const SizedBox(height: 12),
-            Text(DateFormat('MMM d. HH:mm', 'hu').format(n.at!), style: TextStyle(color: AppColors.textMuted)),
+            Text(DateFormat(tr('MMM d. HH:mm'), L10n.code).format(n.at!), style: TextStyle(color: AppColors.textMuted)),
           ],
           if (eventId != null) ...[
             const SizedBox(height: 20),

@@ -85,7 +85,7 @@ class _InviteScreenState extends State<InviteScreen> {
                 notes: e.notes,
                 lat: e.lat,
                 lng: e.lng,
-                extra: 'Szervező: ${e.ownerName}${e.pollOpen ? ' · az időpontról szavazás van' : ''}',
+                extra: trf('Szervező: {0}{1}', [e.ownerName, e.pollOpen ? tr(' · az időpontról szavazás van') : '']),
               ),
               const SizedBox(height: 8),
               if (e.ownerUid != Social.instance.uid)

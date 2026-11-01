@@ -15,7 +15,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/motion.dart';
 
-String _when(DateTime? d) => d == null ? '–' : DateFormat('yyyy. MMM d. HH:mm', 'hu').format(d);
+String _when(DateTime? d) => d == null ? '–' : DateFormat(tr('yyyy. MMM d. HH:mm'), L10n.code).format(d);
 
 /// Admin felület: áttekintés, felhasználók, hibák, visszajelzések, megosztott programok.
 class AdminScreen extends StatelessWidget {
@@ -278,7 +278,7 @@ class _BarChart extends StatelessWidget {
 
   static const _height = 96.0;
 
-  String _label(DateTime d) => range.monthly ? DateFormat.MMM('hu').format(d) : DateFormat('M. d.', 'hu').format(d);
+  String _label(DateTime d) => range.monthly ? DateFormat.MMM(L10n.code).format(d) : DateFormat(tr('M. d.'), L10n.code).format(d);
 
   @override
   Widget build(BuildContext context) {
@@ -421,7 +421,7 @@ class _UsersState extends State<_Users> {
                 child: ListTile(
                   leading: NameAvatar(u.name.isEmpty ? '?' : u.name),
                   title: Text(
-                    '${u.name.isEmpty ? '(névtelen)' : u.name}${u.banned ? '  ⛔' : ''}',
+                    '${u.name.isEmpty ? tr('(névtelen)') : u.name}${u.banned ? '  ⛔' : ''}',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   subtitle: Text(
@@ -511,7 +511,7 @@ class _UserDetailState extends State<_UserDetail> {
                 ListTile(
                   title: const Text('Adatai'),
                   subtitle: Text(
-                    '${u.counts['events'] ?? 0} bejegyzés • ${u.counts['tasks'] ?? 0} feladat • ${u.counts['habits'] ?? 0} cél',
+                    trf('{0} bejegyzés • {1} feladat • {2} cél', [u.counts['events'] ?? 0, u.counts['tasks'] ?? 0, u.counts['habits'] ?? 0]),
                   ),
                 ),
               ],
@@ -596,8 +596,11 @@ class _Errors extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                   subtitle: Text(
-                    '${g.value.length}× • utoljára ${_when(g.value.first.at)} • '
-                    '${{for (final e in g.value) '${e.platform} ${e.version}'}.join(', ')}',
+                    trf('{0}× • utoljára {1} • {2}', [
+                      g.value.length,
+                      _when(g.value.first.at),
+                      {for (final e in g.value) '${e.platform} ${e.version}'}.join(', '),
+                    ]),
                   ),
                   childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                   children: [
@@ -735,7 +738,7 @@ class _SharedEvents extends StatelessWidget {
               Card(
                 child: ListTile(
                   title: Text(e['title'] as String? ?? '', style: const TextStyle(fontWeight: FontWeight.w700)),
-                  subtitle: Text('Szervező: ${e['ownerName'] ?? '?'} • ${e['date'] ?? ''}'),
+                  subtitle: Text(trf('Szervező: {0} • {1}', [e['ownerName'] ?? '?', e['date'] ?? ''])),
                   trailing: IconButton(
                     tooltip: tr('Törlés (moderálás)'),
                     icon: Icon(Icons.delete_outline, color: Colors.red.shade400),

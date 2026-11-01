@@ -89,7 +89,7 @@ class ProfileScreen extends StatelessWidget {
                 ListTile(
                   leading: const Icon(Icons.cake_outlined),
                   title: Text(
-                    birthday == null ? tr('Születésnap megadása') : DateFormat('yyyy. MMMM d.', 'hu').format(birthday),
+                    birthday == null ? tr('Születésnap megadása') : DateFormat(tr('yyyy. MMMM d.'), L10n.code).format(birthday),
                   ),
                   subtitle: Text(store.shareBirthday ? tr('A barátaid látják (év nélkül)') : tr('Csak te látod')),
                   onTap: () => _editBirthday(context),

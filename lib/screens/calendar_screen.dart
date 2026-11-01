@@ -96,9 +96,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
   });
 
   String get _title => switch (_view) {
-    CalendarView.month => DateFormat('yyyy. MMMM', 'hu').format(_focus),
-    CalendarView.day => DateFormat('MMM d., EEE', 'hu').format(_focus),
-    _ => DateFormat('yyyy. MMMM', 'hu').format(_focus),
+    CalendarView.month => DateFormat(tr('yyyy. MMMM'), L10n.code).format(_focus),
+    CalendarView.day => DateFormat(tr('MMM d., EEE'), L10n.code).format(_focus),
+    _ => DateFormat(tr('yyyy. MMMM'), L10n.code).format(_focus),
   };
 
   /// Új bejegyzés az adott időpontra (vagy a fókuszban lévő napon a következő egész órára).
@@ -592,7 +592,7 @@ class _WeekView extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(
-                            DateFormat.E('hu').format(d),
+                            DateFormat.E(L10n.code).format(d),
                             style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                           ),
                           const SizedBox(height: 2),
@@ -678,7 +678,7 @@ class _DayView extends StatelessWidget {
                       child: Column(
                         children: [
                           Text(
-                            DateFormat.E('hu').format(d),
+                            DateFormat.E(L10n.code).format(d),
                             style: TextStyle(fontSize: 11, color: AppColors.textMuted),
                           ),
                           const SizedBox(height: 2),
@@ -928,7 +928,7 @@ class _ListView extends StatelessWidget {
             formatDay(d),
             trailing: sameDay(d, DateTime.now()) || formatDay(d).length > 7
                 ? null
-                : DateFormat('MMM d.', 'hu').format(d),
+                : DateFormat(tr('MMM d.'), L10n.code).format(d),
           ),
         )
         ..add(_DayAgenda(occurrences: occ, tasks: tasks));

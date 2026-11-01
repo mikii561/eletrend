@@ -79,7 +79,7 @@ class _ChallengesScreenState extends State<ChallengesScreen> {
                             c.isActive()
                                 ? trf('{0}. nap a {1}-ból · {2} résztvevő', [c.dayNumber(), c.days, c.members.length])
                                 : c.dayNumber() == 0
-                                ? 'Kezdés: ${DateFormat('MMM d.', 'hu').format(c.start)} · ${c.members.length} résztvevő'
+                                ? trf('Kezdés: {0} · {1} résztvevő', [DateFormat(tr('MMM d.'), L10n.code).format(c.start), c.members.length])
                                 : trf('Véget ért · {0} résztvevő', [c.members.length]),
                           ),
                           trailing: const Icon(Icons.chevron_right),
@@ -273,7 +273,7 @@ class _NewChallengeState extends State<_NewChallenge> {
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(Icons.calendar_today_outlined, color: AppColors.primary),
-              title: Text('Kezdés: ${DateFormat('MMMM d., EEEE', 'hu').format(_start)}'),
+              title: Text(trf('Kezdés: {0}', [DateFormat(tr('MMMM d., EEEE'), L10n.code).format(_start)])),
               onTap: () async {
                 final d = await showDatePicker(
                   context: context,
@@ -396,7 +396,7 @@ class _ChallengeDetailState extends State<ChallengeDetail> {
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        '${DateFormat('MMM d.', 'hu').format(c.start)} – ${DateFormat('MMM d.', 'hu').format(c.end)}',
+                        '${DateFormat(tr('MMM d.'), L10n.code).format(c.start)} – ${DateFormat(tr('MMM d.'), L10n.code).format(c.end)}',
                         style: TextStyle(color: AppColors.textMuted),
                       ),
                       const SizedBox(height: 12),

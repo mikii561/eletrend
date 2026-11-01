@@ -196,7 +196,7 @@ class _FindTimeScreenState extends State<FindTimeScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: FilterChip(
-                      label: Text(DateFormat('E d.', 'hu').format(d)),
+                      label: Text(DateFormat(tr('E d.'), L10n.code).format(d)),
                       selected: _excluded.contains(dayKey(d)),
                       showCheckmark: false,
                       avatar: _excluded.contains(dayKey(d)) ? const Icon(Icons.block, size: 16) : null,

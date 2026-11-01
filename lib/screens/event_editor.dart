@@ -261,7 +261,7 @@ class _EventEditorState extends State<EventEditor> {
                 ListTile(
                   leading: const Icon(Icons.calendar_today_outlined),
                   title: Text(formatDay(_start)),
-                  subtitle: Text(DateFormat('yyyy. MMMM d., EEEE', 'hu').format(_start)),
+                  subtitle: Text(DateFormat(tr('yyyy. MMMM d., EEEE'), L10n.code).format(_start)),
                   onTap: _pickDate,
                 ),
                 if (!_allDay)
@@ -405,7 +405,7 @@ class _EventEditorState extends State<EventEditor> {
                   ListTile(
                     leading: Icon(Icons.group_add_outlined, color: AppColors.primary),
                     title: Text(
-                      _invite.isEmpty ? tr('Barátok meghívása') : 'Meghívod: ${_invite.map(store.nameOf).join(', ')}',
+                      _invite.isEmpty ? tr('Barátok meghívása') : trf('Meghívod: {0}', [_invite.map(store.nameOf).join(', ')]),
                       style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
                     ),
                     subtitle: _e?.shareId != null

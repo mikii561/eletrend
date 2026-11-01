@@ -114,7 +114,7 @@ class DateBadge extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            DateFormat.MMM('hu').format(date).replaceAll('.', '').toUpperCase(),
+            DateFormat.MMM(L10n.code).format(date).replaceAll('.', '').toUpperCase(),
             style: TextStyle(
               color: AppColors.primary,
               fontSize: size * 0.18,

@@ -298,7 +298,7 @@ class _MemoryScreenState extends State<MemoryScreen> {
               subtitle: Text(
                 [
                   if (past) agoLabel(widget.start, now),
-                  DateFormat('yyyy. MMMM d., EEEE', 'hu').format(widget.start),
+                  DateFormat(tr('yyyy. MMMM d., EEEE'), L10n.code).format(widget.start),
                   if (widget.place.isNotEmpty) widget.place,
                 ].join(' · '),
               ),
