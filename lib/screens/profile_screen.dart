@@ -12,6 +12,7 @@ import '../nudges.dart';
 import '../push.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 import '../widgets/common.dart';
 import '../widgets/profile_photo_button.dart';
 import 'account_section.dart';
@@ -38,14 +39,7 @@ class ProfileScreen extends StatelessWidget {
   Future<void> _editBirthday(BuildContext context) async {
     final store = StoreScope.of(context);
     final current = store.birthday == null ? null : DateTime.tryParse(store.birthday!);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: current ?? DateTime(2000, 1, 1),
-      firstDate: DateTime(1920),
-      lastDate: DateTime.now(),
-      initialEntryMode: DatePickerEntryMode.input,
-      helpText: 'Születésnap',
-    );
+    final picked = await pickBirthday(context, initial: current);
     if (picked != null) store.setBirthday(DateFormat('yyyy-MM-dd').format(picked));
   }
 

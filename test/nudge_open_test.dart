@@ -11,6 +11,7 @@ import 'helpers.dart';
 class _PushCounter extends NavigatorObserver {
   int pushes = 0;
 
+  @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     if (previousRoute != null) pushes++;
   }

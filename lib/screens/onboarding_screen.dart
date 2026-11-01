@@ -8,6 +8,7 @@ import '../friends.dart';
 import '../notifications.dart';
 import '../store.dart';
 import '../theme.dart';
+import '../widgets/pickers.dart';
 import '../widgets/motion.dart';
 import '../widgets/profile_photo_button.dart';
 
@@ -121,14 +122,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _pickBirthday() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _birthday ?? DateTime(2000, 1, 1),
-      firstDate: DateTime(1920),
-      lastDate: DateTime.now(),
-      initialEntryMode: DatePickerEntryMode.input,
-      helpText: 'Születésnap',
-    );
+    final picked = await pickBirthday(context, initial: _birthday);
     if (picked != null) setState(() => _birthday = picked);
   }
 
